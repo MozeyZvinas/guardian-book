@@ -1,6 +1,7 @@
 # 00 · The document set for the build (Stage 1)
 
-**Status:** PROPOSED · 27 Oct 2026 · written by the planning session for Mozey's approval.
+**Status:** PROPOSED v1.1 · 27 Oct 2026 · written by the planning session for Mozey's approval.
+v1.1 adds the ChatGPT blueprint adoptions (§8) and the compressed hackathon schedule (§9).
 **Depends on:** the vision canon in `guardian-book-legacy/docs` (October 2026). Housekeeping
 item H1 imports it into this repo.
 **What it decides, once approved:**
@@ -54,9 +55,9 @@ item H1 imports it into this repo.
 
 | # | Item | Why |
 |---|---|---|
-| H0 | **Push the 28 unpushed vision commits** in `~/GitHub/guardian-book-legacy` to the `guardian-book-legacy` GitHub repo, after repointing its remote (founder paste block in START-HERE) | The whole October canon (DESCRIPTION, GUARDIAN_BOOK, WHOLE_LEARNER, BUSINESS_PLAN and more) exists only on the laptop. That folder's remote still points at the old name, which GitHub now resolves to the NEW repo |
-| H1 | Import the vision canon into `docs/vision/` as read-only reference (list in §5) | Builders and briefs cite it. It replaces `docs/pack/`, which waited for the July pack that October superseded |
-| H2 | Mark STALE: `prompts/01-kickoff.md` and T-001 (planning moved to this session to save Fable budget); `docs/pack/README.md`; the README line calling Guardian Book a "companion" (contradicts DESCRIPTION.md) | Stops a paid session from running the old kickoff |
+| H0 | **Back up, don't work from:** push the 28 unpushed commits in `~/GitHub/guardian-book-legacy` to the retired `guardian-book-legacy` GitHub repo, after repointing its remote (founder paste block in START-HERE). We build only in `guardian-book` (D8); this is purely an off-laptop backup of the company documents, which must never enter the public repo (D16) | The company documents (BUSINESS_PLAN, QUESTION_BANK, META_* and others) exist only on the laptop. That folder's remote still points at the old name, which GitHub now resolves to the NEW repo. A normal push would be refused (unrelated histories); a force push would overwrite the new repo |
+| H1 | **Done 27 Oct.** Import the vision canon into `docs/vision/` as read-only reference (list in §5) | Builders and briefs cite it. It replaces `docs/pack/`, which waited for the July pack that October superseded |
+| H2 | **Done 27 Oct.** Mark STALE: `prompts/01-kickoff.md` and T-001 (planning moved to this session to save Fable budget); `docs/pack/README.md`; the README line calling Guardian Book a "companion" (contradicts DESCRIPTION.md) | Stops a paid session from running the old kickoff |
 
 ### The documents
 
@@ -354,3 +355,34 @@ item H1 imports it into this repo.
 - Every run has `--budget` or `--max-budget-usd` set.
 - Use Sonnet 5.5 ($2/$10) for bulk or mechanical briefs, Fable for hard ones. The build
   plan assigns a model per brief.
+
+## 8. Adopted from the ChatGPT blueprint (v1.1; full review in `01-blueprint-review.md`)
+
+| Document | Addition |
+|---|---|
+| 4 · Product | Each requirement block gets: roles and permissions, failure/edge cases, data dependencies, and verification by layer |
+| 5 · Architecture and data | A mandatory "change the ID" authorization test per role and per resource |
+| 6 · Privacy, safety and security | AI-assisted development threats (package verification, prompt injection from repo or web text, no production credentials where the agent runs); OWASP Top 10 for LLM applications for marking and the tutor; MFA on every privileged account |
+| 7 · Quality and delivery | Risk tiers that set the depth of checks; CI hardening (pinned actions, least-privilege token, frozen lockfile, no secrets to pull requests, stable job names); release checklist; smoke test after each deploy; one pull request per brief |
+| 10 · Build plan | A small scorecard: lead time per brief, escaped defects, cost per brief, critical-flow completion |
+| 11 · Brief template and harness | Risk tier; a completion report (files, requirements covered, commands and real output, security notes, gaps, approvals needed); a read-only reviewer agent; a migration skill |
+
+## 9. Hackathon schedule (D9: Guardian Book is the Meta entry; submit 20:00 SAST 4 Nov)
+
+**The stages compress.** Each document is still approved before the next, but approvals
+need to come within hours, not days.
+
+| Day | Documents and work | Code |
+|---|---|---|
+| Tue 27 Oct | Stage 1 closed; housekeeping (H0–H2) done | — |
+| Wed 28 Oct | Stage 2 stack (morning) → 02 product: the hackathon slice (midday) → 03 architecture and data (evening) | — |
+| Thu 29 Oct | 04 privacy minimum, 05 quality and delivery, build plan, brief template, CLAUDE.md | Brief 02: scaffold, CI, deploy skeleton, health check |
+| Fri 30 Oct – Mon 2 Nov | 06 AI and content, then 07 screens, each just before its briefs | Slice briefs: past-paper practice faithful to print; answer by typing or canvas; Meta-model marking with the accuracy gate; evidence engine and Brain page; teacher scan → confirm → release; open-weights evaluation |
+| Tue 3 Nov | Video script, evidence page | Phone test, fixes, record the demo |
+| Wed 4 Nov | Submission package; repo goes public | Freeze by 18:00, submit by 20:00 SAST |
+
+**What we build to:** the judging rubric. Impact, Use of Meta tooling, Technical depth and
+Demo carry equal weight. The video shows only work built during the event.
+
+**What gives if time runs short:** scope sheds before the date (CLAUDE.md rule 6). The
+build plan sets the cut line.

@@ -15,6 +15,9 @@ that connects the **learner**, their **guardian** (parent or accountability part
 **teacher** and their **school**, so there is no disconnect between them.
 
 Never describe it as a marking app. Marking is one feature; lead with the whole platform.
+Describe it from `docs/vision/DESCRIPTION.md`. **Release 1 serves learners and teachers**; the
+guardian plan comes next (D10). This is the Meta hackathon entry (D9), so the repo must stay
+publishable: never commit company documents, personal data or secrets (D16).
 
 Core experience (MVP direction): practise real past exam papers paper by paper and
 subject by subject, questions shown exactly as on the printed paper, answer by typing or
@@ -34,9 +37,9 @@ to help. Teachers scan scripts, the system proposes marks, the teacher confirms.
 ## Experience bar
 Duolingo's design principles, TikTok-level effortlessness, study anywhere (bus, home, school).
 Design references come from Mobbin. Never generic, cluttered or "template" looking.
-Design system: **pending** — v1 (Sentinel / Direction K) or v2 (Sunrise). Until Mozey rules,
-build every screen on theme tokens only (no hard-coded colours, fonts or radii) so either
-system drops in. The Sentinel secretary-bird mark is the logo either way.
+Design system: **Sentinel, latest version.** The source is `docs/vision/DESIGN.md` §v2 + v3
+addendum and `docs/vision/design/sentinel/` (decision D11). Build every screen on theme tokens
+only: no hard-coded colours, fonts or radii.
 
 ## Stack
 Decided: web app, mobile-first, installable PWA; backend on Railway; PostgreSQL.
@@ -52,6 +55,10 @@ becomes binding once logged in `docs/decisions.md`.
 - Tests and typecheck pass before every commit. Marking changes also pass the golden-set eval.
 - New dependencies: well-maintained official packages only; say why in the commit body; no high/critical audit findings.
 - Commits: small, imperative subject line, describe the change only. No co-author trailers, no tool or assistant attribution, no "generated with" lines — in commits, PRs, code comments or docs.
+
+## Where to look
+`START-HERE.md` (current state) → `docs/decisions.md` (outranks everything) → the brief you
+were given in `prompts/` and only the spec sections it cites (`docs/specs/`, `docs/vision/`).
 
 ## Shared state
 `docs/TASKS.md` is shared between the planning session and you. Re-read it before every edit,

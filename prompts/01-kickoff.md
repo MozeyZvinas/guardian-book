@@ -1,5 +1,9 @@
 # Brief 01 — Kickoff: architecture proposal and first-slice plan (task T-001)
 
+> **STALE (27 Oct 2026). Do not run.** Planning moved to the planning session to save Claude
+> Code budget. The architecture and first-slice plan are produced as `docs/specs/*` per
+> `docs/plan/00-document-set.md`. Kept for history only.
+
 You are the implementer on Guardian Book. This task is **planning only**: no application
 code, no package installs, no scaffolding, no config beyond the docs listed below.
 It ends with documents for Mozey to approve.

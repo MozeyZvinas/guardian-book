@@ -1,77 +1,102 @@
 # START HERE
 
 Read this first, every session. Chats hold no state; this page does.
-**Updated:** 27 Oct 2026, planning session.
+**Updated:** 27 Oct 2026 (evening), planning session.
+
+## What we're doing right now
+
+Building **Guardian Book** for the **Meta Global AI Developer Hackathon** (Indie, solo).
+
+**Deadlines:**
+- Submit by **20:00 SAST, Wed 4 Nov**. The official close is 04:00 SAST, 5 Nov.
+- Claude Code credit (about $200 promo) expires **14 Nov**.
+
+**Judging:**
+- Four equally weighted criteria: **Impact · Use of Meta tooling · Technical depth · Demo**.
+- The top 5 per track have their 3-minute videos watched live. The video may show only
+  work built during the event.
+
+**Rules that shape every decision:**
+- The repo goes **public** at submission, so nothing private is ever committed (D16).
+- Product code is **new work** written during the event.
+- Pre-existing inputs (DBE papers, reviewed answer keys, golden cases) are labelled as
+  inputs.
+- Meta models are the primary AI path (D13).
+
+**Release 1 serves learners and teachers (D10).** Parents come next. **Design: Sentinel,
+latest (D11).**
 
 ## Current reality (verified 27 Oct 2026)
 
-**This repo:**
-- Private repo `MozeyZvinas/guardian-book`, on the Mac at `~/Projects/guardian-book`.
-- Setup only: no application code.
+**This repo** (`MozeyZvinas/guardian-book`, private until submission, at
+`~/Projects/guardian-book`): planning only, no application code. It now contains:
+- `docs/vision/`: the product vision, imported read-only;
+- `docs/plan/`: the Stage 1 document set and the ChatGPT blueprint review;
+- `docs/decisions.md`: D2–D16, plus open items.
 
-**The legacy build lives in two places:**
-
-| Folder | What it holds |
-|---|---|
-| `~/GitHub/guardian-book-legacy` | The **October vision canon**: 28 commits not on GitHub yet, so the only copy is this laptop. Its remote still points at the old repo name, which GitHub now resolves to THIS repo. See action H0 below. |
-| `~/Projects/guardian-book-legacy` | A fresh clone from GitHub. It stops before the October work. |
-
-**Reusable legacy data** (verify before relying on it):
+**Retired legacy** (`guardian-book-legacy`, D8): an archive only. Data reused after
+verification:
 
 | Data | Where | Notes |
 |---|---|---|
-| Structured DBE Maths papers | `tools/ingest/data/structured/` | 10 papers, 513 questions on disk. The legacy notes say 11 papers and 519 questions: reconcile. |
+| DBE Maths papers | `tools/ingest/data/structured/` | 10 papers, 513 questions on disk; the legacy notes say 11 and 519, so reconcile |
 | Golden marking cases | `tools/evals/` | Only 4 cases |
-| Permission tests | `tools/rls-tests/` | Ideas to reuse |
-| Erasure script | `tools/erase-user.mjs` | Approach to reuse |
+| Erasure approach | `tools/erase-user.mjs` | |
+| Permission-test ideas | `tools/rls-tests/` | |
 
-**Claude Code:**
-- Runs as `fable` (Agent SDK runner) on the $199.98 promo, which expires **14 Nov**.
-- Fable 5.1 costs $10/$50 per million tokens.
-- Default cap: $20 per session.
+**Two local copies of the legacy repo:**
+- `~/GitHub/guardian-book-legacy` holds 28 commits of October work (vision and company
+  documents) that are on this laptop only. Action H0 below backs them up; it does not
+  mean we work there.
+- `~/Projects/guardian-book-legacy` is a fresh clone from GitHub, without them.
 
-## Where we are
+**Claude Code:** runs as `fable` (Agent SDK, promo key), Fable 5.1 at $10/$50 per million
+tokens, $20 default cap per session.
+
+## Tracker
 
 | Stage | What | Status |
 |---|---|---|
-| 0 | Vision | Close to done; open items below |
-| 1 | Document set (`docs/plan/00-document-set.md`) | **Awaiting Mozey's approval** |
-| 2 | Tech stack decision (`docs/specs/01-stack.md`) | Not started |
-| 3+ | Remaining documents, in the approved order | Not started |
-| Build | Numbered briefs in `prompts/` | Not started |
+| 1 | Document set (`docs/plan/00-document-set.md` v1.1) and blueprint review (`01-blueprint-review.md`) | **Awaiting Mozey's approval (Open #9)** |
+| H | Housekeeping: vision imported, kickoff STALE, README fixed, decisions logged | Done 27 Oct |
+| 2 | Tech stack (`docs/specs/01-stack.md` + ADRs) | Next, Wed 28 Oct morning |
+| 3+ | 02 product (hackathon slice) → 03 architecture and data → 04 privacy minimum → 05 quality and delivery → build plan → brief template → CLAUDE.md | 28–29 Oct |
+| Build | Brief 02 (scaffold + CI + deploy skeleton) and then the slice briefs | From Thu 29 Oct |
 
-**T-001 and `prompts/01-kickoff.md` are on hold.** Planning moved to the planning session to
-save Fable budget. Don't run them.
+The full day-by-day schedule is in `docs/plan/00-document-set.md` §9.
 
 ## Open decisions (owner)
 
 | # | Decision | Owner |
 |---|---|---|
-| 1 | Meta hackathon (submit by 4 Nov): is Guardian Book still the entry? The rules require a public repo, new work only and Meta's models. This changes the scope, pace and model provider. | Mozey |
-| 2 | Design system: v1 Sentinel (Direction K) or v2 Sunrise. This blocks the screens spec. | Mozey |
-| 3 | Release-1 audience: learner loop only, or learner + teacher confirm/release + guardian Help Plan. | Mozey, on the CTO's proposal in 02-product |
-| 4 | Data residency at launch: South Africa-hosted, or cross-border with consent and an attorney's basis. Feeds the stack. | Mozey + attorney |
-| 5 | Every other stack question. | Stage 2 |
+| 9 | Approve the Stage 1 document set v1.1 | Mozey |
+| 8 | Branch protection: go public early (free), GitHub Pro (about $4/month), or CI discipline until submission | Mozey |
+| 2–4 | Framework, Railway layout, auth and consent | Stage 2 |
+| 7 | The hackathon slice itself | Mozey, on the CTO's proposal in 02-product |
 
 ## Next actions
 
-**Mozey: H0, now.** Protect the vision canon (it's reversible and safe):
+**Mozey: H0, back up the October work** (safe and reversible). This does NOT switch us to
+the legacy repo; the last line pushes the new repo.
 ```bash
 cd ~/GitHub/guardian-book-legacy
 git remote set-url origin https://github.com/MozeyZvinas/guardian-book-legacy.git
-git fetch origin && git status -sb      # expect "ahead 28", not "behind"
+git fetch origin && git status -sb     # expect "ahead 28"; if it says "behind", stop and paste the output
 git push origin main
-cd ~/Projects/guardian-book-legacy && git pull --ff-only
+cd ~/Projects/guardian-book && git push
 ```
 
-**Mozey:** approve or adjust Stage 1, and answer open decisions 1–4.
+**Mozey:** turn on MFA for GitHub, Railway, the Anthropic Console and the Meta developer
+account.
 
-**Planning session:** on approval, do the housekeeping H1–H2, then Stage 2 (stack).
+**Planning session:** on approval of Open #9, write Stage 2 (stack).
 
-## Last session handover
+## Last session handover (27 Oct)
 
-- Read the shared setup chat.
-- Inspected both repos.
-- Researched how teams plan builds for coding agents.
-- Wrote the Stage 1 document set and this page.
+- Founder ruled D9–D16.
+- Imported the vision into `docs/vision/`.
+- Reviewed the ChatGPT blueprint (adopted, adapted, deferred, rejected).
+- Updated the document set to v1.1 with the hackathon schedule.
+- Built the downloadable vision, business and competition pack outside the repo, on the
+  Desktop in the Dan Vega folder.
 - No code; nothing touched production.
