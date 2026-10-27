@@ -17,7 +17,7 @@ edit, and make targeted edits only.
 | F4 | Railway project (EU West): app service from the repo (Dockerfile), Postgres 16, Bucket, variables, "wait for CI", daily backups | 28 Oct 12:00 | todo |
 | F5 | 3–5 adult volunteers (handwritten answers, written consent) and 1 maths teacher (checks guidelines, scores the eval set) | Ask 28 Oct; samples by 30 Oct | todo |
 | F6 | Discord: post the organiser questions (prize stacking, open-weight eligibility, agentic autonomy, the 18+ approach, the Teacher Studio policy question, Open #13) | 28 Oct, 16:00 SAST office hours | todo |
-| F7 | Contact DBE: permission request for AI processing, in-app display and commercial use; log the date and the reply | 28 Oct | todo |
+| F7 | DBE permission: save the written sign-off and record its scope (5 lines, private legal folder; downloads are gated on it). If it doesn't cover AI processing, in-app display or commercial use, send the request email | 28 Oct | todo |
 | F8 | Meta Billing: confirm how to run DBE documents on paid usage, not free credits (don't toggle anything irreversible) | Before 30 Oct | todo |
 | F9 | Decide Open #12 (Teacher Studio as the core) | 28 Oct, morning | todo |
 
@@ -37,8 +37,9 @@ edit, and make targeted edits only.
 | B02 Database, auth (18+), roles, seeds, permission harness | 28–29 Oct | P0-01 | B01 | Fable / $20 | todo |
 | B03 Content model + question viewer (KaTeX) | 29 Oct | P0-02 | B02, C1 | Sonnet / $6 | todo |
 | B04 Model gateway + typed assessment (fail closed) | 29 Oct | P0-03 | B03, F3 | Fable / $25 | todo |
-| B03b Content reader: downloader to a private data dir, Muse Spark PDF reader, checks, review queue, provenance (D28, D29) | 30 Oct | D28 | B04, F8 | Fable / $15 | todo |
-| V0/V1 DBE validation batches (internal; planning compares against legacy ground truth) | 30–31 Oct | D29 | B03b | Founder runs; planning compares | todo |
+| B03b Content reader: reads documents from a private data dir (fetched outside the repo), Muse Spark PDF reader, checks, review queue, provenance (D28, D29, D31) | 30 Oct | D28 | B04, F8 | Fable / $15 | todo |
+| V0 DBE validation batch: 25 files downloaded and verified with the private corpus tool (D31) | 28 Oct | D29 | F7 | Founder runs; planning checks | todo |
+| V1 Mathematics + Physical Sciences, Grades 10–12 (~300 files) + held-out set; reader output compared with legacy ground truth | 29–31 Oct | D29 | V0, B03b | Founder runs; planning compares | todo |
 | G1 Handwriting feasibility gate | 29 Oct, evening | P0-04 go/no-go | B04, F5 | Planning | todo |
 | B05 Photo attempt + grounded overlay | 30 Oct | P0-04 | G1 = go | Fable / $25 | todo |
 | B06 Next step + evidence engine v0 + progress | 30–31 Oct | P0-05, P0-06 | B04 | Fable / $20 | todo |
