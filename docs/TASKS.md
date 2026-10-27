@@ -40,7 +40,7 @@ edit, and make targeted edits only.
 | B03 Content model + question viewer (KaTeX) | 29 Oct | P0-02 | B02, C1 | Sonnet / $6 | todo |
 | B04 Model gateway + typed assessment (fail closed) | 29 Oct | P0-03 | B03, F3 | Fable / $25 | todo |
 | B03b Content reader: reads documents from a private data dir (fetched outside the repo), Muse Spark PDF reader, checks, review queue, provenance (D28, D29, D31) | 30 Oct | D28 | B04, F8 | Fable / $15 | todo |
-| V0 DBE validation batch: 25 files downloaded and verified with the private corpus tool (D31, D32) | 28 Oct | D29 | F7, F10 | Planning runs (cloud); founder unblocks | blocked: DBE's site refused automated access from the cloud runner (HTTP 403, 28 Oct); needs DBE's OK for a bulk download |
+| V0 DBE validation batch: 23 files by manual intake (D33). Founder clicks the 23 links in the notebook, then uploads; the tool checks, matches and files them in R2 | 28 Oct | D29 | F10 | Founder clicks; planning checks | doing |
 | V1 Mathematics + Physical Sciences, Grades 10–12 (~300 files) + held-out set; reader output compared with legacy ground truth | 29–31 Oct | D29 | V0, B03b | Founder runs; planning compares | todo |
 | G1 Handwriting feasibility gate | 29 Oct, evening | P0-04 go/no-go | B04, F5 | Planning | todo |
 | B05 Photo attempt + grounded overlay | 30 Oct | P0-04 | G1 = go | Fable / $25 | todo |
