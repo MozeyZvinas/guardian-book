@@ -1,102 +1,111 @@
 # START HERE
 
 Read this first, every session. Chats hold no state; this page does.
-**Updated:** 27 Oct 2026 (evening), planning session.
+**Updated:** 27 Oct 2026 (night), planning session.
 
 ## What we're doing right now
 
 Building **Guardian Book** for the **Meta Global AI Developer Hackathon** (Indie, solo).
 
 **Deadlines:**
-- Submit by **20:00 SAST, Wed 4 Nov**. The official close is 04:00 SAST, 5 Nov.
-- Claude Code credit (about $200 promo) expires **14 Nov**.
+- Submit by **20:00 SAST, Wed 4 Nov** (official close 04:00 SAST, 5 Nov).
+- Claude credit expires **14 Nov**.
 
-**Judging:**
-- Four equally weighted criteria: **Impact · Use of Meta tooling · Technical depth · Demo**.
-- The top 5 per track have their 3-minute videos watched live. The video may show only
-  work built during the event.
+**Judging** (D17, Participant Guide §8):
+- **Impact 30% · Use of Meta tooling 25% · Technical depth 20% · Demo 25%.**
+- The top 5 per track have their 3-minute videos watched live.
 
-**Rules that shape every decision:**
-- The repo goes **public** at submission, so nothing private is ever committed (D16).
-- Product code is **new work** written during the event.
-- Pre-existing inputs (DBE papers, reviewed answer keys, golden cases) are labelled as
-  inputs.
-- Meta models are the primary AI path (D13).
+**Rules that shape everything:**
+- Public repo.
+- **New work only**, built during the event, and the demo must show clearly what was
+  built (or face disqualification).
+- No platform-policy violations.
+- No assets we don't have rights to.
 
-**Release 1 serves learners and teachers (D10).** Parents come next. **Design: Sentinel,
-latest (D11).**
+**Phase 0 is approved (D17–D27):**
+- **Adults only** (teachers + learners 18+; Meta's terms).
+- **Original questions**; the DBE papers are a private benchmark only.
+- **Legacy is mined, never built on.**
+- **iGezi stack** on Railway.
+- **Locked P0 scope**, with handwriting gated on 29 Oct.
+- **Repo public now.**
 
-## Current reality (verified 27 Oct 2026)
+## Current reality (verified 27 Oct, night)
 
-**This repo** (`MozeyZvinas/guardian-book`, private until submission, at
-`~/Projects/guardian-book`): planning only, no application code. It now contains:
-- `docs/vision/`: the product vision, imported read-only;
-- `docs/plan/`: the Stage 1 document set and the ChatGPT blueprint review;
-- `docs/decisions.md`: D2–D16, plus open items.
+**Repo:**
+- Docs only.
+- No code, no CI, no deploy.
+- Local commits not yet pushed.
 
-**Retired legacy** (`guardian-book-legacy`, D8): an archive only. Data reused after
-verification:
+**Meta account:**
+- $150 credits applied; card on file.
+- Spend limit **not** set.
+- Only a "Playground" API key exists.
 
-| Data | Where | Notes |
-|---|---|---|
-| DBE Maths papers | `tools/ingest/data/structured/` | 10 papers, 513 questions on disk; the legacy notes say 11 and 519, so reconcile |
-| Golden marking cases | `tools/evals/` | Only 4 cases |
-| Erasure approach | `tools/erase-user.mjs` | |
-| Permission-test ideas | `tools/rls-tests/` | |
+**Content:**
+- Legacy DBE papers: 10 papers, 513 questions (private benchmark).
+- Golden cases: 4 (too few to show accuracy).
 
-**Two local copies of the legacy repo:**
-- `~/GitHub/guardian-book-legacy` holds 28 commits of October work (vision and company
-  documents) that are on this laptop only. Action H0 below backs them up; it does not
-  mean we work there.
-- `~/Projects/guardian-book-legacy` is a fresh clone from GitHub, without them.
+## Specs (approved)
 
-**Claude Code:** runs as `fable` (Agent SDK, promo key), Fable 5.1 at $10/$50 per million
-tokens, $20 default cap per session.
+| File | What it settles |
+|---|---|
+| `docs/specs/01-stack.md` | Stack, versions, security plan, costs |
+| `docs/specs/02-product-p0.md` | Scope, acceptance tests, cut list, stop rules |
+| `docs/specs/03-architecture-data.md` | Data model, permissions, API, marking rules |
+| `docs/specs/04-quality-security-eval.md` | Tests, CI, security tests, evaluation, delivery, release checklist |
 
 ## Tracker
 
-| Stage | What | Status |
-|---|---|---|
-| 1 | Document set (`docs/plan/00-document-set.md` v1.1) and blueprint review (`01-blueprint-review.md`) | **Awaiting Mozey's approval (Open #9)** |
-| H | Housekeeping: vision imported, kickoff STALE, README fixed, decisions logged | Done 27 Oct |
-| 2 | Tech stack (`docs/specs/01-stack.md` + ADRs) | Next, Wed 28 Oct morning |
-| 3+ | 02 product (hackathon slice) → 03 architecture and data → 04 privacy minimum → 05 quality and delivery → build plan → brief template → CLAUDE.md | 28–29 Oct |
-| Build | Brief 02 (scaffold + CI + deploy skeleton) and then the slice briefs | From Thu 29 Oct |
+`docs/TASKS.md` holds the board. **Next brief: `prompts/B01-scaffold-ci-deploy.md`.**
 
-The full day-by-day schedule is in `docs/plan/00-document-set.md` §9.
+## Next actions (founder)
 
-## Open decisions (owner)
-
-| # | Decision | Owner |
-|---|---|---|
-| 9 | Approve the Stage 1 document set v1.1 | Mozey |
-| 8 | Branch protection: go public early (free), GitHub Pro (about $4/month), or CI discipline until submission | Mozey |
-| 2–4 | Framework, Railway layout, auth and consent | Stage 2 |
-| 7 | The hackathon slice itself | Mozey, on the CTO's proposal in 02-product |
-
-## Next actions
-
-**Mozey: H0, back up the October work** (safe and reversible). This does NOT switch us to
-the legacy repo; the last line pushes the new repo.
+**1. Paste this in Terminal** (pushes both repos and updates the agent's guardrails):
 ```bash
-cd ~/GitHub/guardian-book-legacy
-git remote set-url origin https://github.com/MozeyZvinas/guardian-book-legacy.git
-git fetch origin && git status -sb     # expect "ahead 28"; if it says "behind", stop and paste the output
-git push origin main
-cd ~/Projects/guardian-book && git push
+cd ~/GitHub/guardian-book-legacy && git remote set-url origin https://github.com/MozeyZvinas/guardian-book-legacy.git && git fetch origin && git status -sb && git push origin main
+cd ~/Projects/guardian-book && cat > .claude/settings.json <<'EOF'
+{
+  "attribution": false,
+  "permissions": {
+    "deny": [
+      "Read(./.env)", "Read(./.env.*)", "Read(./**/.env)", "Read(./**/.env.*)",
+      "Read(~/Projects/guardian-book-legacy/**)", "Read(~/GitHub/guardian-book-legacy/**)",
+      "Read(~/Projects/guardian-book-private/**)",
+      "Edit(~/Projects/guardian-book-legacy/**)", "Edit(~/GitHub/guardian-book-legacy/**)",
+      "Edit(~/Projects/guardian-book-private/**)"
+    ],
+    "ask": ["Bash(git push *)", "Bash(gh pr merge *)", "Bash(railway *)"]
+  }
+}
+EOF
+git add .claude/settings.json && git commit -m "Deny agent access to legacy and private folders" && git push
+gh repo edit MozeyZvinas/guardian-book --visibility public --accept-visibility-change-consequences
 ```
+If the legacy status line says "behind", stop and send the output.
 
-**Mozey:** turn on MFA for GitHub, Railway, the Anthropic Console and the Meta developer
-account.
+**2. GitHub:** add a ruleset on `main` (Settings → Rules): require a pull request, require
+status checks, block force-pushes.
 
-**Planning session:** on approval of Open #9, write Stage 2 (stack).
+**3. Meta:** set the spend-limit email at $150. Create the key `guardian-book-app`. Keep it
+for Railway; never paste it into any chat.
 
-## Last session handover (27 Oct)
+**4. Railway:** create the project (EU West) with an app service from GitHub (Dockerfile),
+Postgres 16 and a Bucket. Turn on "wait for CI" and daily backups. Set the variables (list
+in `docs/specs/03-architecture-data.md` §7).
 
-- Founder ruled D9–D16.
-- Imported the vision into `docs/vision/`.
-- Reviewed the ChatGPT blueprint (adopted, adapted, deferred, rejected).
-- Updated the document set to v1.1 with the hackathon schedule.
-- Built the downloadable vision, business and competition pack outside the repo, on the
-  Desktop in the Dan Vega folder.
+**5. People:** ask 3–5 adults for handwritten answers and 1 maths teacher (about 2 hours,
+29–31 Oct).
+
+**6. Run B01:** `cd ~/Projects/guardian-book && fable --budget 15`, then
+`/file prompts/B01-scaffold-ci-deploy.md`.
+
+## Last session handover (27 Oct, night)
+
+- The founder approved Phase 0 (mine legacy, private benchmark + original questions, all
+  defaults).
+- Logged D17–D27.
+- Wrote specs 01–04, the brief template and B01.
+- Rewrote CLAUDE.md, TASKS.md and this page.
+- The private pack lives in `~/Projects/guardian-book-private/phase0/`.
 - No code; nothing touched production.

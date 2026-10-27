@@ -1,5 +1,9 @@
 # 00 · The document set for the build (Stage 1)
 
+> **Partly STALE (D25, 27 Oct night).** The document list, order and schedule (§3, §4, §9)
+> are replaced by four specs in `docs/specs/` and the board in `docs/TASKS.md`. The rules
+> in §2 and the research in §1 still apply.
+
 **Status:** PROPOSED v1.1 · 27 Oct 2026 · written by the planning session for Mozey's approval.
 v1.1 adds the ChatGPT blueprint adoptions (§8) and the compressed hackathon schedule (§9).
 **Depends on:** the vision canon in `guardian-book-legacy/docs` (October 2026). Housekeeping

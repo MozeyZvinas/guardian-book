@@ -18,6 +18,17 @@ How it works:
 
 | ID | Date | Status | Decision | Why / notes | Re-open when |
 |---|---|---|---|---|---|
+| D27 | 2026-10-27 | LOCKED | **Legacy is mined, never built on.** Knowledge (marking rules, test ideas, design, research) is re-expressed in our specs; Claude Code is denied read access to the legacy repo and private folders. Every line of product code is written in this repo during the event | Indie "new work only" rule (Participant Guide §4); the legacy history holds private material | After 4 Nov, for porting with tests |
+| D26 | 2026-10-27 | LOCKED | **Evaluation before claims:** at least 30 held-out cases scored by a teacher, frozen 31 Oct 12:00; gates G1 (handwriting feasibility, 29 Oct), G2 (demo claim), G3 (open-weight row); counts and intervals always published (`docs/specs/04-quality-security-eval.md`) | 4 legacy golden cases prove nothing | — |
+| D25 | 2026-10-27 | LOCKED | **Four public-safe specs replace the seven-spec plan**, and code starts 28 Oct. `docs/plan/00-document-set.md` §3–§4 and §9 are STALE; its rules (§2) stay | The Phase 0 review: docs must not consume the sprint | — |
+| D24 | 2026-10-27 | LOCKED | **Meta model use:** Standard model IDs only (never Contributor); prompts carry the item, the guideline and the answer, never personal data | Free credits and Contributor models may use content for product improvement (Meta Billing page, 27 Oct) | — |
+| D23 | 2026-10-27 | LOCKED | **The repo goes public now** (history is public-safe). A ruleset on `main` requires a pull request plus passing checks and blocks force-pushes | Free rulesets and secret scanning on public repos only (GitHub docs). Closes Open #8 | — |
+| D22 | 2026-10-27 | LOCKED | **Hackathon P0 scope locked** (`docs/specs/02-product-p0.md`): question → typed and handwriting-photo answer (photo gated by G1) → Muse Spark marking with abstention → targeted retry → evidence-linked progress → teacher review, confirm and release → `/evidence`. Freeze: any addition means a same-size cut. Stop rules apply | Rubric fit: Meta tooling 25%; one strong loop. Closes Open #7 | — |
+| D21 | 2026-10-27 | LOCKED | **Stack (Stage 2):** the iGezi baseline: Vite 8 + React 19 + Tailwind 4 PWA; Express 5 + Zod 4; Postgres on Railway (EU West) + Drizzle 0.45; Better Auth (email + password only); Railway Bucket; OpenAI SDK pointed at the Meta API; Vitest + Playwright; GitHub Actions; one Railway service. Node 24, pnpm 12, TypeScript 6.0.3 (`docs/specs/01-stack.md`) | No managed option has a South African region, so the baseline is the simplest and most portable. Closes Open #2, #3, #4 (auth for the hackathon), #6 | Before real minors: move data to a South African region |
+| D20 | 2026-10-27 | LOCKED | **Content:** the app and the repo use only **original** CAPS-aligned NSC-style items with marking guidelines, verified by a maths teacher. The 10 legacy DBE papers (513 questions) are a **private benchmark** only (aggregate results published) and a pattern reference. A DBE permission request goes out | DBE papers are "Copyright reserved", with no licence; the rules ban assets without rights | DBE grants permission |
+| D19 | 2026-10-27 | LOCKED | **Hackathon users are adults only:** teachers, and learners aged 18+ (e.g. adults completing or rewriting matric). The app asks for age attestation at sign-up. Under-18 use is PLANNED, pending Meta's written position or another provider behind the gateway | Meta Model API Terms (9 Oct 2026): end users must be 18+, and no products may target under-18s; the rules ban platform-policy violations. Narrows D10 | Meta written approval, or a provider change |
+| D18 | 2026-10-27 | LOCKED | Phase 0 reconciliation approved (founder, 27 Oct): the private pack in `guardian-book-private/phase0/` | — | — |
+| D17 | 2026-10-27 | LOCKED | **Judging weights: Impact 30% · Use of Meta tooling 25% · Technical depth 20% · Demo 25%** (Participant Guide §8, verified 27 Oct). Corrects the "equally" in D9 | Verified in the logged-in Participant Guide | — |
 | D16 | 2026-10-27 | LOCKED | **The repo must stay publishable.** No company, strategy, legal or pricing documents, personal data or secrets are ever committed. | The repo goes public at the hackathon submission, and git history goes public with it. Company material lives outside the repo. | Never |
 | D15 | 2026-10-27 | LOCKED | The vision canon is imported into `docs/vision/` as read-only reference (from legacy `dc3d734`). | One repo to work from; briefs cite it. See `docs/vision/README.md` for what's stale. | — |
 | D14 | 2026-10-27 | LOCKED | Planning, specs and reviews happen in the planning session. Claude Code (`fable`) only implements numbered briefs in `prompts/`. T-001 and `prompts/01-kickoff.md` are STALE. | Fable runs on about $200 of promo credit that expires 14 Nov. | Credit or tooling changes |
@@ -25,7 +36,7 @@ How it works:
 | D12 | 2026-10-27 | LOCKED | **Hosting for the hackathon may be overseas.** No real learner data before submission (adult volunteers and fictional learners only). Prefer a South African database for SA learners when one is practical. | Real learner data is unlikely before submission. POPIA s72 cross-border basis to be settled before real learners. | Before the first real learner's data or any pilot |
 | D11 | 2026-10-27 | LOCKED | **Design system: Sentinel, latest version** (`docs/vision/DESIGN.md` §v2 + v3 addendum, `docs/vision/design/sentinel/`). The "v2 Sunrise" option is dropped. | Founder ruling. Closes Open #1. | — |
 | D10 | 2026-10-27 | LOCKED | **Release 1 serves learners and teachers.** The guardian/parent plan comes next. | Founder ruling. The hackathon slice drops the guardian Help Plan from P0. | After the hackathon |
-| D9 | 2026-10-27 | LOCKED | **Guardian Book is the Meta Global AI Developer Hackathon entry** (Indie, solo). Roam & Nest is not entered in Meta; it is in the World's Biggest Business Competition. | Submit by 20:00 SAST 4 Nov (official close 04:00 SAST 5 Nov). Product code written during the event; public repo at submission. Judged equally on Impact, Use of Meta tooling, Technical depth and Demo. | — |
+| D9 | 2026-10-27 | LOCKED | **Guardian Book is the Meta Global AI Developer Hackathon entry** (Indie, solo). Roam & Nest is not entered in Meta; it is in the World's Biggest Business Competition. | Submit by 20:00 SAST 4 Nov (official close 04:00 SAST 5 Nov). Product code written during the event; public repo at submission. ~~Judged equally~~ (corrected by D17: 30/25/20/25). | — |
 | D8 | 2026-10-27 | LOCKED | Build only in the new `guardian-book` repo. `guardian-book-legacy` is retired: a read-only archive whose data may be reused after verification. | Fresh start; the legacy UI and app code are not reused. | — |
 | D7 | 2026-10 | LOCKED | Full reset: nothing counts as live until it works on Mozey's own phone. | Previous build: poor design, not user friendly, broken. | — |
 | D6 | 2026-10 | LOCKED | Guardians see school-assessed work in full once the teacher releases it. Private practice stays the learner's unless the learner shares it. | Supersedes the July "aggregates only" rule. Applies when the guardian plan ships (D10). | — |
@@ -39,11 +50,13 @@ How it works:
 | # | Question | Who rules | Notes |
 |---|---|---|---|
 | 1 | ~~Design system~~ | — | Decided: D11 |
-| 2 | Frontend framework and repo layout | CTO, Stage 2 | `docs/specs/01-stack.md` |
-| 3 | Railway service layout (web / API / worker) and database setup | CTO, Stage 2 | |
-| 4 | Auth provider and the guardian-consent flow for minors | CTO + Mozey, Stage 2 and spec 04 | POPIA: consent before collecting a learner's personal information |
-| 5 | File storage for scans/photos and data residency | CTO + attorney | Hackathon: D12. Re-open before real learners |
-| 6 | Model providers behind the gateway | CTO | Hackathon: D13. The rest in Stage 2 |
-| 7 | First vertical slice | Mozey, on the CTO's proposal | Audience decided (D10); the slice is defined in `docs/specs/02-product.md` |
-| 8 | Branch protection on a private repo needs GitHub Pro (about $4 a month), or the repo goes public early (free rulesets and secret scanning), or we rely on CI discipline until submission | Mozey (money / visibility) | GitHub docs: rulesets on private repos need Pro, Team or Enterprise |
-| 9 | Approve the Stage 1 document set (v1.1, with ChatGPT blueprint adoptions) | Mozey | `docs/plan/00-document-set.md`, `docs/plan/01-blueprint-review.md` |
+| 2 | ~~Frontend framework and repo layout~~ | — | Decided: D21 |
+| 3 | ~~Railway service layout~~ | — | Decided: D21 (one service + Postgres + Bucket) |
+| 4 | Guardian consent flow for minors | CTO + Mozey + attorney | Hackathon is adults only (D19). Re-open before any minor uses the product |
+| 5 | Data residency for real learners | CTO + attorney | Hackathon: D12. Re-open before real learners (ADR-0003) |
+| 6 | ~~Model providers~~ | — | Decided for the hackathon: D13, D24. Under-18 provider strategy re-opens with Open #4 |
+| 7 | ~~First vertical slice~~ | — | Decided: D22 |
+| 8 | ~~Branch protection~~ | — | Decided: D23 |
+| 9 | ~~Stage 1 document set~~ | — | Superseded by D25 |
+| 10 | Positioning: keep DESCRIPTION v2.1 as canonical; "Every learner understood. Every next step clearer." as consumer copy only | Mozey | Default until after the hackathon |
+| 11 | Prize stacking; whether an open-weight evaluation qualifies; agentic autonomy with human approval | Organisers (Discord) | Questions drafted in the private pack |
