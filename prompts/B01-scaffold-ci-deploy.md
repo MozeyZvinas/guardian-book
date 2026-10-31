@@ -11,7 +11,7 @@
 ## Read first (only these)
 - `CLAUDE.md`
 - `START-HERE.md`
-- `docs/decisions.md`: D16, D19–D27
+- `docs/decisions.md`: D16, D19–D27, D34
 - `docs/specs/01-stack.md`: all of it (versions, layout, security plan)
 - `docs/specs/03-architecture-data.md`: §1 (modules) and §7 (configuration)
 - `docs/specs/04-quality-security-eval.md`: §1–3 (tiers, test layers, CI) and §7
@@ -66,7 +66,7 @@
      - No other colours anywhere (A3). Flat buttons (A2).
    - **Home screen.** A single screen at 360px:
      - the Guardian Book wordmark in text (no logo asset yet);
-     - one line: "Practise, get marked, know your next step." (placeholder copy);
+     - one line: "Every learner understood. Every next step clearer." (the headline, D34);
      - a status-legend chip row (LIVE / SYNTHETIC / PROTOTYPE / PLANNED);
      - a footer link to `/evidence` (a placeholder page saying "Evaluation results appear
        here after the first run").

@@ -2,10 +2,13 @@
   "attribution": false,
   "permissions": {
     "deny": [
-      "Read(./.env)",
-      "Read(./.env.*)",
-      "Read(./**/.env)",
-      "Read(./**/.env.*)"
-    ]
+      "Read(./.env)", "Read(./.env.*)", "Read(./**/.env)", "Read(./**/.env.*)",
+      "Read(~/Projects/guardian-book-legacy/**)", "Read(~/GitHub/guardian-book-legacy/**)",
+      "Read(~/Projects/guardian-book-private/**)", "Read(~/projects/guardian-book-private/**)",
+      "Read(~/projects/guardian-book-legacy/**)",
+      "Edit(~/Projects/guardian-book-legacy/**)", "Edit(~/GitHub/guardian-book-legacy/**)",
+      "Edit(~/Projects/guardian-book-private/**)", "Edit(~/projects/guardian-book-private/**)"
+    ],
+    "ask": ["Bash(git push *)", "Bash(gh pr merge *)", "Bash(railway *)"]
   }
 }

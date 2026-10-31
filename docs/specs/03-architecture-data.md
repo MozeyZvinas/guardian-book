@@ -185,3 +185,75 @@ encode these rules:
 | `BENCHMARK_DIR` | Evals only; never set in the deployed app |
 
 The startup check logs which groups are configured and **never logs values**.
+
+## 8. Scope v2 additions (D34, 31 Oct 2026): the circle
+
+Everything in §1–§7 stands. This section adds what "one learner, three people" needs.
+Additive only; nothing above is removed.
+
+### 8.1 Tables added or extended
+
+| Table | Key fields | Rules |
+|---|---|---|
+| `profiles` (extended) | `role` enum adds `guardian`; `cards` jsonb null (`{dream, subjects[], hardest_subject, how_i_learn}` as produced by P0-02); `cards_source_text` (≤ 2,000 chars, never served to guardians); `cards_model_run_id` null | Cards are editable by the learner only; an edit does not call the model |
+| `guardian_links` | `learner_id`, `guardian_id`, `invite_code_hash`, `linked_at`, `revoked_at` null; PK(learner, guardian) | Created only by redeeming the learner's code; a learner can revoke |
+| `inputs` | `id`, `learner_id`, `kind` enum(work, notice, question), `kind_overridden` bool, `text` null (≤ 4,000), `object_key` null (private storage; images re-encoded, EXIF stripped; PDFs ≤ 8 MB), `attempt_id` null, `created_at` | Exactly one of text or object; an input of kind `work` on an item creates an `attempt` (§2) |
+| `model_runs` | `id`, `purpose` enum(classify, profile_cards, assess, notice, plan, note), `subject_type`, `subject_id`, `model_id`, `tier` = `standard`, `prompt_version`, `request_id`, `input_tokens`, `output_tokens`, `cost_usd`, `latency_ms`, `output` jsonb, `checks` jsonb (`[{code, passed, detail}]`), `attempt_no` (1–3), `status` enum(accepted, retried, exhausted, failed), `created_at` | Written once per model call. Every model call in the app has a row. `tier` must be `standard` (CHECK) |
+| `calendar_events` | `id`, `scope_type` enum(class, learner), `scope_id`, `title`, `subject` null, `paper` null, `on_date`, `source_input_id`, `source_line` (≤ 300), `confidence` enum(high, low), `status` enum(proposed, confirmed, rejected), `confirmed_by` null, `created_at` | `proposed` events are visible only to the person who must confirm them; guardians see `confirmed` only |
+| `help_plans` | `id`, `learner_id`, `week_start`, `gap_skill_tag`, `learner_view` jsonb, `guardian_view` jsonb, `teacher_view` jsonb, `evidence_event_ids` uuid[] (≥ 1), `resource_ids` uuid[], `agent_trace` jsonb (steps ≤ 8), `model_run_id`, `status` enum(issued, superseded), `created_at` | One `issued` plan per learner per week; a new one supersedes. Guardian view text passes the plain-language check at write time |
+| `notes` | `id`, `teacher_id`, `learner_id`, `guardian_id`, `draft_text` (≤ 600), `final_text` null, `model_run_id` null, `status` enum(draft, approved, sent), `approved_at` null, `sent_at` null | Visible to a guardian only when `sent`; `sent` only after `approved`; contains only this learner's data |
+| `resources` | `id`, `title`, `url`, `licence`, `attribution`, `free` bool, `skill_tags` text[], `approved` bool | Loaded by admin CLI only. Plans may cite `approved` rows only |
+| `learning_events.kind` (extended) | adds `fixed_independently`, `support_given`, `notice_confirmed`, `plan_issued`, `note_sent`, `profile_set` | Still append-only. `support_given` has `basis = none` (it never moves skill state) |
+
+### 8.2 Permissions added (enforced in `access`)
+
+| Action | Learner | Guardian | Teacher | Admin |
+|---|---|---|---|---|
+| Read a learner's profile cards | Own | Linked learner: `dream`, `subjects` only | Learners in own classes: `subjects`, `hardest_subject` | Audited |
+| Create an input | Own | — | Class notice only (`kind = notice`, `scope_type = class`) | — |
+| Read an input, attempt, image or answer | Own | **Never** | Learners in own classes (work only) | Audited |
+| Read a Help Plan | Own `learner_view` | Linked learner's `guardian_view` | Own classes' `teacher_view` | Audited |
+| Tap "We did it" | — | Linked learner's current plan | — | — |
+| Read calendar events | Own + class (`confirmed`) | Linked learner's `confirmed` | Own classes | Audited |
+| Confirm or reject a `proposed` event | Own learner-scope events | — | Own class-scope events | ✓ |
+| Create, approve, send a note | — | — | Own classes only | ✗ |
+| Read a note | — | `sent`, addressed to them | Own | Audited |
+
+**Added "change the ID" tests:** guardian → an unlinked learner's plan, events or cards →
+404; guardian → any attempt, input or image → 404 (even for the linked learner); teacher →
+a note for a learner outside their classes → 404; learner → another learner's plan → 404;
+a `draft` note requested by its guardian → 404.
+
+### 8.3 API added
+
+| Method and path | Who | Body / returns |
+|---|---|---|
+| `POST /api/me/profile` | learner | `{dream, subjects, hardestSubject, howILearn}` → cards (one model call, verified) |
+| `PATCH /api/me/profile/cards` | learner | Edits cards; no model call |
+| `POST /api/me/guardian-code` · `POST /api/guardian/link` | learner · guardian | Issue a code · redeem `{code}` |
+| `POST /api/inputs` | learner · teacher (class notice) | multipart or JSON `{kind?, itemId?, text?, file?, idempotencyKey}` → `{inputId, kind, attemptId?}` |
+| `PATCH /api/inputs/:id/kind` | owner | Override the classification; re-routes |
+| `POST /api/attempts/:id/fix` | owner | `{answerText | image}` for the broken step → `{fixedIndependently}` |
+| `GET /api/me/plan` · `GET /api/guardian/learners/:id/plan` · `GET /api/teacher/classes/:id/plans` | per role | The three views |
+| `POST /api/guardian/learners/:id/plan/done` | guardian | Writes `support_given` (idempotent per plan) |
+| `GET /api/calendar?scope=` · `POST /api/calendar/:id/confirm` · `POST /api/calendar/:id/reject` | per §8.2 | Events |
+| `GET /api/teacher/classes/:id/picture` | teacher | `{gaps: [{skillTag, learners: n, of: m}]}` from confirmed or high-confidence events |
+| `GET /api/teacher/notes?classId=` · `POST /api/teacher/notes/:id/approve` · `POST /api/teacher/notes/:id/send` | teacher | `{finalText}` on approve |
+| `GET /api/guardian/notes` | guardian | `sent` notes addressed to them |
+| `GET /api/evidence` (extended) | public | Adds plan ratings, notice accuracy, `fixed_independently` rate, checks blocked by reason |
+
+### 8.4 The verifier (P0-11)
+
+One module, `apps/api/src/verify`, with pure rule functions `(output, context) → {code,
+passed, detail}` and a runner that applies the rule set for a purpose, records the
+results on `model_runs.checks`, and decides `accepted | retried | exhausted`. Rule codes
+are stable strings (for example `STEP_UNKNOWN`, `MARKS_OVER_MAX`, `EVIDENCE_MISSING`,
+`HINT_LEAKS_ANSWER`, `DATE_OUT_OF_RANGE`, `SOURCE_LINE_MISSING`, `RESOURCE_UNVETTED`,
+`PLAIN_LANGUAGE_FAIL`, `INFERENCE_FORBIDDEN`, `TOOL_UNKNOWN`, `STEPS_EXCEEDED`,
+`CONFIDENCE_LOW`). The runner re-asks the model with the failed codes and details at most
+twice more (3 calls in total), then marks the run `exhausted` and the subject `uncertain`.
+
+### 8.5 Configuration added
+
+`META_MODEL_AGENT` (default `muse-spark-1.3`; `muse-wonder-1.0` only if the account has
+it), `PLAN_AGENT_MAX_STEPS` (default 8), `RESOURCE_LIST_PATH` (admin CLI load).

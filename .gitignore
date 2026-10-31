@@ -37,3 +37,6 @@ Thumbs.db
 # Deploy tooling
 .vercel/
 .railway/
+
+# Claude Code worktrees
+.claude/worktrees/
