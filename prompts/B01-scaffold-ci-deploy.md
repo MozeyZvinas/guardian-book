@@ -83,7 +83,8 @@
 6. **`.env.example`** lists every variable from spec 03 §7, with comments and **no values**.
 7. **CI** (`.github/workflows/ci.yml`), per spec 04 §3:
    - **Jobs:** `gitleaks`, `typecheck`, `lint`, `unit`, `integration` (Postgres 16 service
-     container), `build-image` (docker build; no push).
+     container), `build-image` (docker build; no push). **Set each job's `name:` to exactly
+     these six strings**: the `main` ruleset requires status checks with these names.
    - **Hardening:** `permissions: contents: read`; every third-party action pinned to a
      **full commit SHA**. Resolve SHAs with `git ls-remote https://github.com/<owner>/<action> refs/tags/<tag>`
      and put the tag in a trailing comment.

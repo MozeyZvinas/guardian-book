@@ -51,62 +51,88 @@ then `B02` and `B03` in parallel.
 
 ## Founder: do these now, in order (about 40 minutes)
 
-**1. Push and go public** (paste in Terminal):
+The planning session has done everything it can from its side (specs, briefs, settings,
+`.gitignore`, the commits). These five need your accounts.
+
+**1. Push, go public, protect `main`** (paste the whole block in Terminal; it asks nothing):
 ```bash
 cd ~/Projects/guardian-book && git status -sb && git push -u origin main
 gh repo edit MozeyZvinas/guardian-book --visibility public --accept-visibility-change-consequences
+cat > /tmp/gb-ruleset.json <<'EOF'
+{"name":"protect-main","target":"branch","enforcement":"active",
+ "conditions":{"ref_name":{"include":["refs/heads/main"],"exclude":[]}},
+ "bypass_actors":[{"actor_id":5,"actor_type":"RepositoryRole","bypass_mode":"always"}],
+ "rules":[{"type":"deletion"},{"type":"non_fast_forward"},
+  {"type":"pull_request","parameters":{"required_approving_review_count":0,"dismiss_stale_reviews_on_push":false,"require_code_owner_review":false,"require_last_push_approval":false,"required_review_thread_resolution":false}},
+  {"type":"required_status_checks","parameters":{"strict_required_status_checks_policy":false,"required_status_checks":[{"context":"gitleaks"},{"context":"typecheck"},{"context":"lint"},{"context":"unit"},{"context":"integration"},{"context":"build-image"}]}}]}
+EOF
+gh api -X POST repos/MozeyZvinas/guardian-book/rulesets --input /tmp/gb-ruleset.json > /dev/null && echo "ruleset on main: ok"
 ```
-Then on GitHub: Settings → Rules → New ruleset on `main`: require a pull request, require
-status checks, block force-pushes.
+If `gh` says you are not logged in: `gh auth login` first, then paste again. (The ruleset
+requires a pull request and the six CI checks B01 creates, and blocks force-pushes; you,
+as admin, can bypass it in an emergency.)
 
-Check `.claude/settings.json` exists with the deny list for `../guardian-book-legacy`,
-`../guardian-book-private` and `.env*` (the block is in the 27 Oct handover below). If it
-is missing, create it before any session runs.
-
-**2. Meta:** Billing → spend-limit email at $150. API keys → create `guardian-book-app`.
-Put it only in `~/Projects/guardian-book/.env` as `META_API_KEY=...` (the file is
-git-ignored). Never paste it into any chat. Note whether `muse-wonder-1.0` appears in the
-model list.
-
-**3. Railway:** new project (EU West) → service from the GitHub repo (Dockerfile) → add
-Postgres 16 and a Bucket → variables from `docs/specs/03-architecture-data.md` §7 →
-"wait for CI" on → daily backups on. The deploy will fail until B01 merges; that is fine.
-
-**4. People:** message 1 maths teacher, 2–3 parents and 1–2 learners aged 18+ today.
-Two consents each (data use; filming). Handwritten answers by Sat 1 Nov.
-
-**5. Two Claude Code sessions, two credit sources.** Session A uses the Console
-promotional credits (expire 14 Nov); session B uses the subscription. Billing is decided
-per terminal by whether `ANTHROPIC_API_KEY` is set; there is no per-repo pin. First remove
-any `export ANTHROPIC_API_KEY=...` line from `~/.zshrc` or `~/.zprofile`, then open two
-terminals:
-
+**2. Meta key.** dev.meta.ai → Billing: spend-limit email at $150. API keys → create
+`guardian-book-app`. Then, in Terminal (the key goes only into the git-ignored `.env`):
 ```bash
-# Terminal A — promotional credits (Console key). The key never enters shell history.
+cd ~/Projects/guardian-book && touch .env && chmod 600 .env && printf 'META_API_KEY=PASTE_THE_KEY_HERE\nMETA_BASE_URL=https://api.meta.ai/v1\nMETA_MODEL=muse-spark-1.3\n' >> .env && open -e .env
+```
+Replace `PASTE_THE_KEY_HERE` in the editor that opens, save, close. Never paste the key
+into any chat. Note whether `muse-wonder-1.0` appears in your model list.
+
+**3. Railway.** railway.com → New project (region EU West) → Deploy from GitHub repo
+`MozeyZvinas/guardian-book` (it will fail until B01 merges; that is fine) → Add Postgres →
+Add Bucket → Variables: paste the names from `docs/specs/03-architecture-data.md` §7 with
+the values from Railway's Postgres and Bucket panels, plus `META_API_KEY`, `META_BASE_URL`,
+`META_MODEL`, `BETTER_AUTH_SECRET` (generate: `openssl rand -base64 32`), `BETTER_AUTH_URL`
+(the Railway app URL) → Settings: "Wait for CI" on; health check `/healthz`; daily backups on.
+
+**4. People.** Today: one maths teacher, two or three parents, one or two learners aged 18+.
+Two consents each (data; filming). Handwritten answers by Saturday.
+
+**5. Claude Code.** Two terminals, two credit sources (billing is decided per terminal by
+whether `ANTHROPIC_API_KEY` is set). Remove any `export ANTHROPIC_API_KEY=...` from
+`~/.zshrc` first.
+```bash
+# Terminal A — promotional credits (Console key); the key never enters history
 cd ~/Projects/guardian-book
 read -s "ANTHROPIC_API_KEY?Console API key: "; echo; export ANTHROPIC_API_KEY
-fable --budget 15            # approve "use API key" when asked; /status must show API key
+fable            # approve "use API key" when asked; /status must show API key
 ```
 ```bash
-# Terminal B — subscription. Make sure the key is not set here.
+# Terminal B — subscription (open only after B01 merges)
 cd ~/Projects/guardian-book
 unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN
-fable --budget 25            # /status must show the subscription
+fable            # /status must show the subscription
 ```
-In each session, `/usage` shows the running cost. Promo balance: Console → Billing →
-Promotional credits.
+Watch `/usage` in each. The spend caps in the briefs ($15 B01, $25 B02/B03) are yours to
+hold: stop a session that passes its cap.
 
-**6. Run the briefs:**
-- Terminal A first: `/file prompts/B01-scaffold-ci-deploy.md`. When the PR is open and CI
-  is green, send the link to the planning session for review; merge only after review.
-- After B01 merges, both terminals, each in its own worktree:
-  - Terminal A: `fable -w b02 --budget 25` then `/file prompts/B02-data-auth-circle.md`
-  - Terminal B: `fable -w b03 --budget 25` then `/file prompts/B03-gateway-verifier.md`
-  (`fable -w <name>` creates `.claude/worktrees/<name>` on its own branch; add
-  `.claude/worktrees/` to `.gitignore` in B01.)
+## Prompts to paste into Claude Code (one per session, exactly as written)
+
+**Terminal A, now (B01):**
+```
+Read CLAUDE.md, START-HERE.md, docs/decisions.md (D16, D19–D27, D34) and docs/BUILD-PLAN.md. Then carry out prompts/B01-scaffold-ci-deploy.md and only that brief. First, in one message, report the actual state of the repo (files, no code yet) and your file-by-file plan; then proceed without waiting. Name the six CI jobs exactly gitleaks, typecheck, lint, unit, integration, build-image. Work on branch b01-scaffold, commit small, push the branch, open the PR with the completion report as the body, and stop when CI has finished. Do not merge. If anything in the brief is ambiguous, add the question under B01 in docs/TASKS.md and stop.
+```
+When CI is green, send the PR link to the planning session. Merge only after its review.
+
+**Terminal A, after B01 merges (B02):** start with `fable -w b02`, then paste:
+```
+Read CLAUDE.md, START-HERE.md and docs/decisions.md (D19, D21, D24, D34). Carry out prompts/B02-data-auth-circle.md and only that brief, in this worktree. Do not touch apps/api/src/gateway, apps/api/src/verify or packages/shared/src/contracts/model (another session owns them). Report the repo state and your plan in one message, then proceed. Small commits; push branch b02-data-auth-circle; open the PR with the completion report; stop when CI has finished. Do not merge.
+```
+
+**Terminal B, after B01 merges (B03):** start with `fable -w b03`, then paste:
+```
+Read CLAUDE.md, START-HERE.md and docs/decisions.md (D13, D24, D26, D34). Carry out prompts/B03-gateway-verifier.md and only that brief, in this worktree. Own only apps/api/src/gateway, apps/api/src/verify, packages/shared/src/contracts/model and apps/api/src/evals; create no database tables and no authenticated routes. Read the three Meta doc pages named in the brief before writing the gateway and quote the lines you rely on in code comments with today's date. If META_API_KEY is absent from .env, stop at the mocked tests and say so. Report the repo state and your plan in one message, then proceed. Small commits; push branch b03-gateway-verifier; open the PR with the completion report; stop when CI has finished. Do not merge.
+```
+
+**Review loop.** Paste each PR link to the planning session. It reviews the diff against the
+brief and replies "merge" or with the fixes to paste back into the same session. You merge
+(`gh pr merge <n> --squash`), Railway deploys, you open the URL in a fresh tab.
 
 ## Last session handover (31 Oct)
 
+- 1 Nov: specs 05–06, BUILD-PLAN, the ruleset command, the Claude Code prompts.
 - D34 recorded (scope v2, the circle). D22 superseded; D10 amended for this build; D28
   deferred; the held-out freeze moved to 1 Nov 12:00; Open #10 and #12 closed.
 - `docs/specs/02-product-p0.md` rewritten (v2); spec 03 §8 added (tables, permissions,
