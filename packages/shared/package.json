@@ -1,0 +1,21 @@
+{
+  "name": "@guardian-book/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Zod contracts and pure logic shared by the API and the web app.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  }
+}
