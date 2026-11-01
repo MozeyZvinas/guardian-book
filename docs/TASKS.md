@@ -43,7 +43,7 @@ the same files.
 
 | Brief | Date | Requirements | Depends on | Session / cap | Status |
 |---|---|---|---|---|---|
-| B01 Scaffold + CI + deploy skeleton | 31 Oct | P0-13 (part) | F2 (F4 for the deploy) | A (promo) / $15 | todo |
+| B01 Scaffold + CI + deploy skeleton | 31 Oct | P0-13 (part) | F2 (F4 for the deploy) | A (promo) / $15 | review |
 | B02 ∥ Database, auth, the circle, seeds, permission harness | 31 Oct – 1 Nov | P0-01 | B01 | A (promo) / $25 | todo |
 | B03 ∥ Model gateway, verifier, cost log, live smoke | 31 Oct – 1 Nov | P0-11, P0-04 (model) | B01, F3 | B (subscription) / $25 | todo |
 | B04 Bring anything: inputs, work check → attempt → assessment, notice reader → calendar, `model_runs` | 1 Nov | P0-03, P0-04, P0-06 | B02 + B03 merged | A / $30 | todo |
