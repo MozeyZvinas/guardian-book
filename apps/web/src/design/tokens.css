@@ -1,0 +1,121 @@
+/*
+ * Sentinel design tokens (docs/vision/DESIGN.md §v2 + amendments A1–A7; D11).
+ * The ONLY file allowed to contain colour literals (scripts/check-token-colours.mjs
+ * enforces this at lint time). A closed set: nothing off-palette ships (A3).
+ *
+ * Pink means ACT, never "wrong" (A1). Flat surfaces, no gradients (A2). Colour never
+ * carries correctness alone (A7): a glyph and the words always say it too.
+ */
+@import "tailwindcss";
+
+@theme static {
+  /* Remove Tailwind's default palette: only Sentinel colours exist as utilities. */
+  --color-*: initial;
+
+  --color-white: #ffffff; /* the ground */
+  --color-card: #f6f7f7; /* cards, barely grey */
+  --color-ink: #1b1b1f; /* type, outlines, the bird's head */
+  --color-pink: #d8234b; /* "ember": action only (buttons, links, the crest) */
+  --color-teal: #00747a; /* marks found, progress, confidence */
+  --color-black: #111111; /* night ground */
+  --color-night-text: #e9e9ec; /* body copy on black (A6) */
+  --color-muted: #5e6664; /* muted text, 5.9:1 on white */
+  --color-pink-light: #ff5a7a; /* action on dark */
+  --color-teal-light: #3dd6c6; /* progress on dark */
+
+  --radius-*: initial;
+  --radius-card: 12px;
+
+  --font-sans: "Outfit", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --default-font-family: var(--font-sans);
+
+  /* Fluid type (spec 06 §4): body 16–18px, never below 16px. */
+  --text-body: clamp(1rem, 0.95rem + 0.3vw, 1.125rem);
+  --text-body--line-height: 1.5;
+  --text-display: clamp(1.75rem, 1.2rem + 3.2vw, 2.5rem);
+  --text-display--line-height: 1.12;
+  --text-display--letter-spacing: -0.015em;
+}
+
+/* Semantic tokens: utilities such as bg-ground, text-fg, text-action follow the theme. */
+@theme inline {
+  --color-ground: var(--gb-ground);
+  --color-surface: var(--gb-surface);
+  --color-fg: var(--gb-fg);
+  --color-fg-muted: var(--gb-fg-muted);
+  --color-action: var(--gb-action);
+  --color-progress: var(--gb-progress);
+}
+
+:root {
+  color-scheme: light dark;
+  --gb-ground: var(--color-white);
+  --gb-surface: var(--color-card);
+  --gb-fg: var(--color-ink);
+  --gb-fg-muted: var(--color-muted);
+  --gb-action: var(--color-pink);
+  --gb-progress: var(--color-teal);
+}
+
+/* Night: prefers-color-scheme, with a data-theme override (spec 06 §3). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --gb-ground: var(--color-black);
+    --gb-surface: color-mix(in srgb, var(--color-black) 86%, var(--color-night-text));
+    --gb-fg: var(--color-night-text);
+    --gb-fg-muted: color-mix(in srgb, var(--color-night-text) 72%, var(--color-black));
+    --gb-action: var(--color-pink-light);
+    --gb-progress: var(--color-teal-light);
+  }
+}
+
+:root[data-theme="dark"] {
+  --gb-ground: var(--color-black);
+  --gb-surface: color-mix(in srgb, var(--color-black) 86%, var(--color-night-text));
+  --gb-fg: var(--color-night-text);
+  --gb-fg-muted: color-mix(in srgb, var(--color-night-text) 72%, var(--color-black));
+  --gb-action: var(--color-pink-light);
+  --gb-progress: var(--color-teal-light);
+}
+
+@layer base {
+  html {
+    background-color: var(--gb-ground);
+    color: var(--gb-fg);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100dvh;
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+  }
+
+  /* Links are pink: they are actions. */
+  a {
+    color: var(--gb-action);
+    text-underline-offset: 0.15em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--gb-action);
+    outline-offset: 2px;
+  }
+
+  /* Every mark, score and count uses tabular figures. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  // Shared TypeScript 6.0.3 settings. Every package extends this file.
+  // TS 6 no longer includes every @types/* package by default: each package lists "types".
+  "compilerOptions": {
+    "strict": true,
+    "target": "es2024",
+    "lib": ["es2024"],
+    "module": "nodenext",
+    "types": ["node"],
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "resolveJsonModule": true,
+    // Typecheck and tests resolve the shared package from source (no build step needed).
+    // Build configs clear this and resolve the built dist through the package "exports".
+    "paths": {
+      "@guardian-book/shared": ["./packages/shared/src/index.ts"]
+    }
+  }
+}

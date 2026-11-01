@@ -1,0 +1,15 @@
+.git
+.github
+.claude
+node_modules
+**/node_modules
+**/dist
+.env
+.env.*
+!.env.example
+docs
+prompts
+*.md
+!README.md
+!apps/web/public/fonts/LICENSES.md
+.DS_Store
