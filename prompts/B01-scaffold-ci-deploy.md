@@ -19,6 +19,9 @@
 - `docs/vision/DESIGN.md`: the "v2 — Identity: Sentinel" section and amendments A1–A7.
   Token values only; no screens yet.
 
+- `docs/specs/06-frontend-pwa-mobile.md`: §2 (structure), §3 (tokens in code), §4 (breakpoints)
+- `docs/specs/05-screens-and-flows.md`: §4.1 P1 (the landing screen)
+
 ## Current truth (checked 27 Oct)
 - The repo contains only docs (`docs/`, `prompts/`, `CLAUDE.md`, `README.md`,
   `START-HERE.md`, `.claude/settings.json`, `.gitignore`).

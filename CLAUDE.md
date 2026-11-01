@@ -35,7 +35,9 @@ never the headline). This build is the **Meta Global AI Developer Hackathon** en
   notice → checks the model cannot skip → the Brain (append-only evidence) updates → one
   Help Plan rendered three ways (learner, guardian, teacher) → the teacher confirms what
   was uncertain and approves the note home.
-- **Scope:** `docs/specs/02-product-p0.md` (v2). Data and API additions: spec 03 §8.
+- **Scope:** `docs/specs/02-product-p0.md` (v2). Data and API additions: spec 03 §8. Screens
+  and flows: spec 05. Frontend, responsive and PWA rules: spec 06. The one-page plan:
+  `docs/BUILD-PLAN.md`.
 
 ## Binding rules (enforced by structure and tests, not just words)
 1. **The teacher is the marker of record.** Model proposals are stored once and never

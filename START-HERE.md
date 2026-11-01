@@ -1,7 +1,7 @@
 # START HERE
 
 Read this first, every session. Chats hold no state; this page does.
-**Updated:** 31 Oct 2026, planning session.
+**Updated:** 1 Nov 2026, planning session.
 
 ## What we're doing right now
 
@@ -40,6 +40,9 @@ this build is an adult (D19); Standard model tier only (D24).
 | `docs/specs/02-product-p0.md` (v2) | Scope v2, acceptance tests, cut order, stop rules |
 | `docs/specs/03-architecture-data.md` | Data model, permissions, API, marking rules; §8 adds the circle |
 | `docs/specs/04-quality-security-eval.md` | Tests, CI, security tests, evaluation, delivery |
+| `docs/specs/05-screens-and-flows.md` | Every screen, the navigation map, the core flow, responsive rules, states |
+| `docs/specs/06-frontend-pwa-mobile.md` | Frontend architecture, responsive rules, PWA, performance budget, the native path |
+| `docs/BUILD-PLAN.md` | One page: what we build, in what order, who does what |
 
 ## Tracker
 

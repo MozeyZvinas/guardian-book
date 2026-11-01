@@ -17,6 +17,9 @@
   items), §7, §8.1, §8.2, §8.3 (profile code and link routes only)
 - `docs/specs/04-quality-security-eval.md`: §2 (test layers) and §4 (security tests)
 
+- `docs/specs/05-screens-and-flows.md`: §4.1 P2–P3, §4.2 L8, §4.3 G0, §4.4 T1 (the screens B02 builds); §6 (responsive rules)
+- `docs/specs/06-frontend-pwa-mobile.md`: §2–§4
+
 ## Current truth (checked 31 Oct)
 - B01 provides the workspace, Express app, config check, logging, CI and the home screen.
 - No schema, no auth, no routes beyond `/healthz`.
