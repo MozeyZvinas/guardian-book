@@ -1,0 +1,26 @@
+{
+  "name": "@guardian-book/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Guardian Book API: Express 5, serves /api, /healthz and the built web app.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@guardian-book/shared": "workspace:*",
+    "express": "5.3.0",
+    "pg": "8.23.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6",
+    "@types/pg": "8.23.1",
+    "@types/supertest": "7.2.1",
+    "supertest": "7.3.1",
+    "tsx": "4.23.15"
+  }
+}
