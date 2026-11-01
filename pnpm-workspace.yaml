@@ -1,0 +1,8 @@
+packages:
+  - apps/*
+  - packages/*
+
+# pnpm 12 refuses to run a dependency's install script unless it is listed. esbuild (via
+# tsx) ships its platform binary as an optional dependency, so its script is not needed.
+allowBuilds:
+  esbuild: false

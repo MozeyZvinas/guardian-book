@@ -1,0 +1,29 @@
+{
+  "name": "guardian-book",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Guardian Book: a lifelong learning intelligence. One learner, three people, one Brain.",
+  "type": "module",
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint . && node scripts/check-token-colours.mjs",
+    "test": "vitest run --project shared --project api",
+    "test:integration": "vitest run --project api-integration",
+    "build": "pnpm -r build",
+    "start": "node apps/api/dist/server.js"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.19.2",
+    "eslint": "10.14.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.13.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vitest": "5.0.5"
+  }
+}
