@@ -53,7 +53,7 @@ the same files.
 | B07 ∥ Teacher view: guidelines approval, class picture, confirm queue, review with feedback controls (agree / correct / add / audience), release, interventions (owner, follow-up, outcome, close), notes with origin labels, class notice, learner profile | 3 Nov | P0-10 | B04 | B / $30 | todo |
 | B08 Eval runner results + proof page `/evidence` | 3 Nov | P0-12 | B03, E1 | B / $10 | todo |
 | **Gate P0:** full run on the founder's phone | 3 Nov, 20:00 (D35) | all P0 | — | — | todo |
-| B09 PWA, polish, E2E in CI; then P1 in order (voice, see-it card, overlay, open-weight row, WhatsApp text) | 3 Nov | P0-13, P1 | Gate P0 | A + B | todo |
+| B09 PWA, polish (landing hero by surface, D35), E2E in CI; then P1 in order (incl. P1-g teacher uploads a script) (voice, see-it card, overlay, open-weight row, WhatsApp text) | 3 Nov | P0-13, P1 | Gate P0 | A + B | todo |
 | B10 Release hardening, restore drill, history scan, README | 3 Nov | P0-13 | B09 | B / $8 | todo |
 | V1 Record the demo + X cut | 4 Nov, morning | — | B10 | Founder + planning | todo |
 | B11 Freeze + submit by 20:00 SAST | 4 Nov | — | V1 | Founder | todo |

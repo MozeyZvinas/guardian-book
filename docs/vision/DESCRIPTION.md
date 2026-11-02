@@ -14,6 +14,18 @@ the people who support them. Marking is one feature among many and never the hea
 
 ---
 
+## Category and headlines (D35, 2 Nov 2026)
+
+- **Descriptor:** a student success and guidance platform for high schools. In school,
+  investor and judge copy: an AI-powered student success and guidance platform. Never
+  "student success platform" on its own.
+- **Headlines by surface:** *Every learner deserves the support to succeed.* (website hero);
+  *Every learner understood. Every next step clearer.* (product sign-off).
+- **The north star:** the learner support loop: the right learning support, from the right
+  people, at the right time, and evidence that it worked.
+- "AI tutor" is a feature label, never what Guardian Book is. "AI-powered" never appears in
+  learner or parent headlines.
+
 ## Name and line
 
 **Guardian Book.** *It starts as your teacher, grows into your mentor, and never stops
