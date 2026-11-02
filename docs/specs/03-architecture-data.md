@@ -257,3 +257,55 @@ twice more (3 calls in total), then marks the run `exhausted` and the subject `u
 
 `META_MODEL_AGENT` (default `muse-spark-1.3`; `muse-wonder-1.0` only if the account has
 it), `PLAN_AGENT_MAX_STEPS` (default 8), `RESOURCE_LIST_PATH` (admin CLI load).
+
+## 9. Scope v2.1 additions (D35, 2 Nov 2026): the learner support loop
+
+Additive to §1–§8. Nothing above is removed. B02 creates every table and column here
+(it owns the schema); later briefs write to them.
+
+### 9.1 Tables and columns
+
+| Table / change | Key fields | Rules |
+|---|---|---|
+| `schools` (new) | `id`, `name`, `kind` enum(fictional, pilot, live) default `fictional`, `created_at` | Every class belongs to exactly one school. In this build only `fictional` schools exist |
+| `classes` (add) | `school_id` FK NOT NULL | Teacher and learners of a class act within that school only |
+| `profiles` (add) | `school_id` FK null | Learners and teachers take their class's school; guardians have none (they reach a school only through a linked learner) |
+| `provenance` (Postgres enum, new) | `original_human`, `school_provided`, `teacher_verified`, `student_provided`, `model_generated`, `licensed_content`, `synthetic_self_generated` | — |
+| `training_permission` (Postgres enum, new) | `not_permitted`, `evaluation_only`, `permitted` | Default `not_permitted` everywhere. Nothing in this build is ever `permitted` |
+| Provenance columns (add) on `items`, `guideline_steps`, `attempts`, `inputs`, `assessments`, `reviews`, `notes`, `help_plans`, `calendar_events`, `resources` | `provenance` NOT NULL, `provenance_detail` jsonb null (for `model_generated`: `{provider, model, version, model_run_id}`), `training_permission` NOT NULL default `not_permitted` | Every insert path sets them (test). The shared enum lives in `packages/shared/src/contracts/provenance.ts` |
+| `attempts` (add) | `mode` enum(assisted, independent, retention) default `assisted` | `independent`: no hint is served before submission. `retention`: an independent attempt answering a scheduled follow-up check |
+| `skill_evidence` (new; replaces nothing, `topic_state` stays as the derived label) | `learner_id`, `skill_tag`, `assisted_correct`, `assisted_total`, `independent_correct`, `independent_total`, `retained_correct`, `retained_total`, `confidence_sure_correct`, `confidence_sure_total`, `evidence_count`, `last_checked_at`; PK(learner, skill) | Derived by the pure reducer from `learning_events`; rebuildable. `secure` requires ≥1 independent and ≥1 retained correct on different days; assisted success alone never yields `secure` (test) |
+| `guideline_approvals` (new) | `class_id`, `item_id`, `item_revision`, `approved_by` (teacher), `approved_at`; PK(class, item, revision) | An attempt in a class may be assessed against an item revision only if that class's teacher approved it (test). Seeds pre-approve the demo items for class 12A only |
+| `interventions` (new) | `id`, `learner_id`, `class_id`, `skill_tag`, `help_plan_id` null, `owner_id` (teacher), `action` (≤300 chars), `follow_up_on` date, `status` enum(open, checking, closed), `outcome` enum(improved, no_change, needs_more, null), `outcome_evidence_event_ids` uuid[], `created_at`, `closed_at` null | Created when the teacher assigns from the class picture or the review; `follow_up_on` schedules the learner's retention check; closing requires an outcome and at least one evidence event (test) |
+| `notes` (add) | `origin` enum(ai_suggested, teacher_approved, teacher_added, teacher_revised) NOT NULL; `audience` enum(learner, guardian, teacher_only) NOT NULL | The guardian and learner views show "Teacher-reviewed" for `teacher_approved` and `teacher_revised`, and the teacher's name only for `teacher_added`. `teacher_only` never leaves the teacher space (test) |
+| `review_feedback` (new) | `id`, `review_id`, `kind` enum(agree, correct, add), `text` null (≤600), `audience` enum(learner, guardian, teacher_only), `origin` (as notes), `created_by`, `created_at` | The teacher's own words on a result; shown per audience after release |
+| `learning_events.kind` (extend) | adds `independent_check_completed`, `retention_check_completed`, `guideline_approved`, `feedback_teacher_added`, `intervention_assigned`, `intervention_closed` | Still append-only |
+
+### 9.2 Permissions added (in `access`)
+
+| Action | Learner | Guardian | Teacher | Admin |
+|---|---|---|---|---|
+| Any resource of another school | ✗ (404) | ✗ (404) | ✗ (404) | Audited |
+| Approve a guideline for a class | ✗ | ✗ | Own classes | ✗ |
+| Read an intervention | Own: action and follow-up date only | Linked learner: the action in plain words, if the teacher chose the guardian audience | Own classes | Audited |
+| Create, update, close an intervention | ✗ | ✗ | Own classes | ✗ |
+| Read review feedback | Own, audience = learner, after release | Linked learner, audience = guardian, after release | Own classes, all | Audited |
+| Start a check-alone or retention attempt | Own | ✗ | ✗ | ✗ |
+
+**Added change-the-ID tests:** school A teacher → school B class, attempt, intervention or
+note → 404; learner → `teacher_only` feedback → not present; guardian → a learner-audience
+note → not present; assessing against an unapproved guideline → 409 `guideline_not_approved`.
+
+### 9.3 API added
+
+| Method and path | Who | Body / returns |
+|---|---|---|
+| `POST /api/teacher/classes/:id/guidelines/:itemId/approve` | teacher | `{itemRevision}` → approval |
+| `GET /api/teacher/classes/:id/guidelines` | teacher | Items with approval state |
+| `POST /api/attempts` (extend) | learner | adds `mode` (`assisted` default, `independent`, `retention`) |
+| `GET /api/me/checks` | learner | Due follow-up checks (from open interventions and scheduled retention checks) |
+| `POST /api/teacher/reviews/:id/feedback` | teacher | `{kind, text?, audience}` → review_feedback |
+| `POST /api/teacher/interventions` | teacher | `{learnerId, classId, skillTag, action, followUpOn}` → intervention |
+| `PATCH /api/teacher/interventions/:id` | teacher | `{status?, outcome?, action?, followUpOn?}`; closing requires an outcome and evidence |
+| `GET /api/teacher/classes/:id/interventions` | teacher | Open first, by follow-up date |
+| `GET /api/guardian/learners/:id/plan` (extend) | guardian | adds guardian-audience feedback and intervention actions, labelled "Teacher-reviewed" or with the teacher's name per §9.1 |

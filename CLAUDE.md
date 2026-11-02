@@ -26,7 +26,10 @@ lives in `docs/`.
 Guardian Book is a lifelong learning intelligence; describe it from
 `docs/vision/DESCRIPTION.md`, never as "a marking app" (the homework check is one input,
 never the headline). This build is the **Meta Global AI Developer Hackathon** entry
-(Indie), scope v2 (D34): **one learner, three people, one Brain.**
+(Indie), scope v2.1 (D34, D35): **one learner, three people, one Brain**, demonstrated as
+**the learner support loop** (evidence → teacher-approved diagnosis → learner activity →
+guardian action → teacher-owned intervention → independent check → did it work).
+Descriptor: a student success and guidance platform for high schools.
 - **The users are a circle:** a learner, their guardian and their teacher, linked. In this
   build every account holder is an adult (D19, Meta's API terms); the demo learner is an
   adult matric learner. No minors' data.
@@ -54,6 +57,9 @@ never the headline). This build is the **Meta Global AI Developer Hackathon** en
    - every line of product code is written here, during the event;
    - never read or copy from the legacy repo or private folders;
    - DBE paper content never enters this repo (D20).
+5b. **Provenance and schools (D35):** every stored artifact carries provenance and a
+   training permission (default `not_permitted`); every class belongs to a school, and every
+   access check includes the school boundary.
 6. **Publishable repo (D16):** no secrets, personal data or company documents, ever.
 7. **Scope sheds before dates.** **Done = works on Mozey's phone** after deploy, in a fresh
    tab.

@@ -45,17 +45,17 @@ the same files.
 | Brief | Date | Requirements | Depends on | Session / cap | Status |
 |---|---|---|---|---|---|
 | B01 Scaffold + CI + deploy skeleton | 31 Oct | P0-13 (part) | F2 (F4 for the deploy) | A (promo) / $15 | done (PR #1 merged 1 Nov; reviewed by planning) |
-| B02 ∥ Database, auth, the circle, seeds, permission harness | 1 Nov | P0-01 | B01 | A (promo) / $25 | doing |
-| B03 ∥ Model gateway, verifier, cost log, live smoke | 1 Nov | P0-11, P0-04 (model) | B01, F3 | B (subscription) / $25 | doing |
-| B04 Bring anything: inputs, work check → attempt → assessment, notice reader → calendar, `model_runs` | 1 Nov | P0-03, P0-04, P0-06 | B02 + B03 merged | A / $30 | todo |
-| B05 ∥ Profile cards, learner Today, Brain page (events, skill map, timeline) | 1 Nov | P0-02, P0-07 | B02 + B03 merged | B / $20 | todo |
-| B06 Help Plan agent + guardian view + "We did it" + fix-it retry | 2 Nov | P0-08, P0-09, P0-05 | B04, B05 | A / $30 | todo |
-| B07 ∥ Teacher view: class picture, confirm queue, release, notes approve/send, class notice | 2 Nov | P0-10 | B04 | B / $25 | todo |
-| B08 Eval runner results + proof page `/evidence` | 2 Nov | P0-12 | B03, E1 | B / $10 | todo |
-| **Gate P0:** full run on the founder's phone | 2 Nov, 20:00 | all P0 | — | — | todo |
+| B02 ∥ Database, auth, the circle, schools, provenance, seeds, permission harness (D35 tables) | 2 Nov | P0-01, P0-11b | B01 | A (promo) / $30 | todo (brief updated 2 Nov) |
+| B03 ∥ Model gateway, verifier, cost log, live smoke | 2 Nov | P0-11, P0-04 (model) | B01, F3 | B (subscription) / $25 | todo |
+| B04 Bring anything: inputs, work check → attempt → assessment (guideline approval enforced, provenance written), notice reader → calendar, `model_runs` | 2–3 Nov | P0-03, P0-04, P0-06 | B02 + B03 merged | A / $30 | todo |
+| B05 ∥ Profile cards, Today (+ check-in due), Brain page (assisted / independent / retained evidence), timeline | 3 Nov | P0-02, P0-07 | B02 + B03 merged | B / $20 | todo |
+| B06 Help Plan agent, guardian view (Teacher-reviewed labels), "We did it", fix it → check it alone → follow-up check | 3 Nov | P0-05, P0-08, P0-09 | B04, B05 | A / $30 | todo |
+| B07 ∥ Teacher view: guidelines approval, class picture, confirm queue, review with feedback controls (agree / correct / add / audience), release, interventions (owner, follow-up, outcome, close), notes with origin labels, class notice, learner profile | 3 Nov | P0-10 | B04 | B / $30 | todo |
+| B08 Eval runner results + proof page `/evidence` | 3 Nov | P0-12 | B03, E1 | B / $10 | todo |
+| **Gate P0:** full run on the founder's phone | 3 Nov, 20:00 (D35) | all P0 | — | — | todo |
 | B09 PWA, polish, E2E in CI; then P1 in order (voice, see-it card, overlay, open-weight row, WhatsApp text) | 3 Nov | P0-13, P1 | Gate P0 | A + B | todo |
 | B10 Release hardening, restore drill, history scan, README | 3 Nov | P0-13 | B09 | B / $8 | todo |
-| V1 Record the demo + X cut | 3 Nov | — | B10 | Founder + planning | todo |
+| V1 Record the demo + X cut | 4 Nov, morning | — | B10 | Founder + planning | todo |
 | B11 Freeze + submit by 20:00 SAST | 4 Nov | — | V1 | Founder | todo |
 
 Corpus waves (W1 English done; practical, home languages, Afrikaans catalogued) are

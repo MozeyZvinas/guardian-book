@@ -365,3 +365,41 @@ on every release (no target claimed before measuring).
 A chat window. A leaderboard. Praise of the person. A mark before the retry when a retry is
 available. Any personal data in a prompt. The marking guideline before an attempt. A
 guardian's view of an attempt, an answer or an image. Anything about mood or personality.
+
+## 9. Scope v2.1 additions (D35, 2 Nov 2026): screens for the learner support loop
+
+Additive to §4. Same conventions.
+
+- **L1 Today (add):** a **Check-in due** card when a follow-up check is due (*Two days ago
+  you fixed factorising. Check it alone: one question, no hints.*). It outranks tonight's
+  step when due.
+- **L3 Feedback (add):** after release, the teacher's own words appear under the step map
+  as *From Ms Dlamini* (teacher-added) or *Teacher-reviewed* (approved or revised AI draft).
+  The page states *Your teacher approved this result* once released.
+- **L4 Fix it (add):** after a pass, the primary button becomes **Check it alone** (a matched
+  question; no hints until you submit; a small *Independent* chip). Result screen: *You did
+  it on your own* or *Not yet; here's a hint for next time*.
+- **L6 Brain (change):** each skill chip shows three small marks: *with help*, *on your own*,
+  *later*. Tap → the evidence. The plain line: *Secure means you did it on your own, and
+  again later.*
+- **G1 This week (add):** a **Teacher-reviewed** label on every teacher message that started
+  as an AI draft; the teacher's name on her own notes. If the teacher assigned an
+  intervention with the guardian audience: *Ms Dlamini is working on factorising with Lerato
+  this week. Check-in on Thursday.*
+- **T2 Class picture (add):** **Interventions** panel: open first, by follow-up date; each
+  row shows learner, skill, owner, follow-up date, status; **Assign** from any shared gap
+  (choose learners, write one line, set a follow-up date). Closing asks for the outcome
+  (*Improved · No change · Needs more*) and shows the evidence (the follow-up check).
+- **T3a Review (add):** under the per-step proposal, **feedback controls**: **Agree**,
+  **Correct** (edit the AI's explanation), **Add** (her own note), and an **audience** choice
+  (*Learner · Guardian · Only me*). The checks list and an origin label per comment (*AI
+  suggested · You approved · You added · You revised*) stay visible to the teacher.
+- **T7 Guidelines (new)** · `/teacher/classes/:id/guidelines` · teacher: the items her class
+  will use, each with its marking guideline (M/A/CA steps), **Approve for 12A**; unapproved
+  items cannot be assessed for her class. Approval is per item revision.
+- **Public P1 Landing (change):** hero *Every learner deserves the support to succeed.*; the
+  sign-off line *Every learner understood. Every next step clearer.* (D35, headline by
+  surface).
+
+Navigation additions: Teacher tabs become **Classes · Queue · Notes · Guidelines** (Notice
+moves inside the class picture). Learner tabs unchanged.

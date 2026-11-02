@@ -1,20 +1,21 @@
 # B02 · Database, auth, the circle, seeds, permission harness
 
-**Status:** APPROVED (planning session, 31 Oct 2026)
+**Status:** APPROVED (planning session, 31 Oct 2026; updated 2 Nov for D35)
 **Risk tier:** High (auth, access control, migrations)
-**Model / spend cap:** Fable 5.1 · $25 (`fable --budget 25`)
-**Requirements:** P0-01 in `docs/specs/02-product-p0.md`; the tables in spec 03 §2 and
-§8.1; permissions in §4 and §8.2; auth and profile routes in §5 and §8.3.
+**Model / spend cap:** Fable 5.1 · $30 (D35 adds tables)
+**Requirements:** P0-01 and P0-11b in `docs/specs/02-product-p0.md` (v2.1); the tables in spec
+03 §2, §8.1 and **§9.1**; permissions in §4 and §8.2; auth and profile routes in §5 and §8.3.
 **Depends on:** B01 merged.
 **Runs in parallel with:** B03 (gateway + verifier). **Do not touch** `apps/api/src/gateway`,
 `apps/api/src/verify` or `packages/shared/src/contracts/model/*`; B03 owns them.
 
 ## Read first (only these)
 - `CLAUDE.md`, `START-HERE.md`
-- `docs/decisions.md`: D19, D21, D24, D34
+- `docs/decisions.md`: D19, D21, D24, D34, D35
 - `docs/specs/02-product-p0.md`: §2, §3 (P0-01 only)
 - `docs/specs/03-architecture-data.md`: §1, §2 (all tables), §3, §4, §5 (auth, `/api/me`,
-  items), §7, §8.1, §8.2, §8.3 (profile code and link routes only)
+  items), §7, §8.1, §8.2, §8.3 (profile code and link routes only), **§9.1, §9.2** (schools,
+  provenance, every new table and column; the cross-school permission rows)
 - `docs/specs/04-quality-security-eval.md`: §2 (test layers) and §4 (security tests)
 
 - `docs/specs/05-screens-and-flows.md`: §4.1 P2–P3, §4.2 L8, §4.3 G0, §4.4 T1 (the screens B02 builds); §6 (responsive rules)
@@ -27,7 +28,9 @@
 ## Do
 
 1. **Drizzle schema and migrations** (`apps/api/src/db/schema.ts`, `apps/api/drizzle/`):
-   every table in spec 03 §2 and §8.1, snake_case, UUID v7 primary keys, `created_at`
+   every table and column in spec 03 §2, §8.1 and §9.1 (including `schools`, the provenance
+   and training-permission enums and columns, `attempts.mode`, `skill_evidence`,
+   `guideline_approvals`, `interventions`, `review_feedback`, the `notes` origin and audience), snake_case, UUID v7 primary keys, `created_at`
    defaults. Enums as Postgres enums. CHECKs: `model_runs.tier = 'standard'`;
    `guideline_steps` marks sum = `items.max_marks` (enforce in the loader if a CHECK is
    impractical, with a test). A migration script `pnpm db:migrate` and `pnpm db:generate`.
@@ -38,11 +41,15 @@
    `ageAttested: true` and `role` in (learner, guardian, teacher). A `profiles` row is
    created in the same transaction with `age_attested_at`. Cookies `HttpOnly; Secure;
    SameSite=Lax`. Session lookup is one middleware used by every `/api` route.
+4a. **Provenance contract** (`packages/shared/src/contracts/provenance.ts`): the Zod enums for
+   provenance and training permission, and a helper `provenanceFor(kind)`. Every insert B02
+   writes (seeds, content loader, sign-up) sets provenance; `training_permission` defaults to
+   `not_permitted` and nothing in this build sets `permitted` (test).
 4. **The `access` module** (`apps/api/src/access`): `can(user, action, resource)` is the
    only place permission decisions are made. Implement every row of spec 03 §4 and §8.2
    that B02's routes need, and the resolver helpers B03 and later briefs will call
-   (`learnerOwns`, `teacherOfLearner`, `guardianLinkedTo`, `classMember`). Unknown
-   action → deny.
+   (`learnerOwns`, `teacherOfLearner`, `guardianLinkedTo`, `classMember`, `sameSchool`).
+   **Every check includes the school boundary** (spec 03 §9.2). Unknown action → deny.
 5. **The circle:**
    - a teacher's class: `POST /api/teacher/classes` → `{name}`; a class code (8 chars,
      unambiguous alphabet) stored hashed; `POST /api/learner/join` → `{code}`;
@@ -58,18 +65,23 @@
    Put **two** original sample items with guidelines in `apps/api/seed/items/` for
    development (write them yourself: CAPS Grade 12 Algebra, 4–6 marks each, clearly
    labelled `source: original`, `reviewer: pending`).
-7. **Seeds** (`pnpm db:seed`, idempotent): the demo circle: learner "Lerato" (nickname
+7. **Seeds** (`pnpm db:seed`, idempotent): school **"Sentinel High (fictional)"** (`kind =
+   fictional`) and a second fictional school **"Riverside Secondary (fictional)"** for isolation
+   tests; the demo circle: learner "Lerato" (nickname
    only; age attested), her guardian "Mma Lerato", teacher "Ms Dlamini" with class
    "12A", five classmate learners in 12A, the guardian linked, the two sample items
-   approved. Fixed UUIDs so tests can reference them. A second teacher with class "11B"
-   and one learner, for cross-class tests. Passwords from env in dev (`SEED_PASSWORD`),
+   approved, with `guideline_approvals` rows for class 12A only (so assessing for 11B's class is
+   refused). Fixed UUIDs so tests can reference them. Seed provenance: `synthetic_self_generated`
+   for people, `original_human` for the two items. A second teacher with class "11B" and one learner
+   at Riverside Secondary, for cross-class and cross-school tests. Passwords from env in dev (`SEED_PASSWORD`),
    never committed.
 8. **Permission harness** (`apps/api/test/access.integration.test.ts`): a table-driven
    integration test that logs in as each seeded user and asserts every "change the ID"
    case in spec 03 §4 and §8.2 for the routes that exist after B02: learner A → learner
    B's `/api/me`-scoped data → 404; teacher 11B → class 12A → 404; guardian → unlinked
    learner → 404; learner → `/api/teacher/*` → 403; guardian → `/api/learner/*` → 403;
-   no session → 401. The harness is written so later briefs add rows, not files.
+   no session → 401; **Riverside teacher → any Sentinel High class, learner or attempt →
+   404**. The harness is written so later briefs add rows, not files.
 9. **Audit events** for sign-up, link, revoke, class join, content load.
 10. **Shared contracts** (`packages/shared/src/contracts/auth.ts`, `circle.ts`,
     `items.ts`): Zod schemas used by both API and web. Types exported.
@@ -92,6 +104,9 @@
 | Sign-up without `ageAttested: true` | 400; no user, no profile |
 | Sign-up with role `admin` | 400 |
 | UPDATE on `learning_events` via SQL in a test | Rejected by the database |
+| A class row without `school_id` | Rejected by the database |
+| Any insert path in B02 without provenance | Test fails; no row defaults to `permitted` |
+| Cross-school request (Riverside teacher → Sentinel High resource) | 404 |
 | Each case in the permission harness | The expected status code |
 | `GET /api/items/:id` as a learner with no attempt | Item without `guidelineSteps` |
 | `pnpm content:load` on a directory with a marks-sum error | Exits non-zero, loads nothing |

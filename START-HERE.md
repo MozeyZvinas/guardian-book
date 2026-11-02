@@ -1,18 +1,19 @@
 # START HERE
 
 Read this first, every session. Chats hold no state; this page does.
-**Updated:** 1 Nov 2026, planning session.
+**Updated:** 2 Nov 2026, planning session (D35).
 
 ## What we're doing right now
 
 Building **Guardian Book** for the **Meta Global AI Developer Hackathon** (Indie, solo),
-scope v2 (D34): **one learner, three people, one Brain.** A learner, their guardian and
+scope v2.1 (D34, D35): **one learner, three people, one Brain**, shown as **the learner
+support loop**. A learner, their guardian and
 their teacher, linked; the learner brings anything; Muse Spark reads it; checks the model
 cannot skip; the Brain updates; one Help Plan rendered three ways; the teacher confirms
 and approves the note home. The homework check is one input, never the headline.
 
 **Deadlines:**
-- Full phone run (Gate P0): **Mon 2 Nov, 20:00 SAST**.
+- Full phone run (Gate P0): **Tue 3 Nov, 20:00 SAST** (moved by D35).
 - Submit by **20:00 SAST, Wed 4 Nov** (official close 04:00 SAST, 5 Nov).
 - Promotional Claude credit expires **14 Nov**.
 
@@ -118,19 +119,23 @@ When CI is green, send the PR link to the planning session. Merge only after its
 
 **Terminal A, after B01 merges (B02):** start with `fable -w b02`, then paste:
 ```
-Read CLAUDE.md, START-HERE.md and docs/decisions.md (D19, D21, D24, D34). Carry out prompts/B02-data-auth-circle.md and only that brief, in this worktree. Do not touch apps/api/src/gateway, apps/api/src/verify or packages/shared/src/contracts/model (another session owns them). Report the repo state and your plan in one message, then proceed. Small commits; push branch b02-data-auth-circle; open the PR with the completion report; stop when CI has finished. Do not merge.
+Read CLAUDE.md, START-HERE.md and docs/decisions.md (D19, D21, D24, D34, D35). Carry out prompts/B02-data-auth-circle.md and only that brief, in this worktree. Do not touch apps/api/src/gateway, apps/api/src/verify or packages/shared/src/contracts/model (another session owns them). Report the repo state and your plan in one message, then proceed. Small commits; push branch b02-data-auth-circle; open the PR with the completion report; stop when CI has finished. Do not merge.
 ```
 
 **Terminal B, after B01 merges (B03):** start with `fable -w b03`, then paste:
 ```
-Read CLAUDE.md, START-HERE.md and docs/decisions.md (D13, D24, D26, D34). Carry out prompts/B03-gateway-verifier.md and only that brief, in this worktree. Own only apps/api/src/gateway, apps/api/src/verify, packages/shared/src/contracts/model and apps/api/src/evals; create no database tables and no authenticated routes. Read the three Meta doc pages named in the brief before writing the gateway and quote the lines you rely on in code comments with today's date. If META_API_KEY is absent from .env, stop at the mocked tests and say so. Report the repo state and your plan in one message, then proceed. Small commits; push branch b03-gateway-verifier; open the PR with the completion report; stop when CI has finished. Do not merge.
+Read CLAUDE.md, START-HERE.md and docs/decisions.md (D13, D24, D26, D34, D35). Carry out prompts/B03-gateway-verifier.md and only that brief, in this worktree. Own only apps/api/src/gateway, apps/api/src/verify, packages/shared/src/contracts/model and apps/api/src/evals; create no database tables and no authenticated routes. Read the three Meta doc pages named in the brief before writing the gateway and quote the lines you rely on in code comments with today's date. If META_API_KEY is absent from .env, stop at the mocked tests and say so. Report the repo state and your plan in one message, then proceed. Small commits; push branch b03-gateway-verifier; open the PR with the completion report; stop when CI has finished. Do not merge.
 ```
 
 **Review loop.** Paste each PR link to the planning session. It reviews the diff against the
 brief and replies "merge" or with the fixes to paste back into the same session. You merge
 (`gh pr merge <n> --squash`), Railway deploys, you open the URL in a fresh tab.
 
-## Last session handover (31 Oct)
+## Last session handover
+
+- 2 Nov: D35 (the student success direction; the learner support loop; six mechanics).
+  Spec 02 v2.1, spec 03 §9, spec 05 §9, B02 updated (schools, provenance, new tables; cap
+  $30), B03 boundary note. Gate moved to 3 Nov 20:00. (31 Oct)
 
 - 1 Nov: specs 05–06, BUILD-PLAN, the ruleset command, the Claude Code prompts.
 - D34 recorded (scope v2, the circle). D22 superseded; D10 amended for this build; D28

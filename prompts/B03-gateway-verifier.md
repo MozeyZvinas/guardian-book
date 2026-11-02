@@ -14,7 +14,7 @@ create database tables or routes that need auth; B02 owns the schema. Persisting
 
 ## Read first (only these)
 - `CLAUDE.md`, `START-HERE.md`
-- `docs/decisions.md`: D13, D24, D26, D34
+- `docs/decisions.md`: D13, D24, D26, D34, D35
 - `docs/specs/02-product-p0.md`: §1, §3 rows P0-04 and P0-11
 - `docs/specs/03-architecture-data.md`: §6, §7, §8.4, §8.5, and the `steps` jsonb shape in
   §2
@@ -88,6 +88,11 @@ create database tables or routes that need auth; B02 owns the schema. Persisting
 
 ## Don't
 - No routes that need a session; no database writes (B04 wires `model_runs`).
+- Do not create `packages/shared/src/contracts/provenance.ts` (B02 owns it). Model outputs
+  B03 returns carry `{provider: 'meta', model, version: promptVersion}` so B04 can record
+  `provenance = model_generated` with that detail.
+- In the work-check prompt, honour `mode`: for `independent` and `retention` attempts the
+  output may carry the hint, but the API will withhold it until after submission (B06).
 - No new dependencies beyond the OpenAI SDK, Zod and `zod-to-json-schema` (or the SDK's
   own helper). Justify anything else in the PR.
 - Never log or echo the key, the answer text or images. The bundle-secret check must
