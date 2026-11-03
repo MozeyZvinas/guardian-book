@@ -1,0 +1,4 @@
+# Eval result files are written here by `pnpm eval:dev`. They are committed only when the
+# planning session says so (git add -f), and never with personal data.
+*
+!.gitignore

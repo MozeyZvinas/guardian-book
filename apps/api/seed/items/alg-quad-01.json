@@ -1,0 +1,43 @@
+{
+  "slug": "alg-quad-01",
+  "topic": "Algebra: quadratic equations",
+  "skill_tags": ["factorise-quadratic", "solve-quadratic"],
+  "prompt_md": "Solve for $x$:\n\n$$x^2 - 5x + 6 = 0$$",
+  "max_marks": 3,
+  "source": "original",
+  "provenance": "original_human",
+  "training_permission": "not_permitted",
+  "final_answer": "x = 2 or x = 3",
+  "guideline": [
+    {
+      "step_id": "S1",
+      "step_no": 1,
+      "kind": "M",
+      "criterion": "Factorise the trinomial into two linear brackets",
+      "marks": 1,
+      "skill_tag": "factorise-quadratic",
+      "notes": "The quadratic formula with a = 1, b = -5, c = 6 substituted correctly also earns this mark",
+      "expected": "(x - 2)(x - 3) = 0"
+    },
+    {
+      "step_id": "S2",
+      "step_no": 2,
+      "kind": "A",
+      "criterion": "First root",
+      "marks": 1,
+      "skill_tag": "solve-quadratic",
+      "notes": null,
+      "expected": "x = 2"
+    },
+    {
+      "step_id": "S3",
+      "step_no": 3,
+      "kind": "CA",
+      "criterion": "Second root, consistent with the learner's factors",
+      "marks": 1,
+      "skill_tag": "solve-quadratic",
+      "notes": "Consistent accuracy: a second root that follows correctly from the learner's own factorisation earns the mark",
+      "expected": "x = 3"
+    }
+  ]
+}

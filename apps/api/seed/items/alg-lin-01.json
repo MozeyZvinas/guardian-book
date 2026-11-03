@@ -1,0 +1,43 @@
+{
+  "slug": "alg-lin-01",
+  "topic": "Algebra: linear equations",
+  "skill_tags": ["expand-brackets", "solve-linear"],
+  "prompt_md": "Solve for $x$:\n\n$$3(x - 2) = 2x + 5$$",
+  "max_marks": 3,
+  "source": "original",
+  "provenance": "original_human",
+  "training_permission": "not_permitted",
+  "final_answer": "x = 11",
+  "guideline": [
+    {
+      "step_id": "S1",
+      "step_no": 1,
+      "kind": "M",
+      "criterion": "Expand the bracket on the left",
+      "marks": 1,
+      "skill_tag": "expand-brackets",
+      "notes": null,
+      "expected": "3x - 6 = 2x + 5"
+    },
+    {
+      "step_id": "S2",
+      "step_no": 2,
+      "kind": "M",
+      "criterion": "Collect like terms with x on one side and constants on the other",
+      "marks": 1,
+      "skill_tag": "solve-linear",
+      "notes": "Method mark: earned when the learner's own expanded form is rearranged correctly, even if the expansion was wrong",
+      "expected": "3x - 2x = 5 + 6"
+    },
+    {
+      "step_id": "S3",
+      "step_no": 3,
+      "kind": "CA",
+      "criterion": "Solve for x",
+      "marks": 1,
+      "skill_tag": "solve-linear",
+      "notes": "Consistent accuracy: a value that follows correctly from the learner's own rearrangement earns the mark",
+      "expected": "x = 11"
+    }
+  ]
+}
