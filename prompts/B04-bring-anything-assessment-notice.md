@@ -22,6 +22,16 @@ and web routes `apps/web/src/routes/learner/{bring,attempt,calendar}` and
 - `docs/specs/06-frontend-pwa-mobile.md`: §2, §4, §6
 
 ## Do
+0. **Content loader, one small change (B02's code; you may edit
+   `packages/shared/src/contracts/items.ts` and `apps/api/src/content/loader.ts` for this
+   only).** The item schema refuses `provenance: model_generated` ("items are never
+   model_generated"). The demo content pack is AI-drafted and honestly labelled so, and the
+   class teacher's guideline approval (spec 03 §9.1, refused with 409 until given) is the
+   review gate. So: accept `model_generated` items when `reviewer` is `pending`, keep the
+   provenance as written, and expose it on `GET /api/items/:id` for teachers so B07 can label
+   such guidelines "AI-drafted: check before approving". `original_human` and
+   `teacher_verified` load as today. Tests: a `model_generated` item loads; it cannot be
+   assessed for a class until that class's teacher approves it.
 1. **Storage** (`apps/api/src/storage`): S3-compatible client for the Railway bucket
    (`BUCKET_*`; Railway buckets are private and use **virtual-hosted-style** URLs, so
    `forcePathStyle: false` and `BUCKET_REGION` as given, usually `auto`; the bucket has no
