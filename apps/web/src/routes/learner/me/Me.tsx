@@ -1,26 +1,28 @@
-import { useState, type FormEvent } from 'react'
-import type { MeResponse } from '@guardian-book/shared'
-import { issueGuardianCode, joinClass, revokeGuardian } from '../../api/circle'
-import { RequireRole } from '../../app/RequireRole'
-import { Button, Card, Field, FormError, TextInput } from '../../components/Form'
-import { Page } from '../../components/Page'
-import { SignOutButton } from '../../components/SignOutButton'
-import { StatusChip } from '../../components/StatusChip'
-import { StatusLegend } from '../../components/StatusLegend'
-import { useMe } from '../../state/me'
+import { useEffect, useState, type FormEvent } from 'react'
+import { Link } from 'react-router'
+import type { MeResponse, ProfileCards, ProfileResponse } from '@guardian-book/shared'
+import { issueGuardianCode, joinClass, revokeGuardian } from '../../../api/circle'
+import { getProfile } from '../../../api/learner'
+import { RequireRole } from '../../../app/RequireRole'
+import { CardsEditor, CardsView } from '../../../components/CardsEditor'
+import { Button, Card, Field, FormError, TextInput } from '../../../components/Form'
+import { LearnerShell } from '../../../components/LearnerShell'
+import { SignOutButton } from '../../../components/SignOutButton'
+import { Skeleton } from '../../../components/Skeleton'
+import { StatusChip } from '../../../components/StatusChip'
+import { StatusLegend } from '../../../components/StatusLegend'
+import { useMe } from '../../../state/me'
 
-/** L8 · Me (spec 05 §4.2), B02 slice: invite a parent, join a class, what your parent can see. */
+/** L8 · Me (spec 05 §4.2): the four cards (edit), invite a parent, join a class, what your parent can see. */
 export function Me() {
   return <RequireRole roles={['learner']}>{(me) => <MeScreen me={me} />}</RequireRole>
 }
 
 function MeScreen({ me }: { me: MeResponse }) {
   return (
-    <Page footer={<StatusLegend />}>
+    <LearnerShell footer={<StatusLegend />}>
       <h1 className="text-display font-semibold text-balance">Hi {me.profile.nickname}</h1>
-      <p className="text-fg-muted">
-        Your profile cards arrive soon. <StatusChip status="PLANNED" />
-      </p>
+      <ProfileCardsSection />
       <InviteGuardian me={me} />
       <JoinClass me={me} />
       <Card title="What your parent can see">
@@ -29,13 +31,83 @@ function MeScreen({ me }: { me: MeResponse }) {
           <li>What is coming up.</li>
           <li>The topic you are stuck on, in plain words.</li>
           <li>One thing they can do to help.</li>
+          <li>From your cards: what you want to do one day, and your subjects.</li>
         </ul>
-        <p className="text-sm text-fg-muted">Never your work, your answers or your photos.</p>
+        <p className="text-sm text-fg-muted">Never your work, your answers, your photos or the words you typed about yourself.</p>
       </Card>
       <div>
         <SignOutButton />
       </div>
-    </Page>
+    </LearnerShell>
+  )
+}
+
+type Load = { status: 'loading' } | { status: 'ready'; profile: ProfileResponse } | { status: 'error'; error: unknown }
+
+function ProfileCardsSection() {
+  const [load, setLoad] = useState<Load>({ status: 'loading' })
+  const [editing, setEditing] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    getProfile()
+      .then((profile) => {
+        if (!cancelled) setLoad({ status: 'ready', profile })
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setLoad({ status: 'error', error })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  function saved(cards: ProfileCards) {
+    setLoad({ status: 'ready', profile: { cards, origin: load.status === 'ready' ? load.profile.origin : 'student' } })
+    setEditing(false)
+  }
+
+  return (
+    <Card title="About you">
+      {load.status === 'loading' ? <Skeleton lines={2} label="Loading your cards" /> : null}
+      {load.status === 'error' ? <FormError error={load.error} /> : null}
+      {load.status === 'ready' && !load.profile.cards ? (
+        <>
+          <p className="text-sm text-fg-muted">Four quick questions start your cards. You can skip any of them.</p>
+          <div>
+            <Link to="/me/setup" className="inline-flex min-h-11 items-center rounded-card border border-fg-muted/50 bg-surface px-5 font-medium text-fg no-underline">
+              Tell me about you
+            </Link>
+          </div>
+        </>
+      ) : null}
+      {load.status === 'ready' && load.profile.cards ? (
+        editing ? (
+          <CardsEditor cards={load.profile.cards} onSaved={saved} onCancel={() => setEditing(false)} />
+        ) : (
+          <>
+            <CardsView cards={load.profile.cards} />
+            <p className="flex flex-wrap items-center gap-2 text-sm text-fg-muted">
+              {load.profile.origin === 'model' ? (
+                <>
+                  Read from your words by the model and checked. <StatusChip status="LIVE" />
+                </>
+              ) : (
+                <>Your own words.</>
+              )}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="quiet" onClick={() => setEditing(true)}>
+                Edit cards
+              </Button>
+              <Link to="/me/setup" className="inline-flex min-h-11 items-center px-2 text-sm">
+                Start again
+              </Link>
+            </div>
+          </>
+        )
+      ) : null}
+    </Card>
   )
 }
 
@@ -184,7 +256,7 @@ function JoinClass({ me }: { me: MeResponse }) {
             <TextInput id="class-code" name="code" autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={12} required className="tracking-widest uppercase tnum" />
           </Field>
         </div>
-        <Button type="submit" disabled={busy}>
+        <Button type="submit" variant="quiet" disabled={busy}>
           {busy ? 'Joining…' : 'Join'}
         </Button>
       </form>

@@ -10,9 +10,20 @@ export type AuditAction =
   | 'circle.guardian_code_issued'
   | 'circle.guardian_linked'
   | 'circle.guardian_revoked'
+  | 'profile.cards_set'
+  | 'profile.cards_edited'
+  | 'profile.cards_refused'
   | 'content.loaded'
   | 'seed.run'
   | 'access.admin_read'
+  // B04
+  | 'input.created'
+  | 'input.kind_changed'
+  | 'attempt.created'
+  | 'attempt.assess_started'
+  | 'attempt.assessed'
+  | 'attempt.assess_refused'
+  | 'calendar.decided'
 
 export interface AuditInput {
   actorId: string | null

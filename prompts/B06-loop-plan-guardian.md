@@ -20,6 +20,21 @@ and web routes `apps/web/src/routes/learner/{fix,item}` and `apps/web/src/routes
   `interventions` read-only here, `notes` origin and audience), §9.2, §9.3
 - `docs/specs/05-screens-and-flows.md`: §4.2 L4, L5, §4.3 G0–G4, §9 (L4, G1 changes)
 
+## Integration notes (planning session, 3 Nov, after reviewing B04 and B05)
+- **Events that move the Brain** (`fixed_independently`, `independent_check_completed`,
+  `retention_check_completed`) build their payload with `evidencePayload(...)` from
+  `packages/shared/src/brain/evidence.ts` (B05): `skills_correct` / `skills_lost` (or
+  `correct` with `skill_tag` set) and `mode`. Anything else does not move skill state.
+- **Retention checks are derived, not stored:** `GET /api/me/checks` (B05) lists a retention
+  check 2 days after a correct independent check until a retention outcome is recorded, plus
+  open interventions' follow-up dates. Write the right events; add no scheduling table.
+- **Every model call** (the Help Plan agent) goes through B04's `runModel` helper in
+  `apps/api/src/modelRuns/` so the daily caps and `model_runs` rows apply.
+- **Maths on screen:** render item prompts, guideline criteria and hints with
+  `apps/web/src/components/MathText.tsx` (KaTeX, added with the B05 merge). Skill names come
+  from `packages/shared/src/brain/skills.ts` (learner and guardian wording), never raw tags.
+- **Playwright** is in the repo (`pnpm test:e2e`, from B04); use it for the 390×844 test.
+
 ## Do
 1. **Fix it** (`POST /api/attempts/:id/fix`): redo the lost step (typed or photo) on the same
    item, assessed only for that step; a pass appends `fixed_independently` (first independent

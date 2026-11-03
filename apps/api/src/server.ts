@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createApp } from './app.js'
+import { sweepStuckAttempts } from './assessment/service.js'
 import { describeConfig, loadConfig } from './config.js'
 import { createDb, type DbHandle } from './db/client.js'
 import { runMigrations } from './db/migrate.js'
@@ -28,6 +29,11 @@ if (config.db.url) {
     }
   }
   handle = createDb(config.db.url)
+  // A restart mid-assessment leaves attempts `assessing`; after 5 minutes they become
+  // `uncertain` (no marks shown). Never fatal: the sweep runs again at the next boot.
+  sweepStuckAttempts(handle.db, logger).catch((err: unknown) => {
+    logger.error('stuck-attempt sweep failed', { err })
+  })
 }
 
 const app = createApp({ config, logger, webDistDir, version, db: handle?.db ?? null })
