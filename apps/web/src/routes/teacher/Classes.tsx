@@ -4,12 +4,10 @@ import type { MeResponse, SchoolSummary } from '@guardian-book/shared'
 import { createClass, schools as fetchSchools } from '../../api/circle'
 import { RequireRole } from '../../app/RequireRole'
 import { Button, Card, Field, FormError, Select, TextInput } from '../../components/Form'
-import { Page } from '../../components/Page'
-import { SignOutButton } from '../../components/SignOutButton'
-import { StatusChip } from '../../components/StatusChip'
 import { useMe } from '../../state/me'
+import { TeacherShell } from './shell/TeacherShell'
 
-/** T1 · Classes (spec 05 §4.4): my classes with learner counts; create a class → a code to share. */
+/** T1 · Classes (spec 05 §4.4): my classes with learner counts; each one opens its picture; create a class → a code to share. */
 export function TeacherClasses() {
   return <RequireRole roles={['teacher']}>{(me) => <ClassesScreen me={me} />}</RequireRole>
 }
@@ -50,17 +48,19 @@ function ClassesScreen({ me }: { me: MeResponse }) {
   }
 
   return (
-    <Page>
-      <h1 className="text-display font-semibold text-balance">My classes</h1>
-      {me.school ? <p className="text-fg-muted">{me.school.name}</p> : null}
-
+    <TeacherShell me={me} title="My classes" eyebrow={me.school?.name}>
       {me.classes.length > 0 ? (
         <ul className="m-0 flex list-none flex-col gap-2 p-0">
           {me.classes.map((cls) => (
-            <li key={cls.id} className="flex items-center justify-between gap-3 rounded-card bg-surface px-4 py-3">
-              <span className="font-medium">{cls.name}</span>
-              <span className="flex items-center gap-3 text-sm">
-                <Link to={`/teacher/classes/${cls.id}/notice`}>Class notice</Link>
+            <li key={cls.id} className="flex flex-wrap items-center justify-between gap-3 rounded-card bg-surface px-4 py-3">
+              <Link to={`/teacher/classes/${cls.id}`} className="text-lg font-medium">
+                {cls.name}
+              </Link>
+              <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                <Link to={`/teacher/classes/${cls.id}/queue`}>Queue</Link>
+                <Link to={`/teacher/classes/${cls.id}/notes`}>Notes</Link>
+                <Link to={`/teacher/classes/${cls.id}/guidelines`}>Guidelines</Link>
+                <Link to={`/teacher/classes/${cls.id}/notice`}>Notice</Link>
                 <span className="text-fg-muted tnum">
                   {cls.learnerCount} {cls.learnerCount === 1 ? 'learner' : 'learners'}
                 </span>
@@ -71,9 +71,6 @@ function ClassesScreen({ me }: { me: MeResponse }) {
       ) : (
         <p className="text-fg-muted">No classes yet. Create one and share its code.</p>
       )}
-      <p className="text-sm text-fg-muted">
-        The class picture and the confirm queue arrive with the next builds. <StatusChip status="PLANNED" />
-      </p>
 
       {created ? (
         <Card title={`${created.name} is ready`}>
@@ -109,9 +106,6 @@ function ClassesScreen({ me }: { me: MeResponse }) {
           </div>
         </form>
       </Card>
-      <div>
-        <SignOutButton />
-      </div>
-    </Page>
+    </TeacherShell>
   )
 }
