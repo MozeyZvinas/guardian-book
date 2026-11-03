@@ -43,6 +43,24 @@ The server boots with no environment at all: `/healthz` reports which groups are
 configured and `/` serves the home screen. To configure a group, copy `.env.example` to
 `.env` and fill in that group; a local `.env` never points at a hosted database.
 
+### Database, accounts and the demo circle
+
+With `DATABASE_URL`, `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` set (see `.env.example`):
+
+```bash
+pnpm db:migrate                       # additive Drizzle migrations (also run at API boot)
+SEED_PASSWORD=choose-one pnpm db:seed # the fictional demo circle; idempotent; prints the class codes
+pnpm content:load /path/outside/repo  # reviewed items (JSON) → approved; all-or-nothing
+pnpm db:generate                      # after editing apps/api/src/db/schema.ts
+```
+
+Every account holder is an adult: sign-up requires the box "I am 18 or older" (D19) and
+the API refuses a body without `ageAttested: true`. Demo people sign in as
+`<key>@demo.guardianbook.test` (for example `lerato`, `mma-lerato`, `ms-dlamini`) with the
+seed password. The database refuses UPDATE and DELETE on `learning_events`, `assessments`
+and `model_runs`; every artifact row carries provenance and a training permission that
+defaults to `not_permitted`.
+
 Production image:
 
 ```bash
@@ -58,6 +76,12 @@ during the event (D27), one brief at a time:
 - **B01** (1 Nov 2026) · Workspace, API skeleton (`/healthz`, config check, structured
   logs with redaction, security headers, static serving), Sentinel tokens and the landing
   screen, Dockerfile and compose, CI with six checks, deploy runbook.
+- **B02** (3 Nov 2026) · The schema (every table in spec 03, Postgres enums, UUID v7,
+  append-only triggers, provenance columns, schools as tenants), Better Auth with a
+  one-transaction sign-up and age attestation, the `access` module and its permission
+  harness, the circle (class codes, guardian codes, links, revoke), items and the content
+  loader, the seeded demo circle, and the sign-up, sign-in, learner, guardian and teacher
+  screens.
 
 ## Pre-existing inputs
 

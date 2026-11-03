@@ -45,7 +45,7 @@ the same files.
 | Brief | Date | Requirements | Depends on | Session / cap | Status |
 |---|---|---|---|---|---|
 | B01 Scaffold + CI + deploy skeleton | 31 Oct | P0-13 (part) | F2 (F4 for the deploy) | A (promo) / $15 | done (PR #1 merged 1 Nov; reviewed by planning) |
-| B02 ∥ Database, auth, the circle, schools, provenance, seeds, permission harness (D35 tables) | 2 Nov | P0-01, P0-11b | B01 | A (promo) / $30 | todo (brief updated 2 Nov) |
+| B02 ∥ Database, auth, the circle, schools, provenance, seeds, permission harness (D35 tables) | 2 Nov | P0-01, P0-11b | B01 | A (promo) / $30 | review (PR open 3 Nov; see questions below) |
 | B03 ∥ Model gateway, verifier, cost log, live smoke | 2 Nov | P0-11, P0-04 (model) | B01, F3 | B (subscription) / $25 | todo |
 | B04 Bring anything: inputs, work check → attempt → assessment (guideline approval enforced, provenance written), notice reader → calendar, `model_runs` | 2–3 Nov | P0-03, P0-04, P0-06 | B02 + B03 merged | A / $30 | todo |
 | B05 ∥ Profile cards, Today (+ check-in due), Brain page (assisted / independent / retained evidence), timeline | 3 Nov | P0-02, P0-07 | B02 + B03 merged | B / $20 | todo |
@@ -63,3 +63,24 @@ Corpus waves (W1 English done; practical, home languages, Afrikaans catalogued) 
 
 ## Questions for the planning session
 Add any question here, linked to a task ID.
+
+- **B02 · `.env.example` could not be edited** (the session's permission settings deny
+  writes to `.env*`). Please append these lines (also in the PR body):
+  `DB_MIGRATE_ON_BOOT=` (default true; set false to migrate as a Railway pre-deploy step),
+  `SEED_PASSWORD=` (dev only; the demo people's password; the class codes derive from it),
+  `CONTENT_DIR=` (admin CLI only; a directory outside the repo).
+- **B02 · schema additions to confirm** (spec 03 names nothing for these): `classes.code_hash`,
+  a `guardian_invite_codes` table (the learner's unredeemed, rotating code; `guardian_links`
+  still holds the redeemed hash), and `guideline_steps.step_type` (M/A/CA, from P0-04).
+- **B02 · a teacher's school:** P2 has no school field, so `POST /api/teacher/classes` takes
+  `schoolId` for a teacher's first class (T1 shows a select fed by a read-only
+  `GET /api/schools`); after that the teacher's school applies and any other school is 404.
+  Seeded teachers already have a school. Confirm, or say where the school should be chosen.
+- **B02 · sign-up ownership:** `POST /api/auth/sign-up/email` is our route (one Drizzle
+  transaction: user, credential account, `profiles` with `age_attested_at`, audit), and Better
+  Auth's own sign-up is disabled, because its hooks cannot write a foreign-keyed `profiles`
+  row inside its adapter transaction. Sessions, sign-in, sign-out and password hashing are
+  Better Auth's. Confirm this reading of "Better Auth, email + password only".
+- **B02 · migrations at boot** (default on; `DB_MIGRATE_ON_BOOT=false` opts out) so the first
+  deploy after merge works on the phone without a Railway settings change. Spec 03 §2 says
+  "a release step": confirm, or ask the founder to set the pre-deploy command.
