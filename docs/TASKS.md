@@ -51,7 +51,7 @@ the same files.
 | B05 ∥ Profile cards, Today (+ check-in due), Brain page (assisted / independent / retained evidence), timeline | 3 Nov | P0-02, P0-07 | B02 + B03 merged | B / $20 | todo |
 | B06 Help Plan agent, guardian view (Teacher-reviewed labels), "We did it", fix it → check it alone → follow-up check | 3 Nov | P0-05, P0-08, P0-09 | B04, B05 | A / $30 | todo |
 | B07 ∥ Teacher view: guidelines approval, class picture, confirm queue, review with feedback controls (agree / correct / add / audience), release, interventions (owner, follow-up, outcome, close), notes with origin labels, class notice, learner profile | 3 Nov | P0-10 | B04 | B / $30 | todo |
-| B08 Eval runner results + proof page `/evidence` | 3 Nov | P0-12 | B03, E1 | B / $10 | doing (3 Nov: code written and committed on `b08-proof-page`; session hit its $10 cap before the live run, push and PR; see the B08 note below) |
+| B08 Eval runner results + proof page `/evidence` | 3 Nov | P0-12 | B03, E1 | B / $10 | in review (PR #6, 3 Nov; first live summary committed; see the B08 notes below) |
 | **Gate P0:** full run on the founder's phone | 3 Nov, 20:00 (D35) | all P0 | — | — | todo |
 | B09 PWA, polish (landing hero by surface, D35), E2E in CI; `robots.txt` (allow `/`, `/evidence`; disallow `/api/`, `/learner/`, `/guardian/`, `/teacher/`, invite and join links; D36); then P1 in order (incl. P1-g teacher uploads a script) (voice, see-it card, overlay, open-weight row, WhatsApp text) | 3 Nov | P0-13, P1 | Gate P0 | A + B | todo |
 | B10 Release hardening, restore drill, history scan, README | 3 Nov | P0-13 | B09 | B / $8 | todo |
@@ -85,13 +85,11 @@ Add any question here, linked to a task ID.
   deploy after merge works on the phone without a Railway settings change. Spec 03 §2 says
   "a release step": confirm, or ask the founder to set the pre-deploy command.
 
-- **B08 · handover (3 Nov, session stopped at its cap).** Code is committed on
-  `b08-proof-page` (worktree `.claude/worktrees/b08`), not pushed. To finish: (1) run
-  `docker compose up -d && pnpm test:integration` (writes `evals/results/privacy-harness.json`);
-  (2) `EVAL_DIR=apps/api/src/evals/fixtures/cases pnpm eval:dev` (live, about 12–30 Muse Spark
-  calls, well under $1) to write `evals/results/latest.json`; (3) `git add evals/results/latest.json`,
-  commit, push, open the PR; (4) check the six CI jobs. The committed `latest.json` must keep the
-  conservative dataset label (synthetic typed answers, implementer-scored, not held out).
+- **B08 · finished 3 Nov (second session), PR #6.** The integration suite (62 tests) wrote the
+  permission harness file; the live `pnpm eval:dev` over the 12 in-repo cases (12 calls, $0.17)
+  wrote `evals/results/latest.json`, committed with the conservative dataset label. Four tests
+  committed by the first session had not run green (interval and money formatters, numerals in
+  `SuiteSection.tsx`, the empty-state log check); fixed in `1b743a2`, described in the PR.
 - **B08 · `.env.example` could not be edited** (permission settings deny `.env*`). Please add:
   `EVAL_DATASET_LABEL=`, `EVAL_HELD_OUT=`, `EVAL_NOT_YET=`, `EVAL_PRIVACY_FILE=` (all eval-only;
   documented in `apps/api/src/evals/run.ts`).
