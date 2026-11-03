@@ -5,8 +5,7 @@ import { calendar as fetchCalendar, decideEvent, getInput } from '../../../api/p
 import { RequireRole } from '../../../app/RequireRole'
 import { CalendarEventRow } from '../../../components/CalendarEventRow'
 import { FormError } from '../../../components/Form'
-import { LearnerLinks } from '../../../components/LearnerLinks'
-import { Page } from '../../../components/Page'
+import { LearnerShell } from '../../../components/LearnerShell'
 import { StatusChip } from '../../../components/StatusChip'
 
 /**
@@ -88,7 +87,7 @@ function CalendarScreen() {
   const confirmed = (events ?? []).filter((event) => event.status === 'confirmed')
 
   return (
-    <Page footer={<LearnerLinks />}>
+    <LearnerShell>
       <h1 className="text-display font-semibold text-balance">Calendar</h1>
       {noticeState && NOTICE_MESSAGE[noticeState] ? (
         <p role="status" aria-live="polite" className="rounded-card bg-surface p-3">
@@ -134,6 +133,6 @@ function CalendarScreen() {
         </ul>
       </section>
       <FormError error={error} />
-    </Page>
+    </LearnerShell>
   )
 }

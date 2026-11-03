@@ -75,13 +75,18 @@ function TodayScreen() {
         <h1 className="text-display font-semibold text-balance">Hi {today.nickname}</h1>
         {today.exam ? (
           <p>
-            <span className="inline-flex items-center gap-2 rounded-full bg-surface px-3 py-1 text-sm font-medium">
+            <Link to="/calendar" className="inline-flex items-center gap-2 rounded-full bg-surface px-3 py-1 text-sm font-medium text-fg no-underline">
               <span aria-hidden="true">◷</span>
               {today.exam.title} · <span className="tnum">{daysWord(today.exam.daysAway)}</span>
               <span className="text-fg-muted">({shortDate(today.exam.onDate)})</span>
-            </span>
+              <span className="sr-only">, open the calendar</span>
+            </Link>
           </p>
-        ) : null}
+        ) : (
+          <p className="text-sm text-fg-muted">
+            No exam dates yet. <Link to="/calendar">Calendar</Link>
+          </p>
+        )}
       </div>
 
       {checkIn ? <CheckInCard check={checkIn} more={today.checkIns.length - 1} /> : null}
