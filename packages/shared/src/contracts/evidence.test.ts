@@ -6,6 +6,7 @@ import {
   formatDate,
   formatDateRange,
   formatInterval,
+  formatLatency,
   formatMs,
   formatPercent,
   formatRatio,
@@ -81,6 +82,7 @@ describe('formatters', () => {
   it('formats latency, money and dates', () => {
     expect(formatMs(850)).toBe('850 ms')
     expect(formatMs(14200)).toBe('14.2 s')
+    expect(formatLatency({ p50: 14200, p95: 23100 })).toBe('p50 14.2 s · p95 23.1 s')
     expect(formatUsd(0.0042)).toBe('$0.0042')
     expect(formatUsd(0.0615)).toBe('$0.062')
     expect(formatUsd(1.5)).toBe('$1.50')

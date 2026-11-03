@@ -106,11 +106,31 @@ const ONE_DECIMAL_BELOW = 10
 const MS_PER_SECOND = 1000
 const CENT = 0.01
 
+const fixedFormats = new Map<number, Intl.NumberFormat>()
+
+/**
+ * `value` to exactly `digits` decimals, rounded half up on the decimal value: `toFixed`
+ * rounds the binary one, so 0.0615 would show as "0.061".
+ */
+function fixed(value: number, digits: number): string {
+  let format = fixedFormats.get(digits)
+  if (!format) {
+    format = new Intl.NumberFormat('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits, useGrouping: false })
+    fixedFormats.set(digits, format)
+  }
+  return format.format(value)
+}
+
+/** The number part of a percentage: one decimal below 10, whole numbers above. */
+function percentNumber(fraction: number): string {
+  const value = fraction * PERCENT
+  if (value === 0 || value >= ONE_DECIMAL_BELOW) return fixed(value, 0)
+  return fixed(value, 1)
+}
+
 /** A fraction in [0, 1] as a percentage: one decimal below 10%, whole numbers above. */
 export function formatPercent(fraction: number): string {
-  const value = fraction * PERCENT
-  if (value === 0 || value >= ONE_DECIMAL_BELOW) return `${Math.round(value)}%`
-  return `${value.toFixed(1)}%`
+  return `${percentNumber(fraction)}%`
 }
 
 /** "9 of 12". */
@@ -118,11 +138,11 @@ export function formatCount(ratio: EvidenceRatio): string {
   return `${ratio.n} of ${ratio.d}`
 }
 
-/** "47–91%", or null when there is no denominator. */
+/** "47–91%" (one sign, on the high end), or null when there is no denominator. */
 export function formatInterval(ratio: EvidenceRatio): string | null {
   if (!ratio.ci95) return null
   const [low, high] = ratio.ci95
-  return `${formatPercent(low)}–${formatPercent(high)}`
+  return `${percentNumber(low)}–${formatPercent(high)}`
 }
 
 /** "9 of 12 (75%; 95% CI 47–91%)", or "0 of 0 (no cases)". */
@@ -134,15 +154,20 @@ export function formatRatio(ratio: EvidenceRatio): string {
 
 /** "14.2 s" at a second or more, else "850 ms". */
 export function formatMs(ms: number): string {
-  if (ms >= MS_PER_SECOND) return `${(ms / MS_PER_SECOND).toFixed(1)} s`
-  return `${Math.round(ms)} ms`
+  if (ms >= MS_PER_SECOND) return `${fixed(ms / MS_PER_SECOND, 1)} s`
+  return `${fixed(ms, 0)} ms`
+}
+
+/** "p50 14.2 s · p95 23.1 s": the page shows latency only through this, so it holds no numerals. */
+export function formatLatency(latency: NonNullable<EvidenceSuite['latency_ms']>): string {
+  return `${P50_LABEL} ${formatMs(latency.p50)} · ${P95_LABEL} ${formatMs(latency.p95)}`
 }
 
 /** "$0.0123" below a cent, "$0.123" below a dollar, "$1.23" above. */
 export function formatUsd(usd: number): string {
-  if (usd < CENT) return `$${usd.toFixed(4)}`
-  if (usd < 1) return `$${usd.toFixed(3)}`
-  return `$${usd.toFixed(2)}`
+  if (usd < CENT) return `$${fixed(usd, 4)}`
+  if (usd < 1) return `$${fixed(usd, 3)}`
+  return `$${fixed(usd, 2)}`
 }
 
 const DAY_MONTH = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })

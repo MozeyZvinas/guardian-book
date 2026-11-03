@@ -58,7 +58,9 @@ describe('GET /api/evidence', () => {
     expect(res.status).toBe(200)
     expect(res.body).toEqual({ evidence: null })
     expect(res.headers['cache-control']).toBe('no-store')
-    expect(lines.filter((line) => line.includes('evidence'))).toEqual([])
+    // The request log (info) is expected; a missing file must raise nothing above it.
+    const aboveInfo = lines.map((line) => JSON.parse(line) as { level: string }).filter((entry) => entry.level !== 'info')
+    expect(aboveInfo).toEqual([])
   })
 
   it('serves exactly the file, and changing the file changes the answer', async () => {

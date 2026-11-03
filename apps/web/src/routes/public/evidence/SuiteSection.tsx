@@ -1,10 +1,8 @@
 import {
   CI_LABEL,
-  P50_LABEL,
-  P95_LABEL,
   formatCount,
   formatInterval,
-  formatMs,
+  formatLatency,
   formatPercent,
   formatUsd,
   type EvidenceMetric,
@@ -112,14 +110,12 @@ export function SuiteSection({ suite }: { suite: EvidenceSuite }) {
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
         <dt className="text-fg-muted">Checks blocked</dt>
         <dd className="m-0 tnum">
-          {blocked.length === 0 ? 'none' : blocked.map(([code, count]) => `${code} × ${count}`).join(' · ')}
+          {blocked.length ? blocked.map(([code, count]) => `${code} × ${count}`).join(' · ') : 'none'}
         </dd>
         {suite.latency_ms ? (
           <>
             <dt className="text-fg-muted">Latency</dt>
-            <dd className="m-0 tnum">
-              {P50_LABEL} {formatMs(suite.latency_ms.p50)} · {P95_LABEL} {formatMs(suite.latency_ms.p95)}
-            </dd>
+            <dd className="m-0 tnum">{formatLatency(suite.latency_ms)}</dd>
           </>
         ) : null}
         {suite.cost ? (
