@@ -1,0 +1,55 @@
+{
+  "slug": "alg-12-nature-of-roots",
+  "topic": "Algebra: nature of roots",
+  "skill_tags": ["discriminant", "nature-of-roots"],
+  "prompt_md": "For which value(s) of $k$ will the equation\n\n$$x^2 + 6x + k = 0$$\n\nhave **equal** roots? Show your reasoning.",
+  "diagram_key": null,
+  "max_marks": 5,
+  "author": "Guardian Book planning session (original item, written for this build)",
+  "reviewer": "pending",
+  "reviewed_at": null,
+  "source": "original",
+  "provenance": "original_human",
+  "guideline_steps": [
+    {
+      "step_no": 1,
+      "step_type": "M",
+      "criterion": "States the condition for equal roots: the discriminant $\\Delta = b^2 - 4ac$ must equal $0$.",
+      "marks": 1,
+      "skill_tag": "nature-of-roots",
+      "notes": "A written statement is required (a condition must be stated, not implied)."
+    },
+    {
+      "step_no": 2,
+      "step_type": "M",
+      "criterion": "Identifies $a = 1$, $b = 6$, $c = k$ and substitutes into the discriminant.",
+      "marks": 1,
+      "skill_tag": "discriminant",
+      "notes": "Implicit values count: visible substitution $36 - 4k$ earns this mark without a separate list."
+    },
+    {
+      "step_no": 3,
+      "step_type": "A",
+      "criterion": "Correct expression: $36 - 4k = 0$.",
+      "marks": 1,
+      "skill_tag": "discriminant",
+      "notes": null
+    },
+    {
+      "step_no": 4,
+      "step_type": "CA",
+      "criterion": "Solves the resulting linear equation for $k$.",
+      "marks": 1,
+      "skill_tag": "discriminant",
+      "notes": "Consistent accuracy: follow-through from an incorrect step 3 expression still earns this mark."
+    },
+    {
+      "step_no": 5,
+      "step_type": "A",
+      "criterion": "Final answer: $k = 9$.",
+      "marks": 1,
+      "skill_tag": "nature-of-roots",
+      "notes": null
+    }
+  ]
+}
