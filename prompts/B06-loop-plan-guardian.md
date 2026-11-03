@@ -75,5 +75,5 @@ and web routes `apps/web/src/routes/learner/{fix,item}` and `apps/web/src/routes
 | CI | All six jobs green |
 
 ## Git
-Worktree branch `b06-loop-plan-guardian` (`fable -w b06`). Small commits; push; PR; stop
+Worktree branch `b06-loop-plan-guardian` (worktree `.claude/worktrees/b06`; see START-HERE). Small commits; push; PR; stop
 when CI has finished. Do not merge.

@@ -69,5 +69,5 @@ folders (inputs, assessment, calendar, modelRuns, storage, bring, attempt, calen
 | CI | All six jobs green |
 
 ## Git
-Worktree branch `b05-profile-today-brain` (`fable -w b05`). Small commits; push; PR with the
+Worktree branch `b05-profile-today-brain` (worktree `.claude/worktrees/b05`; see START-HERE). Small commits; push; PR with the
 completion report; stop when CI has finished. Do not merge.

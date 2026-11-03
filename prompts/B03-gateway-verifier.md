@@ -120,7 +120,7 @@ create database tables or routes that need auth; B02 owns the schema. Persisting
 `pnpm eval:dev` (mocked), the live smoke summary, the CI run link.
 
 ## Git
-Worktree branch `b03-gateway-verifier` (created by `fable -w b03`). Small commits.
+Worktree branch `b03-gateway-verifier` (worktree `.claude/worktrees/b03`, created with git; see START-HERE). Small commits.
 `git push -u origin b03-gateway-verifier`. `gh pr create --base main`. **Do not merge.**
 
 ## Completion report (PR body)

@@ -40,4 +40,4 @@
 | CI | All six jobs green |
 
 ## Git
-Branch `b08-proof-page` (`fable -w b08`). PR; stop when CI has finished. Do not merge.
+Branch `b08-proof-page` (worktree `.claude/worktrees/b08`; see START-HERE). PR; stop when CI has finished. Do not merge.

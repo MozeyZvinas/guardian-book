@@ -122,7 +122,7 @@
 `pnpm typecheck`, `pnpm lint`, `pnpm build`, the CI run link.
 
 ## Git
-Worktree branch `b02-data-auth-circle` (created by `fable -w b02`). Small commits.
+Worktree branch `b02-data-auth-circle` (worktree `.claude/worktrees/b02`, created with git; see START-HERE). Small commits.
 `git push -u origin b02-data-auth-circle`. `gh pr create --base main` with the completion
 report as the body. **Do not merge. Stop when the PR is open and CI has finished.**
 

@@ -89,5 +89,5 @@ and web routes `apps/web/src/routes/learner/{bring,attempt,calendar}` and
 | CI | All six jobs green |
 
 ## Git
-Worktree branch `b04-bring-assess-notice` (`fable -w b04`). Small commits; push; PR with the
+Worktree branch `b04-bring-assess-notice` (worktree `.claude/worktrees/b04`; see START-HERE). Small commits; push; PR with the
 completion report; stop when CI has finished. Do not merge.

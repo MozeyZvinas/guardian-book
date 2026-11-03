@@ -66,5 +66,5 @@ folders (plans, resources, guardian routes, fix/check, learner fix and item scre
 | CI | All six jobs green |
 
 ## Git
-Worktree branch `b07-teacher-space` (`fable -w b07`). Small commits; push; PR; stop when CI has
+Worktree branch `b07-teacher-space` (worktree `.claude/worktrees/b07`; see START-HERE). Small commits; push; PR; stop when CI has
 finished. Do not merge.
