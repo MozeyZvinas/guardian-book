@@ -29,8 +29,8 @@ edit, and make targeted edits only.
 
 | ID | Task | Due | Status |
 |---|---|---|---|
-| C1 | Content pack v1: 12 original CAPS Grade 12-style items, 3 topics, with M/A/CA marking guidelines and skill tags (teacher verifies); loaded from a directory outside the repo (`CONTENT_DIR`) | Draft 31 Oct; verified 1 Nov | todo |
-| C4 | Vetted resource list (Siyavula CC BY sections with attribution; free first) and two fictional school notices for the demo | 1 Nov | todo |
+| C1 | Content pack v1: 12 original CAPS Grade 12-style items, 3 topics, with M/A/CA marking guidelines and skill tags (teacher verifies); loaded from a directory outside the repo (`CONTENT_DIR`) | Draft 31 Oct; verified 1 Nov | drafted 3 Nov (12 items: algebra, sequences, calculus; 18 skill tags; 34 automated maths checks pass; factorising in 5 items for fix → check alone → retention); **teacher sign-off pending** (printable review sheet ready) |
+| C4 | Vetted resource list (Siyavula CC BY sections with attribution; free first) and two fictional school notices for the demo | 1 Nov | done 3 Nov: 23 resources fetched and checked (Siyavula CC BY 3.0 or link-only; 3 for parents; Khan not verifiable), 2 notices (PDF + PNG), 2 consent forms for F5 |
 | C5 | Dev eval cases (`EVAL_DIR`): 10 typed + volunteer photos; held-out set frozen 1 Nov 12:00 (D34) | 1 Nov | todo |
 | C2 | Specs 01–04, B01 brief, CLAUDE.md, decisions D17–D27 | 27 Oct | done (awaiting push) |
 | C3 | Briefs B02–B03 | 31 Oct | done |
