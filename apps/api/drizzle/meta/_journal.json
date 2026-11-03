@@ -22,6 +22,13 @@
       "when": 1793725650755,
       "tag": "0002_append_only",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793735035987,
+      "tag": "0003_b04_inputs_attempts",
+      "breakpoints": true
     }
   ]
 }
