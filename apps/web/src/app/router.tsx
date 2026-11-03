@@ -26,6 +26,26 @@ export const router = createBrowserRouter([
     errorElement: <RouteError />,
   },
   {
+    path: '/bring',
+    lazy: () => import('../routes/learner/bring/Bring').then((m) => ({ Component: m.Bring })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/attempts/:id',
+    lazy: () => import('../routes/learner/attempt/Attempt').then((m) => ({ Component: m.Attempt })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/calendar',
+    lazy: () => import('../routes/learner/calendar/Calendar').then((m) => ({ Component: m.Calendar })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/teacher/classes/:id/notice',
+    lazy: () => import('../routes/teacher/notice/Notice').then((m) => ({ Component: m.TeacherNotice })),
+    errorElement: <RouteError />,
+  },
+  {
     path: '/guardian/link',
     lazy: () => import('../routes/guardian/Link').then((m) => ({ Component: m.GuardianLink })),
     errorElement: <RouteError />,
