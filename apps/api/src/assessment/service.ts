@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, isNull, lt } from 'drizzle-orm'
 import {
+  evidencePayload,
   provenanceColumns,
   workCheckOutputSchema,
   type AssessedStep,
@@ -204,12 +205,23 @@ interface WriteAssessmentInput {
 const confidenceToReal = (confidence: Confidence | null): number | null =>
   confidence === null ? null : confidence === 'high' ? 1 : confidence === 'medium' ? 0.5 : 0
 
+/**
+ * What the `assessed` event tells the Brain (B05's `evidencePayload`, the one shape that
+ * moves skill state, D37): the tags of fully earned steps and the tags of steps that lost
+ * marks, each de-duplicated and in step order. A tag in both lists counts as lost.
+ */
+export function assessedSkills(steps: readonly Pick<StoredStep, 'skill_tag' | 'awarded' | 'available'>[]): { skillsCorrect: string[]; skillsLost: string[] } {
+  const skillsCorrect = [...new Set(steps.filter((step) => step.awarded >= step.available).map((step) => step.skill_tag))]
+  const skillsLost = [...new Set(steps.filter((step) => step.awarded < step.available).map((step) => step.skill_tag))]
+  return { skillsCorrect, skillsLost }
+}
+
 /** Writes the assessment row once, the `assessed` event, and clears the in-progress flag, in one transaction. */
 export async function writeAssessment(db: Db, input: WriteAssessmentInput): Promise<string> {
   const allHigh = input.steps.length > 0 && input.steps.every((step) => step.confidence === 'high')
   const basis = input.status === 'proposed' && allHigh ? 'model_high' : 'none'
   const lost = input.steps.filter((step) => step.awarded < step.available)
-  const lostSkills = [...new Set(lost.map((step) => step.skill_tag))]
+  const { skillsCorrect, skillsLost } = assessedSkills(input.steps)
   const provenance =
     input.modelRunId && input.provenanceModel
       ? provenanceColumns('model_output', {
@@ -248,14 +260,16 @@ export async function writeAssessment(db: Db, input: WriteAssessmentInput): Prom
       itemId: input.attempt.itemId,
       skillTag: lost[0]?.skill_tag ?? null,
       basis,
-      payload: {
-        status: input.status,
-        total: input.total,
-        max_marks: input.steps.reduce((acc, step) => acc + step.available, 0),
-        lost_skills: lostSkills,
-        mode: input.attempt.mode,
-        all_high: allHigh,
-      },
+      payload: evidencePayload(
+        { skills_correct: skillsCorrect, skills_lost: skillsLost, mode: input.attempt.mode },
+        {
+          status: input.status,
+          total: input.total,
+          max_marks: input.steps.reduce((acc, step) => acc + step.available, 0),
+          lost_skills: skillsLost,
+          all_high: allHigh,
+        },
+      ),
     })
     await tx.update(attempts).set({ assessingStartedAt: null }).where(eq(attempts.id, input.attempt.id))
     await recordAudit(tx, {

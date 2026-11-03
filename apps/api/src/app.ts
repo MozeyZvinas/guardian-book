@@ -20,6 +20,7 @@ import { circleRouter } from './routes/circle.js'
 import { healthzRouter } from './routes/healthz.js'
 import { itemsRouter } from './routes/items.js'
 import { meRouter } from './routes/me.js'
+import { learnerSpaceRouter } from './routes/me/index.js'
 import { webStatic } from './static.js'
 import { createStorage, type Storage } from './storage/index.js'
 
@@ -35,7 +36,7 @@ export interface AppOptions {
   db?: Db | null
   /** Better Auth, when the database and `BETTER_AUTH_*` are configured. */
   auth?: Auth | null
-  /** The model gateway; built from `config.meta` by default (unconfigured = every call refused, no crash). */
+  /** The model gateway (a scripted one in tests); built from `config.meta` by default (unconfigured = every call refused, no crash). */
   gateway?: Gateway
   /** Private object storage; built from `config.bucket` by default (null = uploads answer 503). */
   storage?: Storage | null
@@ -45,7 +46,19 @@ export interface AppOptions {
 }
 
 /** Route prefixes that need the database; with none configured they answer 503, not 404. */
-const API_PREFIXES = ['/api/auth', '/api/me', '/api/teacher', '/api/learner', '/api/guardian', '/api/items', '/api/schools', '/api/inputs', '/api/attempts', '/api/calendar']
+const API_PREFIXES = [
+  '/api/auth',
+  '/api/me',
+  '/api/teacher',
+  '/api/learner',
+  '/api/learners',
+  '/api/guardian',
+  '/api/items',
+  '/api/schools',
+  '/api/inputs',
+  '/api/attempts',
+  '/api/calendar',
+]
 
 function errorHandler(logger: Logger): ErrorRequestHandler {
   return (err: unknown, req, res, _next) => {
@@ -95,9 +108,6 @@ export function createApp(options: AppOptions): Express {
 
     app.use('/api', express.json({ limit: '1mb' }))
     app.use('/api', attachSession(auth, db))
-    app.use(meRouter(db))
-    app.use(circleRouter(db))
-    app.use(itemsRouter(db))
     const practice: PracticeDeps = {
       db,
       gateway,
@@ -107,6 +117,10 @@ export function createApp(options: AppOptions): Express {
       jobs: options.jobs ?? new JobRegistry(logger),
       now: options.now ?? (() => new Date()),
     }
+    app.use(meRouter(db))
+    app.use(learnerSpaceRouter(practice))
+    app.use(circleRouter(db))
+    app.use(itemsRouter(db))
     app.use(inputsRouter(practice))
     app.use(attemptsRouter(practice))
     app.use(calendarRouter(practice))

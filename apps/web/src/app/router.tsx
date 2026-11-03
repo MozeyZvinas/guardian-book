@@ -20,9 +20,25 @@ export const router = createBrowserRouter([
     lazy: () => import('../routes/public/SignIn').then((m) => ({ Component: m.SignIn })),
     errorElement: <RouteError />,
   },
+  // Learner space (spec 05 §4.2): L1 Today, L0 setup, L6 Brain, L8 Me.
+  {
+    path: '/today',
+    lazy: () => import('../routes/learner/today/Today').then((m) => ({ Component: m.Today })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/me/setup',
+    lazy: () => import('../routes/learner/setup/Setup').then((m) => ({ Component: m.Setup })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/brain',
+    lazy: () => import('../routes/learner/brain/Brain').then((m) => ({ Component: m.Brain })),
+    errorElement: <RouteError />,
+  },
   {
     path: '/me',
-    lazy: () => import('../routes/me/Me').then((m) => ({ Component: m.Me })),
+    lazy: () => import('../routes/learner/me/Me').then((m) => ({ Component: m.Me })),
     errorElement: <RouteError />,
   },
   {

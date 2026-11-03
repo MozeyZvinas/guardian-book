@@ -7,8 +7,7 @@ import { RequireRole } from '../../../app/RequireRole'
 import { CaptureSheet, type Capture } from '../../../components/CaptureSheet'
 import { Button, Card, FormError } from '../../../components/Form'
 import { KindChips } from '../../../components/KindChip'
-import { LearnerLinks } from '../../../components/LearnerLinks'
-import { Page } from '../../../components/Page'
+import { LearnerShell } from '../../../components/LearnerShell'
 import { StatusChip } from '../../../components/StatusChip'
 
 /**
@@ -123,7 +122,7 @@ function BringScreen() {
   }
 
   return (
-    <Page footer={<LearnerLinks />}>
+    <LearnerShell>
       <h1 className="text-display font-semibold text-balance">Bring anything</h1>
       <p className="text-fg-muted">Homework, a school notice, or a question about a step. One photo, or type it.</p>
 
@@ -205,6 +204,6 @@ function BringScreen() {
           Photos are stored privately and stripped of location data. Your parent never sees your work or your photos. <Link to="/calendar">Calendar</Link>
         </p>
       ) : null}
-    </Page>
+    </LearnerShell>
   )
 }

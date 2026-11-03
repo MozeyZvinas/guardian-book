@@ -2,7 +2,9 @@ import type { RequestHandler } from 'express'
 
 /**
  * Security headers, set by hand (no dependency). Same-origin app: scripts, styles, fonts
- * and API calls all come from 'self'; images may also be data: URIs.
+ * and API calls all come from 'self'; images may also be data: URIs. Inline `style`
+ * attributes are allowed because KaTeX (D37) lays maths out with them; scripts stay 'self'
+ * only, and no route ever renders raw HTML.
  */
 export const CONTENT_SECURITY_POLICY = contentSecurityPolicy([])
 
@@ -10,6 +12,7 @@ export const CONTENT_SECURITY_POLICY = contentSecurityPolicy([])
 export function contentSecurityPolicy(imageOrigins: string[]): string {
   return [
     "default-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
     `img-src 'self' data:${imageOrigins.map((origin) => ` ${origin}`).join('')}`,
     "object-src 'none'",
     "base-uri 'self'",
