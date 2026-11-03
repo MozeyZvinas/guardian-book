@@ -88,6 +88,17 @@ describe('outcomesOf', () => {
     ])
   })
 
+  it('the arrays decide when present, even with a headline skill_tag on the event (B04’s assessed event)', () => {
+    // B04 sets `skill_tag` to the first lost skill; the arrays carry every step's outcome.
+    const assessed = outcomesOf(event({ skill: 'solve', skillsCorrect: ['factorise'], skillsLost: ['solve'], mode: 'independent' }))
+    expect(assessed).toEqual([
+      { skillTag: 'factorise', correct: true, mode: 'independent', sure: null },
+      { skillTag: 'solve', correct: false, mode: 'independent', sure: null },
+    ])
+    // Empty arrays (nothing earned, nothing lost) count nothing, and `correct` is not consulted.
+    expect(outcomesOf(event({ skill: 'solve', correct: true, skillsCorrect: [], skillsLost: [] }))).toEqual([])
+  })
+
   it('defaults the mode by kind and lets the payload override it', () => {
     expect(outcomesOf(event({ kind: 'independent_check_completed', correct: true }))[0]?.mode).toBe('independent')
     expect(outcomesOf(event({ kind: 'retention_check_completed', correct: true }))[0]?.mode).toBe('retention')

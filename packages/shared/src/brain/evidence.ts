@@ -8,10 +8,12 @@ import type { EventBasis, EventPayload, LearningEventKind } from '../contracts/e
  * assess path, B06's fix-it and check-alone flows, B07's reviews) build the payload with
  * `evidencePayload(...)` so the shape stays one thing:
  *
- * - one skill per event: `skill_tag` set on the event and `correct: true | false` in the
- *   payload; or
- * - one event per attempt: `skill_tag` null and `skills_correct` / `skills_lost` arrays of
- *   tags in the payload (both may be present; a tag in both counts as lost).
+ * - one event per attempt: `skills_correct` / `skills_lost` arrays of tags in the payload
+ *   (both may be present; a tag in both counts as lost). The event's `skill_tag` may still
+ *   name a headline skill for the timeline (B04's `assessed` puts the first lost one there);
+ *   the arrays decide what is counted; or
+ * - one skill per event: no arrays, `skill_tag` set on the event and `correct: true | false`
+ *   in the payload.
  *
  * `mode` (assisted / independent / retention) defaults by kind and may be set explicitly.
  * `sure` records what the learner said about their own answer before seeing the result
@@ -105,7 +107,9 @@ export function outcomesOf(event: BrainEvent): SkillOutcome[] {
   const sureValue = event.payload['sure']
   const sure = typeof sureValue === 'boolean' ? sureValue : null
 
-  if (event.skillTag) {
+  const hasArrays = Array.isArray(event.payload['skills_correct']) || Array.isArray(event.payload['skills_lost'])
+  if (!hasArrays) {
+    if (!event.skillTag) return []
     const correct = event.payload['correct']
     if (typeof correct !== 'boolean') return []
     return [{ skillTag: event.skillTag, correct, mode, sure }]
