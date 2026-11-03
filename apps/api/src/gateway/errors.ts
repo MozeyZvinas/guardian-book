@@ -27,10 +27,20 @@ export type GatewayErrorCode =
   /** A connection-level failure (DNS, reset) that is not a timeout. */
   | 'network'
 
+export interface GatewayErrorSpend {
+  inputTokens: number
+  cachedInputTokens: number
+  outputTokens: number
+  costUsd: number
+  latencyMs: number
+}
+
 export interface GatewayErrorOptions {
   status?: number | null
   requestId?: string | null
   attempts?: number
+  /** Set when the provider answered and billed us, but the answer was unusable. */
+  spend?: GatewayErrorSpend | null
   cause?: unknown
 }
 
@@ -41,6 +51,8 @@ export class GatewayError extends Error {
   readonly requestId: string | null
   /** How many transport attempts were made before giving up (0 when none was started). */
   readonly attempts: number
+  /** Tokens, cost and latency of the unusable answer, so the spend is still recorded. */
+  readonly spend: GatewayErrorSpend | null
 
   constructor(code: GatewayErrorCode, message: string, options: GatewayErrorOptions = {}) {
     super(message, options.cause === undefined ? undefined : { cause: options.cause })
@@ -48,6 +60,7 @@ export class GatewayError extends Error {
     this.status = options.status ?? null
     this.requestId = options.requestId ?? null
     this.attempts = options.attempts ?? 0
+    this.spend = options.spend ?? null
   }
 }
 

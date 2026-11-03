@@ -106,6 +106,17 @@ describe('verifiedCall', () => {
     expect(scripted.requests).toHaveLength(2)
   })
 
+  it('records the spend of a truncated (unusable) answer on the failed run', async () => {
+    const { gateway } = setup([okResponse('', { finishReason: 'length', promptTokens: 1000, completionTokens: 2500, requestId: 'req_cut' })])
+    const result = await verifiedCall({ ...base, gateway })
+    expect(result.status).toBe('failed')
+    expect(result.error?.code).toBe('invalid_output')
+    expect(result.runs[0]?.usage).toEqual({ inputTokens: 1000, cachedInputTokens: 0, outputTokens: 2500 })
+    expect(result.runs[0]?.costUsd).toBeCloseTo(0.011875, 8)
+    expect(result.runs[0]?.requestId).toBe('req_cut')
+    expect(result.totalCostUsd).toBeCloseTo(0.011875, 8)
+  })
+
   it('returns failed on a timeout with no mark invented', async () => {
     const { gateway } = setup([{ ok: false, kind: 'timeout' }])
     const result = await verifiedCall({ ...base, gateway })

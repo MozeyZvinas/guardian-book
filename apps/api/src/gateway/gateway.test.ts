@@ -197,8 +197,12 @@ describe('createGateway', () => {
     const { gateway: refused } = gatewayWith([refusal])
     await expectGatewayError(refused.callStructured(params), 'invalid_output')
 
-    const { gateway: truncated } = gatewayWith([okResponse(goodOutput, { finishReason: 'length' })])
-    await expectGatewayError(truncated.callStructured(params), 'invalid_output')
+    const { gateway: truncated } = gatewayWith([okResponse('', { finishReason: 'length', promptTokens: 1444, completionTokens: 2500, requestId: 'req_cut' })])
+    const cut = await expectGatewayError(truncated.callStructured(params), 'invalid_output')
+    expect(cut.message).toContain('max_tokens')
+    expect(cut.requestId).toBe('req_cut')
+    // The call was billed even though it was unusable: the spend travels with the error.
+    expect(cut.spend).toEqual({ inputTokens: 1444, cachedInputTokens: 0, outputTokens: 2500, costUsd: 0.01243, latencyMs: expect.any(Number) })
 
     const { gateway: noChoices } = gatewayWith([{ ok: true, status: 200, requestId: 'r', body: { choices: [] } }])
     await expectGatewayError(noChoices.callStructured(params), 'invalid_output')

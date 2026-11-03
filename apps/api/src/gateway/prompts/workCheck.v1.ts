@@ -12,8 +12,15 @@ import type { ImageInput } from '../transport.js'
  */
 
 export const WORK_CHECK_PROMPT_VERSION = 'work-check-v1' as const
-export const WORK_CHECK_MAX_TOKENS = 2_500
-export const WORK_CHECK_TIMEOUT_MS = 60_000
+/**
+ * Output budget. Live smoke, 3 Nov 2026 (`muse-spark-1.3`): the model reasons before it
+ * writes the JSON and the reasoning is billed as output tokens: 1,252 and 1,683 on two
+ * correct answers; more than 2,500 (cut off, empty content) on two wrong ones. The JSON
+ * itself is about 400 tokens. 6,000 leaves room for a hard case at about $0.026 worst case.
+ */
+export const WORK_CHECK_MAX_TOKENS = 6_000
+/** Observed 12–23 s per call at up to 2,500 output tokens; the budget above needs longer. */
+export const WORK_CHECK_TIMEOUT_MS = 90_000
 
 export type AttemptMode = 'assisted' | 'independent' | 'retention'
 

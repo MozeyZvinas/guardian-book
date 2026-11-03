@@ -180,21 +180,28 @@ export function createGateway(options: GatewayOptions): Gateway {
           finishReason: choice?.finish_reason ?? null,
         }
 
+        // The provider answered and billed us; an unusable answer still records its spend.
+        const spend = { ...usage, costUsd: cost, latencyMs }
+        const unusable = (message: string): GatewayError =>
+          new GatewayError('invalid_output', message, { status: result.status, requestId, attempts: attempt, spend })
+
         const content = choice?.message.content
+        // Observed 3 Nov 2026: Muse Spark spends output tokens reasoning before the JSON; when
+        // max_tokens runs out first, finish_reason is "length" and content is empty.
+        if (choice?.finish_reason === 'length') {
+          logger.warn('model call: truncated by max_tokens', { ...logBase, ...usageFields, maxTokens: params.maxTokens })
+          throw unusable('The model output was cut off by max_tokens.')
+        }
         if (!choice || choice.message.refusal || typeof content !== 'string' || content.length === 0) {
           logger.warn('model call: no content', { ...logBase, ...usageFields, refused: Boolean(choice?.message.refusal) })
-          throw new GatewayError('invalid_output', 'The model returned no JSON content.', { status: result.status, requestId, attempts: attempt })
-        }
-        if (choice.finish_reason === 'length') {
-          logger.warn('model call: truncated', { ...logBase, ...usageFields })
-          throw new GatewayError('invalid_output', 'The model output was cut off by max_tokens.', { status: result.status, requestId, attempts: attempt })
+          throw unusable('The model returned no JSON content.')
         }
         let output: unknown
         try {
           output = JSON.parse(content)
         } catch {
           logger.warn('model call: content is not JSON', { ...logBase, ...usageFields })
-          throw new GatewayError('invalid_output', 'The model content was not valid JSON.', { status: result.status, requestId, attempts: attempt })
+          throw unusable('The model content was not valid JSON.')
         }
 
         logger.info('model call', { ...logBase, ...usageFields, totalLatencyMs: now() - startedAt })
