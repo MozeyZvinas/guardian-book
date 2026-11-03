@@ -322,6 +322,12 @@ export const attempts = pgTable(
     imageKey: text('image_key'),
     parentAttemptId: uuid('parent_attempt_id'),
     idempotencyKey: text('idempotency_key').notNull(),
+    /**
+     * Set when a background assessment starts (B04): `GET /api/attempts/:id` answers
+     * `assessing` while it is set and no assessment row exists; the boot sweep marks any
+     * attempt stuck here for more than 5 minutes `uncertain`. Cleared when the run ends.
+     */
+    assessingStartedAt: timestamp('assessing_started_at', { withTimezone: true }),
     ...provenanceColumns(),
     createdAt: createdAt(),
   },
@@ -488,10 +494,14 @@ export const inputs = pgTable(
     text: text('text'),
     objectKey: text('object_key'),
     attemptId: uuid('attempt_id').references(() => attempts.id),
+    /** Replaying `POST /api/inputs` with the same key returns the same input: no second upload, no second model call (B04). */
+    idempotencyKey: text('idempotency_key').notNull(),
     ...provenanceColumns(),
     createdAt: createdAt(),
   },
   (t) => [
+    unique('inputs_learner_idempotency').on(t.learnerId, t.idempotencyKey),
+    index('inputs_learner_created_idx').on(t.learnerId, t.createdAt),
     check('inputs_text_len', sql`char_length(${t.text}) <= 4000`),
     check(
       'inputs_text_xor_object',

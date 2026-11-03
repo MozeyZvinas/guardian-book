@@ -123,7 +123,9 @@ describe('item file', () => {
     expect(itemFileSchema.safeParse(item).success).toBe(true)
     expect(itemFileSchema.safeParse({ ...item, max_marks: 4 }).success).toBe(false)
     expect(itemFileSchema.safeParse({ ...item, source: 'dbe' }).success).toBe(false)
-    expect(itemFileSchema.safeParse({ ...item, provenance: 'model_generated' }).success).toBe(false)
+    // AI-drafted items load while unreviewed (B04 §0); a reviewed one says teacher_verified.
+    expect(itemFileSchema.safeParse({ ...item, provenance: 'model_generated', reviewer: 'pending' }).success).toBe(true)
+    expect(itemFileSchema.safeParse({ ...item, provenance: 'model_generated', reviewer: 'Ms Dlamini' }).success).toBe(false)
     const badType = { ...item, guideline_steps: [{ ...item.guideline_steps[0], step_type: 'B', marks: 3 }] }
     expect(itemFileSchema.safeParse(badType).success).toBe(false)
   })

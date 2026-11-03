@@ -13,6 +13,14 @@ export type AuditAction =
   | 'content.loaded'
   | 'seed.run'
   | 'access.admin_read'
+  // B04
+  | 'input.created'
+  | 'input.kind_changed'
+  | 'attempt.created'
+  | 'attempt.assess_started'
+  | 'attempt.assessed'
+  | 'attempt.assess_refused'
+  | 'calendar.decided'
 
 export interface AuditInput {
   actorId: string | null
