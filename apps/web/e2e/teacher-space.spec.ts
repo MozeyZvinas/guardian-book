@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test'
+import { expect, test, type APIRequestContext, type Page, type PlaywrightWorkerArgs } from '@playwright/test'
 
 /**
  * The teacher space at 1440×900 (brief B07 §6): approve a guideline → review → correct a
@@ -17,7 +17,7 @@ async function signIn(page: Page, email: string, home: RegExp) {
   await expect(page).toHaveURL(home)
 }
 
-async function apiAs(playwright: typeof import('@playwright/test'), baseURL: string, email: string): Promise<APIRequestContext> {
+async function apiAs(playwright: PlaywrightWorkerArgs['playwright'], baseURL: string, email: string): Promise<APIRequestContext> {
   const api = await playwright.request.newContext({ baseURL, extraHTTPHeaders: { Origin: baseURL } })
   const res = await api.post('/api/auth/sign-in/email', { data: { email, password: PASSWORD } })
   expect(res.ok()).toBe(true)
