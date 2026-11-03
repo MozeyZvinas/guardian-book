@@ -29,7 +29,7 @@ founder sets it all in the Railway dashboard.
    | `META_MODEL` | `muse-spark-1.3` (never a `-contributor` ID; the app refuses them) |
    | `MODEL_DAILY_BUDGET_USD` | e.g. `20` |
    | `MODEL_USER_DAILY_CALLS` | e.g. `60` |
-   | `BUCKET_ENDPOINT`, `BUCKET_NAME`, `BUCKET_ACCESS_KEY_ID`, `BUCKET_SECRET_ACCESS_KEY`, `BUCKET_REGION` | From the Bucket panel |
+   | `BUCKET_ENDPOINT`, `BUCKET_NAME`, `BUCKET_ACCESS_KEY_ID`, `BUCKET_SECRET_ACCESS_KEY`, `BUCKET_REGION` | References to the Bucket's `ENDPOINT`, `BUCKET` (not `RAILWAY_BUCKET_NAME`), `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY`, `REGION`, e.g. `${{photos.ENDPOINT}}` |
    | `SENTRY_DSN` | Optional |
 
    Never set `BENCHMARK_DIR` in the deployed app. Never paste any of these values into a

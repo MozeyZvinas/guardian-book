@@ -23,7 +23,9 @@ and web routes `apps/web/src/routes/learner/{bring,attempt,calendar}` and
 
 ## Do
 1. **Storage** (`apps/api/src/storage`): S3-compatible client for the Railway bucket
-   (`BUCKET_*`); private objects only; presigned GET ≤ 5 min; images re-encoded with EXIF
+   (`BUCKET_*`; Railway buckets are private and use **virtual-hosted-style** URLs, so
+   `forcePathStyle: false` and `BUCKET_REGION` as given, usually `auto`; the bucket has no
+   public URL, so serve only through presigned links); private objects only; presigned GET ≤ 5 min; images re-encoded with EXIF
    stripped (sharp is allowed; justify in the PR); PDFs stored as-is (≤ 8 MB). Not configured →
    uploads return a clear 503 `storage_not_configured`; the app still runs.
 2. **Inputs** (`POST /api/inputs`, `PATCH /api/inputs/:id/kind`): multipart or JSON; one
