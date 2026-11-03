@@ -96,9 +96,9 @@ function SetupScreen() {
 
   return (
     <LearnerShell>
-      <p className="text-sm font-medium text-fg-muted tnum">
+      <h1 className="text-sm font-medium text-fg-muted tnum">
         Tell me about you · {stage.step + 1} of {PROMPTS.length}
-      </p>
+      </h1>
       <form
         onSubmit={(event) => {
           event.preventDefault()
