@@ -47,7 +47,7 @@ the same files.
 | B01 Scaffold + CI + deploy skeleton | 31 Oct | P0-13 (part) | F2 (F4 for the deploy) | A (promo) / $15 | done (PR #1 merged 1 Nov; reviewed by planning) |
 | B02 ∥ Database, auth, the circle, schools, provenance, seeds, permission harness (D35 tables) | 2 Nov | P0-01, P0-11b | B01 | A (promo) / $30 | review (PR open 3 Nov; see questions below) |
 | B03 ∥ Model gateway, verifier, cost log, live smoke | 2 Nov | P0-11, P0-04 (model) | B01, F3 | B (subscription) / $25 | todo |
-| B04 Bring anything: inputs, work check → attempt → assessment (guideline approval enforced, provenance written), notice reader → calendar, `model_runs` | 2–3 Nov | P0-03, P0-04, P0-06 | B02 + B03 merged | A / $30 | todo |
+| B04 Bring anything: inputs, work check → attempt → assessment (guideline approval enforced, provenance written), notice reader → calendar, `model_runs` | 2–3 Nov | P0-03, P0-04, P0-06 | B02 + B03 merged | A / $30 | review (PR open 3 Nov; live smoke 2 calls, $0.024; see questions below) |
 | B05 ∥ Profile cards, Today (+ check-in due), Brain page (assisted / independent / retained evidence), timeline | 3 Nov | P0-02, P0-07 | B02 + B03 merged | B / $20 | todo |
 | B06 Help Plan agent, guardian view (Teacher-reviewed labels), "We did it", fix it → check it alone → follow-up check | 3 Nov | P0-05, P0-08, P0-09 | B04, B05 | A / $30 | todo |
 | B07 ∥ Teacher view: guidelines approval, class picture, confirm queue, review with feedback controls (agree / correct / add / audience), release, interventions (owner, follow-up, outcome, close), notes with origin labels, class notice, learner profile | 3 Nov | P0-10 | B04 | B / $30 | todo |
@@ -84,3 +84,22 @@ Add any question here, linked to a task ID.
 - **B02 · migrations at boot** (default on; `DB_MIGRATE_ON_BOOT=false` opts out) so the first
   deploy after merge works on the phone without a Railway settings change. Spec 03 §2 says
   "a release step": confirm, or ask the founder to set the pre-deploy command.
+- **B04 · two schema additions to confirm** (migration `0003`, additive): `attempts.assessing_started_at`
+  (the persisted "assessing" state the brief's 202 + poll and the 5-minute boot sweep need) and
+  `inputs.idempotency_key` with UNIQUE(learner, key) (spec 03 §8.3 sends `idempotencyKey` on
+  `POST /api/inputs`, but §8.1 had no column for it).
+- **B04 · per-call timeout:** the brief says "keep the 45 s timeout per model call"; B03 measured
+  Muse Spark reasoning past 2,500 output tokens on wrong answers and set `WORK_CHECK_TIMEOUT_MS`
+  to 90 s. B04 uses B03's 90 s per call inside the brief's 120 s whole-run deadline (the route
+  still answers in milliseconds). Say if 45 s is the ruling.
+- **B04 · PDF notices:** Meta's image understanding takes images only, so a PDF is stored
+  (≤ 8 MB, private) but not read; the screens say so and ask for a photo (`unsupported_pdf`).
+  Reading PDFs needs a rasteriser (not in the allowed dependencies). Fine for the demo (the PNG
+  notice works), or rule otherwise.
+- **B04 · a teacher's class notice** is stored in `inputs` with `learner_id` = the teacher
+  (spec 03 §8.1 has no uploader column); the events carry the class scope. Confirm or name a column.
+- **B04 · Playwright** (`@playwright/test`, root devDependency) is the one dependency beyond the
+  S3 client and `sharp`: the brief asks for a Playwright test. `pnpm test:e2e` runs locally
+  (build first); B09 adds the CI job.
+- **B04 · item prompts** render as Markdown/LaTeX source (no KaTeX yet: no new dependencies).
+  B09 polish, or allow `katex` now.
