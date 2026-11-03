@@ -47,6 +47,11 @@ and web routes `apps/web/src/routes/learner/{bring,attempt,calendar}` and
      approved that item revision (spec 03 §9.1).
    - Persist every model call as a `model_runs` row (`apps/api/src/modelRuns/record.ts`)
      with checks, attempt number, cost and request ID.
+   - **Spend caps (B03 left these to you):** before every model call, check
+     `model_usage_daily` against `MODEL_USER_DAILY_CALLS` (per user) and
+     `MODEL_DAILY_BUDGET_USD` (all users, today, SAST); refuse with 429 `budget_exhausted`
+     and a plain message; after the call add its calls and `cost_usd`. One shared helper in
+     `apps/api/src/modelRuns/` that B05 and B06 also call. Tests for both caps.
    - `accepted` → write the `assessments` row once (status `proposed`), steps with evidence
      and boxes; `exhausted`/`failed`/timeout → status `uncertain`, no marks shown.
    - Append `attempt_submitted` and `assessed` events through `appendEvent` (B02), with
