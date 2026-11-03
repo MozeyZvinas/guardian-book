@@ -14,7 +14,11 @@
     "test": "vitest run --project shared --project api",
     "test:integration": "vitest run --project api-integration",
     "build": "pnpm -r build",
-    "start": "node apps/api/dist/server.js"
+    "start": "node apps/api/dist/server.js",
+    "db:generate": "pnpm --filter @guardian-book/api db:generate",
+    "db:migrate": "pnpm --filter @guardian-book/api db:migrate",
+    "db:seed": "pnpm --filter @guardian-book/api db:seed",
+    "content:load": "pnpm --filter @guardian-book/api content:load"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
