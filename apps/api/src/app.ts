@@ -46,6 +46,7 @@ function errorHandler(logger: Logger): ErrorRequestHandler {
     // express.json() parse failures and oversize bodies.
     const status = typeof (err as { status?: unknown })?.status === 'number' ? (err as { status: number }).status : 500
     if (status >= 400 && status < 500) {
+      logger.warn('request refused', { requestId, route: req.path, status, message: err instanceof Error ? err.message : String(err) })
       if (res.headersSent) return
       res.status(status).json({ error: { code: 'bad_request', message: 'The request could not be read.', requestId } })
       return

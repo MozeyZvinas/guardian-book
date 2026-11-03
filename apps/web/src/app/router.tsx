@@ -4,10 +4,36 @@ import { Landing } from '../routes/public/Landing'
 import { NotFound } from '../routes/public/NotFound'
 import { RouteError } from './RouteError'
 
-// Public routes only in B01. Learner, guardian and teacher spaces arrive with their briefs,
-// each as its own lazily loaded chunk (spec 06 §2).
+// Public routes load eagerly. Each space (learner, guardian, teacher) and the account
+// forms are their own lazily loaded chunks, so a phone never downloads the teacher console
+// (spec 06 §2).
 export const router = createBrowserRouter([
   { path: '/', element: <Landing />, errorElement: <RouteError /> },
   { path: '/evidence', element: <Evidence />, errorElement: <RouteError /> },
+  {
+    path: '/signup',
+    lazy: () => import('../routes/public/SignUp').then((m) => ({ Component: m.SignUp })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/signin',
+    lazy: () => import('../routes/public/SignIn').then((m) => ({ Component: m.SignIn })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/me',
+    lazy: () => import('../routes/me/Me').then((m) => ({ Component: m.Me })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/guardian/link',
+    lazy: () => import('../routes/guardian/Link').then((m) => ({ Component: m.GuardianLink })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/teacher',
+    lazy: () => import('../routes/teacher/Classes').then((m) => ({ Component: m.TeacherClasses })),
+    errorElement: <RouteError />,
+  },
   { path: '*', element: <NotFound /> },
 ])
