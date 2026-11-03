@@ -12,11 +12,11 @@ export const signOut = () => api('/api/auth/sign-out', signOutResponseSchema, { 
 
 export const me = () => api('/api/me', meResponseSchema)
 
-/** Where each role lands after sign-in (spec 05 §4; Today and the guardian week arrive with B05 and B06). */
+/** Where each role lands after sign-in (spec 05 §4; the guardian week arrives with B06). */
 export function homeFor(role: Role): string {
   switch (role) {
     case 'learner':
-      return '/me'
+      return '/today'
     case 'guardian':
       return '/guardian/link'
     case 'teacher':
