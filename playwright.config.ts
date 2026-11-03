@@ -24,7 +24,11 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   // A Chromium phone profile (Pixel 5) at 390×844: Chromium is the only browser installed.
-  projects: [{ name: 'phone-390', use: { ...devices['Pixel 5'], viewport: { width: 390, height: 844 } } }],
+  // The teacher space is desktop-first (spec 05 §4.4): its spec runs at 1440×900 (B07).
+  projects: [
+    { name: 'phone-390', use: { ...devices['Pixel 5'], viewport: { width: 390, height: 844 } }, testIgnore: /teacher-space/ },
+    { name: 'laptop-1440', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } }, testMatch: /teacher-space/ },
+  ],
   webServer: {
     command: 'pnpm --filter @guardian-book/api exec tsx test/e2e/serve.ts',
     url: `http://127.0.0.1:${port}/healthz`,
