@@ -13,7 +13,7 @@ cannot skip; the Brain updates; one Help Plan rendered three ways; the teacher c
 and approves the note home. The homework check is one input, never the headline.
 
 **Deadlines:**
-- Full phone run (Gate P0): **Tue 3 Nov, 20:00 SAST** (moved by D35).
+- Full phone run (Gate P0): **as soon as B06 + B07 merge; target Wed 4 Nov, 13:00 SAST** (moved 3 Nov: B02/B03 started late).
 - Submit by **20:00 SAST, Wed 4 Nov** (official close 04:00 SAST, 5 Nov).
 - Promotional Claude credit expires **14 Nov**.
 
@@ -152,8 +152,8 @@ brief and replies "merge" or with the fixes to paste back into the same session.
 | Now | B02 (worktree `b02`) | B03 (worktree `b03`) | — |
 | After B02 + B03 merge | B04 (worktree `b04`) | B05 (worktree `b05`) | B08 (worktree `b08`) |
 | After B04 (+ B05) merge | B06 (worktree `b06`) | B07 (worktree `b07`) | — |
-| 3 Nov, 20:00 (or as soon as B06 + B07 merge) | **The full run on your phone** | | |
-| 4 Nov, morning | B09 polish and PWA | B10 hardening | Record the video and the X cut |
+| As soon as B06 + B07 merge (target 4 Nov, 13:00) | **The full run on your phone** | | |
+| 4 Nov, after the phone run | B09 polish and PWA | B10 hardening | Record the video and the X cut |
 | 4 Nov, by 20:00 SAST | **Submit** | | |
 
 The prompt for every brief follows the same pattern (replace NN and the decision list):
