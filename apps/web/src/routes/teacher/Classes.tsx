@@ -60,7 +60,7 @@ function ClassesScreen({ me }: { me: MeResponse }) {
                 <Link to={`/teacher/classes/${cls.id}/queue`}>Queue</Link>
                 <Link to={`/teacher/classes/${cls.id}/notes`}>Notes</Link>
                 <Link to={`/teacher/classes/${cls.id}/guidelines`}>Guidelines</Link>
-                <Link to={`/teacher/classes/${cls.id}/notice`}>Notice</Link>
+                <Link to={`/teacher/classes/${cls.id}/notice`}>Class notice</Link>
                 <span className="text-fg-muted tnum">
                   {cls.learnerCount} {cls.learnerCount === 1 ? 'learner' : 'learners'}
                 </span>

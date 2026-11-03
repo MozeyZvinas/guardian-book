@@ -50,7 +50,7 @@ the same files.
 | B04 Bring anything: inputs, work check → attempt → assessment (guideline approval enforced, provenance written), notice reader → calendar, `model_runs` | 2–3 Nov | P0-03, P0-04, P0-06 | B02 + B03 merged | A / $30 | review (PR open 3 Nov; live smoke 2 calls, $0.024; see questions below) |
 | B05 ∥ Profile cards, Today (+ check-in due), Brain page (assisted / independent / retained evidence), timeline | 3 Nov | P0-02, P0-07 | B02 + B03 merged | B / $20 | todo |
 | B06 Help Plan agent, guardian view (Teacher-reviewed labels), "We did it", fix it → check it alone → follow-up check | 3 Nov | P0-05, P0-08, P0-09 | B04, B05 | A / $30 | todo |
-| B07 ∥ Teacher view: guidelines approval, class picture, confirm queue, review with feedback controls (agree / correct / add / audience), release, interventions (owner, follow-up, outcome, close), notes with origin labels, class notice, learner profile | 3 Nov | P0-10 | B04 | B / $30 | todo |
+| B07 ∥ Teacher view: guidelines approval, class picture, confirm queue, review with feedback controls (agree / correct / add / audience), release, interventions (owner, follow-up, outcome, close), notes with origin labels, class notice, learner profile | 3 Nov | P0-10 | B04 | B / $30 | review (PR open 4 Nov; see questions below) |
 | B08 Eval runner results + proof page `/evidence` | 3 Nov | P0-12 | B03, E1 | B / $10 | todo |
 | **Gate P0:** full run on the founder's phone | 3 Nov, 20:00 (D35) | all P0 | — | — | todo |
 | B09 PWA, polish (landing hero by surface, D35), E2E in CI; `robots.txt` (allow `/`, `/evidence`; disallow `/api/`, `/learner/`, `/guardian/`, `/teacher/`, invite and join links; D36); then P1 in order (incl. P1-g teacher uploads a script) (voice, see-it card, overlay, open-weight row, WhatsApp text) | 3 Nov | P0-13, P1 | Gate P0 | A + B | todo |
@@ -103,3 +103,24 @@ Add any question here, linked to a task ID.
   (build first); B09 adds the CI job.
 - **B04 · item prompts** render as Markdown/LaTeX source (no KaTeX yet: no new dependencies).
   B09 polish, or allow `katex` now.
+- **B07 · B05 not on main when B07 finished:** review events carry `skills_correct` /
+  `skills_lost` / `mode` through a local `reviewEvidencePayload()` (same keys as B05's
+  `evidencePayload()`); skill wording uses the same fallback rule as B05's `skillLabel`;
+  T6 shows raw lost/found counts. `MathText` is on no branch, so prompts render as plain
+  text. Three one-line swaps once B05 merges; say if you want them in this PR after the merge.
+- **B07 · `guideline_approved` event subject:** `learning_events.learner_id` is NOT NULL and
+  there is no class-level event, so one event is written against the teacher's user ID
+  (D37's precedent for the class notice). Alternative: one event per learner in the class.
+- **B07 · learner-facing review route:** spec 03 §5 says `GET /api/attempts/:id` returns the
+  released review, but that is B04's service and B06 is touching it (fix/check), so B07 adds
+  `GET /api/attempts/:id/review` (owner after release: review + learner-audience feedback
+  with "Teacher-reviewed" / "From Ms Dlamini"; class teacher: everything; guardian: 404).
+  L3 should call it to show *Your teacher approved this result* (B06 or B09).
+- **B07 · `GET /api/guardian/notes`** (spec 03 §8.3) lives in `apps/api/src/notes/` (the label
+  depends on the note's origin) rather than a guardian folder; B06's G2 screen can read it.
+- **B07 · note prompts cite evidence by alias** (`E1`, `E2`), never by UUID: the gateway's
+  phone-number guard trips on digit runs in UUIDs, and the model only needs an opaque
+  handle. `model_runs.output` therefore holds aliases; the learner's own events are the map.
+- **B07 · release by attempt:** `POST /api/teacher/attempts/:id/release` exists beside the
+  spec's `POST /api/teacher/reviews/:id/release`, so "release before confirm → 409
+  `not_confirmed`" is testable (a review ID does not exist before confirm).
