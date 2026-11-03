@@ -16,10 +16,8 @@ import type { Db } from '../../db/client.js'
 import { profiles } from '../../db/schema.js'
 import { appendEvent } from '../../evidence/append.js'
 import { PromptSafetyError } from '../../gateway/promptSafety.js'
-import type { Gateway } from '../../gateway/gateway.js'
-import { verifiedCall } from '../../gateway/verifiedCall.js'
 import { HttpError, notFound, parse, requestIdOf, uuidParam } from '../../lib/http.js'
-import type { Logger } from '../../logger.js'
+import { runModel, type ModelRunDeps } from '../../modelRuns/index.js'
 import { runChecks } from '../../verify/index.js'
 import {
   EMPTY_CARDS,
@@ -31,20 +29,22 @@ import {
   prototypeCards,
   sourceText,
 } from './profileCards.v1.js'
-import { recordRuns } from './recordRuns.js'
 
 /**
  * Tell me about you (P0-02; spec 03 §8.1, §8.3; spec 05 §4.2 L0, L8).
  *
- * - `POST /api/me/profile`: one `profile_cards` model call through `verifiedCall`; the
- *   verifier's INFERENCE_FORBIDDEN rule must pass (re-ask up to 3 calls, then the cards are
- *   empty and labelled). No model → cards from the raw text, labelled PROTOTYPE.
+ * - `POST /api/me/profile`: one `profile_cards` model call through B04's `runModel` (the
+ *   daily caps, then `verifiedCall`, then one `model_runs` row per call); the verifier's
+ *   INFERENCE_FORBIDDEN rule must pass (re-ask up to 3 calls, then the cards are empty and
+ *   labelled). No model → cards from the raw text, labelled PROTOTYPE. A cap already
+ *   reached answers 429 `budget_exhausted` before anything is sent.
  * - `PATCH /api/me/profile/cards`: edits, never a model call.
  * - `GET /api/me/profile`: the learner's own cards. The raw text is stored once and never
  *   served to anyone.
  * - `GET /api/learners/:id/cards`: the fields each role may read (spec 03 §8.2).
  */
-export function profileRouter(db: Db, gateway: Gateway, logger: Logger): Router {
+export function profileRouter(deps: ModelRunDeps): Router {
+  const { db, gateway, logger } = deps
   const router = Router()
 
   router.get('/api/me/profile', requireRole('learner'), async (_req, res, next) => {
@@ -87,9 +87,11 @@ export function profileRouter(db: Db, gateway: Gateway, logger: Logger): Router 
         const checks = runChecks('profile_cards', candidate, {})
         payload = checks.passed ? { cards: candidate, source: 'prototype', modelRunId: null } : { cards: EMPTY_CARDS, source: 'uncertain', modelRunId: null }
       } else {
-        const result = await verifiedCall({
-          gateway,
+        const { result, lastRunId } = await runModel(deps, {
+          userId: actor.userId,
           purpose: 'profile_cards',
+          subjectType: 'profile',
+          subjectId: actor.userId,
           promptVersion: PROFILE_CARDS_PROMPT_VERSION,
           system: buildProfileCardsSystem(),
           user,
@@ -97,12 +99,6 @@ export function profileRouter(db: Db, gateway: Gateway, logger: Logger): Router 
           maxTokens: PROFILE_CARDS_MAX_TOKENS,
           timeoutMs: PROFILE_CARDS_TIMEOUT_MS,
         })
-        const runIds = await recordRuns(
-          db,
-          { purpose: 'profile_cards', subjectType: 'profile', subjectId: actor.userId, promptVersion: PROFILE_CARDS_PROMPT_VERSION, fallbackModel: gateway.model },
-          result.runs,
-        )
-        const lastRunId = runIds.at(-1) ?? null
         logger.info('profile cards', { requestId, status: result.status, calls: result.runs.length, costUsd: result.totalCostUsd, latencyMs: result.totalLatencyMs })
         if (result.status === 'accepted' && result.output) {
           payload = { cards: result.output, source: 'model', modelRunId: lastRunId }

@@ -108,10 +108,6 @@ export function createApp(options: AppOptions): Express {
 
     app.use('/api', express.json({ limit: '1mb' }))
     app.use('/api', attachSession(auth, db))
-    app.use(meRouter(db))
-    app.use(learnerSpaceRouter(db, gateway, logger))
-    app.use(circleRouter(db))
-    app.use(itemsRouter(db))
     const practice: PracticeDeps = {
       db,
       gateway,
@@ -121,6 +117,10 @@ export function createApp(options: AppOptions): Express {
       jobs: options.jobs ?? new JobRegistry(logger),
       now: options.now ?? (() => new Date()),
     }
+    app.use(meRouter(db))
+    app.use(learnerSpaceRouter(practice))
+    app.use(circleRouter(db))
+    app.use(itemsRouter(db))
     app.use(inputsRouter(practice))
     app.use(attemptsRouter(practice))
     app.use(calendarRouter(practice))
