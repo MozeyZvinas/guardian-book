@@ -20,7 +20,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['scripts/**/*.mjs', 'eslint.config.js', 'vitest.config.ts', 'apps/web/vite.config.ts'],
+    files: ['scripts/**/*.mjs', 'eslint.config.js', 'vitest.config.ts', 'playwright.config.ts', 'apps/web/vite.config.ts'],
     languageOptions: { globals: globals.node },
   },
   {

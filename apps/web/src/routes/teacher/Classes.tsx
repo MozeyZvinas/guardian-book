@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { Link } from 'react-router'
 import type { MeResponse, SchoolSummary } from '@guardian-book/shared'
 import { createClass, schools as fetchSchools } from '../../api/circle'
 import { RequireRole } from '../../app/RequireRole'
@@ -56,10 +57,13 @@ function ClassesScreen({ me }: { me: MeResponse }) {
       {me.classes.length > 0 ? (
         <ul className="m-0 flex list-none flex-col gap-2 p-0">
           {me.classes.map((cls) => (
-            <li key={cls.id} className="flex items-center justify-between rounded-card bg-surface px-4 py-3">
+            <li key={cls.id} className="flex items-center justify-between gap-3 rounded-card bg-surface px-4 py-3">
               <span className="font-medium">{cls.name}</span>
-              <span className="text-sm text-fg-muted tnum">
-                {cls.learnerCount} {cls.learnerCount === 1 ? 'learner' : 'learners'}
+              <span className="flex items-center gap-3 text-sm">
+                <Link to={`/teacher/classes/${cls.id}/notice`}>Class notice</Link>
+                <span className="text-fg-muted tnum">
+                  {cls.learnerCount} {cls.learnerCount === 1 ? 'learner' : 'learners'}
+                </span>
               </span>
             </li>
           ))}

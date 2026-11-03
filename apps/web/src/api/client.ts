@@ -21,7 +21,7 @@ export class ApiRequestError extends Error {
 export async function api<T>(
   path: string,
   schema: ZodType<T>,
-  init: { method?: 'GET' | 'POST' | 'DELETE' | 'PATCH'; body?: unknown } = {},
+  init: { method?: 'GET' | 'POST' | 'DELETE' | 'PATCH'; body?: unknown; form?: FormData } = {},
 ): Promise<T> {
   let res: Response
   try {
@@ -30,9 +30,10 @@ export async function api<T>(
       credentials: 'same-origin',
       headers: {
         accept: 'application/json',
-        ...(init.body !== undefined ? { 'content-type': 'application/json' } : {}),
+        // A FormData body sets its own multipart content type (with the boundary).
+        ...(init.body !== undefined && !init.form ? { 'content-type': 'application/json' } : {}),
       },
-      body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+      body: init.form ?? (init.body !== undefined ? JSON.stringify(init.body) : undefined),
     })
   } catch {
     throw new ApiRequestError(0, 'offline', 'No connection. Check your signal and try again.')

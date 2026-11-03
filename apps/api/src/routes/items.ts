@@ -59,6 +59,12 @@ export function itemsRouter(db: Db): Router {
         promptMd: row.promptMd,
         diagramKey: row.diagramKey,
       }
+      // Teachers see where an item came from, so an AI-drafted guideline is labelled
+      // "check before approving" (B07) and never mistaken for a reviewed one.
+      if (actor.role === 'teacher' || actor.role === 'admin') {
+        item.provenance = row.provenance
+        item.reviewer = row.reviewer
+      }
 
       if (await can(db, actor, 'item.guideline.read', { type: 'item', id: itemId })) {
         const steps = await db

@@ -49,7 +49,7 @@ describe('GET /api/me/today', () => {
     // A notice input (teacher's class notice) that produced two events; only confirmed ones count, soonest first.
     const [noticeInput] = await ctx.db
       .insert(inputs)
-      .values({ learnerId: SEED_PEOPLE.msDlamini.id, kind: 'notice', text: 'Term 4 timetable', provenance: 'school_provided' })
+      .values({ learnerId: SEED_PEOPLE.msDlamini.id, kind: 'notice', text: 'Term 4 timetable', idempotencyKey: 'n-1', provenance: 'school_provided' })
       .returning({ id: inputs.id })
     if (!noticeInput) throw new Error('no input')
     const in12 = new Date(Date.now() + 12 * DAY)
@@ -85,10 +85,10 @@ describe('GET /api/me/today', () => {
 
     const t = Date.now()
     await ctx.db.insert(inputs).values([
-      { learnerId: lerato, kind: 'work', text: 'working 1', attemptId: uncertainAttempt.id, provenance: 'student_provided', createdAt: new Date(t - 3000) },
-      { learnerId: lerato, kind: 'work', text: 'working 2', attemptId: fixedAttempt.id, provenance: 'student_provided', createdAt: new Date(t - 2000) },
-      { learnerId: lerato, kind: 'question', text: 'why step 2?', provenance: 'student_provided', createdAt: new Date(t - 1000) },
-      { learnerId: lerato, kind: 'notice', text: 'a notice', provenance: 'student_provided', createdAt: new Date(t) },
+      { learnerId: lerato, kind: 'work', text: 'working 1', attemptId: uncertainAttempt.id, idempotencyKey: 'i-1', provenance: 'student_provided', createdAt: new Date(t - 3000) },
+      { learnerId: lerato, kind: 'work', text: 'working 2', attemptId: fixedAttempt.id, idempotencyKey: 'i-2', provenance: 'student_provided', createdAt: new Date(t - 2000) },
+      { learnerId: lerato, kind: 'question', text: 'why step 2?', idempotencyKey: 'i-3', provenance: 'student_provided', createdAt: new Date(t - 1000) },
+      { learnerId: lerato, kind: 'notice', text: 'a notice', idempotencyKey: 'i-4', provenance: 'student_provided', createdAt: new Date(t) },
     ])
 
     const planEvent = await appendEvent(ctx.db, { learnerId: lerato, kind: 'plan_issued', basis: 'none' })

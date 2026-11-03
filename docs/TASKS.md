@@ -47,8 +47,8 @@ the same files.
 | B01 Scaffold + CI + deploy skeleton | 31 Oct | P0-13 (part) | F2 (F4 for the deploy) | A (promo) / $15 | done (PR #1 merged 1 Nov; reviewed by planning) |
 | B02 ∥ Database, auth, the circle, schools, provenance, seeds, permission harness (D35 tables) | 2 Nov | P0-01, P0-11b | B01 | A (promo) / $30 | review (PR open 3 Nov; see questions below) |
 | B03 ∥ Model gateway, verifier, cost log, live smoke | 2 Nov | P0-11, P0-04 (model) | B01, F3 | B (subscription) / $25 | todo |
-| B04 Bring anything: inputs, work check → attempt → assessment (guideline approval enforced, provenance written), notice reader → calendar, `model_runs` | 2–3 Nov | P0-03, P0-04, P0-06 | B02 + B03 merged | A / $30 | todo |
-| B05 ∥ Profile cards, Today (+ check-in due), Brain page (assisted / independent / retained evidence), timeline | 3 Nov | P0-02, P0-07 | B02 + B03 merged | B / $20 | review (PR open 3 Nov, branch `b05-profile-today-brain`; see questions below) |
+| B04 Bring anything: inputs, work check → attempt → assessment (guideline approval enforced, provenance written), notice reader → calendar, `model_runs` | 2–3 Nov | P0-03, P0-04, P0-06 | B02 + B03 merged | A / $30 | done (PR #5 merged 4 Nov SAST; live smoke 2 calls, $0.024) |
+| B05 ∥ Profile cards, Today (+ check-in due), Brain page (assisted / independent / retained evidence), timeline | 3 Nov | P0-02, P0-07 | B02 + B03 merged | B / $20 | review (PR #4, branch `b05-profile-today-brain`; brought up to date with B04 on 4 Nov: assessed events through `evidencePayload()`, profile cards through `runModel`, KaTeX `MathText`; see questions below) |
 | B06 Help Plan agent, guardian view (Teacher-reviewed labels), "We did it", fix it → check it alone → follow-up check | 3 Nov | P0-05, P0-08, P0-09 | B04, B05 | A / $30 | todo |
 | B07 ∥ Teacher view: guidelines approval, class picture, confirm queue, review with feedback controls (agree / correct / add / audience), release, interventions (owner, follow-up, outcome, close), notes with origin labels, class notice, learner profile | 3 Nov | P0-10 | B04 | B / $30 | todo |
 | B08 Eval runner results + proof page `/evidence` | 3 Nov | P0-12 | B03, E1 | B / $10 | todo |
@@ -84,23 +84,32 @@ Add any question here, linked to a task ID.
 - **B02 · migrations at boot** (default on; `DB_MIGRATE_ON_BOOT=false` opts out) so the first
   deploy after merge works on the phone without a Railway settings change. Spec 03 §2 says
   "a release step": confirm, or ask the founder to set the pre-deploy command.
-- **B05 · Playwright vs "no new dependencies":** the brief asks for a Playwright test at
-  390×844 and forbids new dependencies; Playwright is not in the repo (B09 adds it). The
-  PR carries headless-Chrome screenshots at 390 and 360 (`docs/screenshots/b05-*.png`) with
-  a no-horizontal-scroll probe instead. Say if Playwright should come in now.
-- **B05 · the evidence payload contract** (`packages/shared/src/brain/evidence.ts`): the
-  reducer reads `correct` (with `skill_tag` set) or `skills_correct` / `skills_lost` (one
-  event per attempt), plus `mode` and `sure`, built with `evidencePayload(...)`. B04
-  (`assessed`), B06 (`fixed_independently`, `independent_check_completed`,
-  `retention_check_completed`) and B07 (`review_confirmed`) need to write that shape or
-  their events will not move skill state. Please point those briefs at it.
-- **B05 · `model_runs` rows:** B04's shared `apps/api/src/modelRuns/` helper (with the spend
-  caps) is not on `main`, so the profile route records its runs with a small local insert
-  (`apps/api/src/routes/me/recordRuns.ts`) and applies no daily cap. After B04 merges, swap
-  it for B04's helper (one call site).
 - **B05 · `confidence_sure_*`:** read as the learner's own "I'm sure" call (`payload.sure`)
   against the outcome; nothing collects it yet. Confirm, or say what it should measure.
 - **B05 · `GET /api/me/checks`** is built here (spec 03 §9.3 names no brief): open
   interventions due today or earlier, plus retention checks derived from events (2 days
   after a correct independent check, until a retention outcome is recorded). B06/B07 can
   rely on it.
+- **B05 · resolved by D37 and the 4 Nov update of PR #4:** Playwright (in the repo from
+  B04), the evidence payload contract (B04's `assessed` event now writes `skills_correct` /
+  `skills_lost` / `mode` through `evidencePayload()`), and `model_runs` rows (the profile
+  route calls B04's `runModel`, so the daily caps apply; `recordRuns.ts` is gone).
+- **B04 · two schema additions to confirm** (migration `0003`, additive): `attempts.assessing_started_at`
+  (the persisted "assessing" state the brief's 202 + poll and the 5-minute boot sweep need) and
+  `inputs.idempotency_key` with UNIQUE(learner, key) (spec 03 §8.3 sends `idempotencyKey` on
+  `POST /api/inputs`, but §8.1 had no column for it).
+- **B04 · per-call timeout:** the brief says "keep the 45 s timeout per model call"; B03 measured
+  Muse Spark reasoning past 2,500 output tokens on wrong answers and set `WORK_CHECK_TIMEOUT_MS`
+  to 90 s. B04 uses B03's 90 s per call inside the brief's 120 s whole-run deadline (the route
+  still answers in milliseconds). Say if 45 s is the ruling.
+- **B04 · PDF notices:** Meta's image understanding takes images only, so a PDF is stored
+  (≤ 8 MB, private) but not read; the screens say so and ask for a photo (`unsupported_pdf`).
+  Reading PDFs needs a rasteriser (not in the allowed dependencies). Fine for the demo (the PNG
+  notice works), or rule otherwise.
+- **B04 · a teacher's class notice** is stored in `inputs` with `learner_id` = the teacher
+  (spec 03 §8.1 has no uploader column); the events carry the class scope. Confirm or name a column.
+- **B04 · Playwright** (`@playwright/test`, root devDependency) is the one dependency beyond the
+  S3 client and `sharp`: the brief asks for a Playwright test. `pnpm test:e2e` runs locally
+  (build first); B09 adds the CI job.
+- **B04 · item prompts** render as Markdown/LaTeX source (no KaTeX yet: no new dependencies).
+  B09 polish, or allow `katex` now.

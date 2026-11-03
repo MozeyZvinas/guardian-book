@@ -25,6 +25,9 @@ const slugSchema = z
   .max(80)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'slugs are lower-case, dash-separated')
 
+/** The reviewer value of an item nobody has reviewed yet. */
+export const PENDING_REVIEWER = 'pending'
+
 /** One guideline step as written in a content file. */
 export const guidelineStepFileSchema = z
   .object({
@@ -78,8 +81,16 @@ export const itemFileSchema = z
         message: 'step_no must run 1..n in order',
       })
     }
-    if (item.provenance === 'model_generated') {
-      ctx.addIssue({ code: 'custom', path: ['provenance'], message: 'items are never model_generated' })
+    // An AI-drafted item is honestly labelled `model_generated` and loads only while its
+    // reviewer is still `pending`: the class teacher's guideline approval (spec 03 §9.1) is
+    // the review gate, and B07 labels such guidelines "AI-drafted: check before approving".
+    // Once a teacher has reviewed it, the file says so with `teacher_verified`.
+    if (item.provenance === 'model_generated' && item.reviewer !== PENDING_REVIEWER) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['provenance'],
+        message: `a model_generated item must have reviewer "${PENDING_REVIEWER}"; once reviewed, set provenance to teacher_verified`,
+      })
     }
   })
 export type ItemFile = z.infer<typeof itemFileSchema>
@@ -110,6 +121,9 @@ export const itemDetailSchema = itemSummarySchema.extend({
   promptMd: z.string(),
   diagramKey: z.string().nullable(),
   guidelineSteps: z.array(guidelineStepSchema).optional(),
+  /** Teachers and admins only: where the item came from, so an AI-drafted guideline is labelled before approval. */
+  provenance: provenanceSchema.optional(),
+  reviewer: z.string().optional(),
 })
 export type ItemDetail = z.infer<typeof itemDetailSchema>
 
