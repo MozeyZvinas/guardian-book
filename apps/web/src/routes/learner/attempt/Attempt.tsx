@@ -6,8 +6,8 @@ import { assess, attemptImageUrl, getAttempt } from '../../../api/practice'
 import { RequireRole } from '../../../app/RequireRole'
 import { Button, Card, FormError } from '../../../components/Form'
 import { HintCard } from '../../../components/HintCard'
-import { LearnerLinks } from '../../../components/LearnerLinks'
-import { Page } from '../../../components/Page'
+import { LearnerShell } from '../../../components/LearnerShell'
+import { MathText } from '../../../components/MathText'
 import { StatusChip } from '../../../components/StatusChip'
 import { ConfidenceLabel, StepMap } from '../../../components/StepMap'
 import { WorkViewer } from '../../../components/WorkViewer'
@@ -65,10 +65,10 @@ function AttemptScreen() {
 
   if (!data) {
     return (
-      <Page footer={<LearnerLinks />}>
+      <LearnerShell>
         <h1 className="text-display font-semibold text-balance">Your work</h1>
         {error ? <FormError error={error} /> : <p className="text-fg-muted" aria-live="polite">Loading…</p>}
-      </Page>
+      </LearnerShell>
     )
   }
 
@@ -80,11 +80,11 @@ function AttemptScreen() {
   const boxes = proposed?.steps.flatMap((step) => (step.box ? [{ box: step.box, label: step.stepId, lost: step.awarded < step.available }] : [])) ?? []
 
   return (
-    <Page footer={<LearnerLinks />}>
+    <LearnerShell>
       <div className="flex flex-col gap-1">
         <p className="m-0 text-sm text-fg-muted">{attempt.itemTopic}</p>
         <h1 className="text-display font-semibold text-balance">Your work</h1>
-        <p className="m-0 font-serif whitespace-pre-wrap">{attempt.itemPromptMd}</p>
+        <MathText as="p" text={attempt.itemPromptMd} className="m-0 font-serif whitespace-pre-wrap" />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -130,7 +130,7 @@ function AttemptScreen() {
 
       {proposed && lost && lostName ? (
         <Card title={`Where it slipped: step ${lostName.stepNo}`}>
-          <p className="m-0">{lostName.criterion}</p>
+          <MathText as="p" text={lostName.criterion} className="m-0" />
           <blockquote className="m-0 border-l-2 border-fg-muted/50 pl-3 text-sm text-fg-muted">“{lost.evidence}”</blockquote>
           <p className="m-0 text-sm">{lost.feedback}</p>
         </Card>
@@ -162,6 +162,6 @@ function AttemptScreen() {
         <Link to="/bring">Bring something else</Link>
         {attempt.mode !== 'assisted' ? ` · ${attempt.mode === 'independent' ? 'Independent' : 'Follow-up check'}` : ''}
       </p>
-    </Page>
+    </LearnerShell>
   )
 }

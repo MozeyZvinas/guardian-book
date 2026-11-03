@@ -1,4 +1,5 @@
 import type { AssessedStep, Confidence } from '@guardian-book/shared'
+import { MathText } from './MathText'
 
 /**
  * StepMap (spec 05 §5): one row per guideline step, ✓ or ✗ with the words, marks small in
@@ -54,7 +55,7 @@ export function StepMap({ guideline, steps, assessing }: { guideline: StepName[]
                 Step {name.stepNo}
                 <span className="sr-only">{earned ? ', found' : partial ? ', partly found' : ', lost'}</span>
               </span>
-              <span className="block text-sm text-fg-muted">{name.criterion}</span>
+              <MathText text={name.criterion} className="block text-sm text-fg-muted" />
             </span>
             <span className="text-sm tnum" aria-label={`${step.awarded} of ${step.available} marks`}>
               {step.awarded}/{step.available}
