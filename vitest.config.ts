@@ -32,7 +32,7 @@ export default defineConfig({
         test: {
           name: 'api-integration',
           root: './apps/api',
-          include: ['test/integration/**/*.test.ts'],
+          include: ['test/integration/**/*.test.ts', 'test/**/*.integration.test.ts'],
           setupFiles: ['./test/integration/setup.ts'],
           testTimeout: 15_000,
           hookTimeout: 30_000,

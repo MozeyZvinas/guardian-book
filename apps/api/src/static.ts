@@ -40,7 +40,9 @@ export function webStatic(distDir: string): Router {
       return
     }
     res.setHeader('Cache-Control', 'no-cache')
-    res.sendFile(indexPath)
+    // With `root` set, the dotfile check covers only `index.html`, not the whole absolute
+    // path: a checkout under `.claude/worktrees/` would otherwise answer 404 "Not Found".
+    res.sendFile('index.html', { root: distDir })
   })
 
   return router

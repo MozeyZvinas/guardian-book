@@ -34,10 +34,24 @@ and web routes `apps/web/src/routes/learner/{bring,attempt,calendar}` and
 3. **The homework check:** an input of kind `work` on an approved item creates an `attempt`
    (mode `assisted` unless the client sends `independent` or `retention`). `POST
    /api/attempts/:id/assess` runs B03's `verifiedCall` with the work-check prompt.
+   - **Run it in the background (B03 measured 18–30 s per Muse Spark call, up to 3 calls).**
+     The route returns **202** `{status: "assessing"}` at once (idempotent: a second call
+     while running returns the same 202); the work runs in-process after the response;
+     the client polls `GET /api/attempts/:id` every 2 s and shows a waiting state ("Reading
+     your work…", the steps appearing as they resolve is not required). Never hold an HTTP
+     request open past 60 s: Cloudflare cuts requests at 100 s. Keep the 45 s timeout per
+     model call; the whole run gives up at 120 s → `uncertain`. A server restart mid-run
+     leaves the attempt `assessing`; on boot, mark attempts stuck for more than 5 minutes
+     `uncertain` (no marks shown).
    - **Refuse** with 409 `guideline_not_approved` when the learner's class teacher has not
      approved that item revision (spec 03 §9.1).
    - Persist every model call as a `model_runs` row (`apps/api/src/modelRuns/record.ts`)
      with checks, attempt number, cost and request ID.
+   - **Spend caps (B03 left these to you):** before every model call, check
+     `model_usage_daily` against `MODEL_USER_DAILY_CALLS` (per user) and
+     `MODEL_DAILY_BUDGET_USD` (all users, today, SAST); refuse with 429 `budget_exhausted`
+     and a plain message; after the call add its calls and `cost_usd`. One shared helper in
+     `apps/api/src/modelRuns/` that B05 and B06 also call. Tests for both caps.
    - `accepted` → write the `assessments` row once (status `proposed`), steps with evidence
      and boxes; `exhausted`/`failed`/timeout → status `uncertain`, no marks shown.
    - Append `attempt_submitted` and `assessed` events through `appendEvent` (B02), with

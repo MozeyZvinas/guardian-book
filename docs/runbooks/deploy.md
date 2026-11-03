@@ -70,6 +70,19 @@ Railway → Deployments → the previous successful deployment → **Redeploy**.
 (from B02 on) are additive only, so the previous version keeps working against the newer
 schema. Record what happened in `docs/runbooks/incidents.md`.
 
+## Migrations and the demo seed (from B02)
+
+- **Migrations run at boot.** When `DATABASE_URL` is set the server applies pending
+  migrations (`apps/api/drizzle/`, additive, idempotent) before it listens; a failure is
+  logged and `/healthz` still answers. To run them as a separate release step instead, set
+  `DB_MIGRATE_ON_BOOT=false` and use Railway → Settings → Deploy → **Pre-deploy command**:
+  `node apps/api/dist/db/migrate.js`.
+- **Seed the demo circle once** (fictional people only). With the Railway CLI linked to the
+  app service: `SEED_PASSWORD='<choose one>' railway run pnpm db:seed`. It prints the class
+  codes; the seed password is never committed and never shared in chat. Re-running is safe.
+- **Reviewed content** is loaded the same way from a directory outside the repo:
+  `railway run pnpm content:load /path/to/items`.
+
 ## Local rules that protect production
 
 - Local `.env` points at docker Postgres (`127.0.0.1:5433`), never at Railway. The

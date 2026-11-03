@@ -1,0 +1,161 @@
+import request from 'supertest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { can } from '../src/access/index.js'
+import { attempts, items } from '../src/db/schema.js'
+import { SEED_CLASSES, SEED_PEOPLE, SEED_SCHOOLS, type SeedPersonKey } from '../src/db/seed-data.js'
+import { freshContext, signInAs, type TestContext } from './integration/db.js'
+
+/**
+ * The permission harness (spec 03 §4, §8.2, §9.2; spec 04 §4): every "change the ID"
+ * case for the routes that exist, as a table. Later briefs ADD ROWS here, not files.
+ *
+ * Conventions: no session → 401; wrong role → 403; wrong object (another learner, class,
+ * guardian or school) → 404, so the ID is never confirmed.
+ */
+
+type Method = 'get' | 'post' | 'delete' | 'patch'
+
+interface HarnessCase {
+  name: string
+  as: SeedPersonKey | null
+  method: Method
+  path: string
+  body?: Record<string, unknown>
+  expect: number
+}
+
+const P = SEED_PEOPLE
+const C = SEED_CLASSES
+
+const CASES: HarnessCase[] = [
+  // ── no session → 401 ─────────────────────────────────────────────────────────────────
+  { name: 'anonymous reads /api/me', as: null, method: 'get', path: '/api/me', expect: 401 },
+  { name: 'anonymous lists items', as: null, method: 'get', path: '/api/items', expect: 401 },
+  { name: 'anonymous creates a class', as: null, method: 'post', path: '/api/teacher/classes', body: { name: 'X' }, expect: 401 },
+  { name: 'anonymous joins a class', as: null, method: 'post', path: '/api/learner/join', body: { code: 'ABCDEFGH' }, expect: 401 },
+  { name: 'anonymous links a guardian', as: null, method: 'post', path: '/api/guardian/link', body: { code: 'ABCDEFGH' }, expect: 401 },
+  { name: 'anonymous lists schools', as: null, method: 'get', path: '/api/schools', expect: 401 },
+
+  // ── wrong role → 403 ─────────────────────────────────────────────────────────────────
+  { name: 'learner → POST /api/teacher/classes', as: 'lerato', method: 'post', path: '/api/teacher/classes', body: { name: 'X' }, expect: 403 },
+  { name: 'learner → GET /api/teacher/classes/:id (own class)', as: 'lerato', method: 'get', path: `/api/teacher/classes/${C['12A'].id}`, expect: 403 },
+  { name: 'guardian → POST /api/learner/join', as: 'mmaLerato', method: 'post', path: '/api/learner/join', body: { code: 'ABCDEFGH' }, expect: 403 },
+  { name: 'guardian → POST /api/me/guardian-code', as: 'mmaLerato', method: 'post', path: '/api/me/guardian-code', expect: 403 },
+  { name: 'guardian → DELETE /api/me/guardians/:id', as: 'mmaLerato', method: 'delete', path: `/api/me/guardians/${P.mmaLerato.id}`, expect: 403 },
+  { name: 'teacher → POST /api/learner/join', as: 'msDlamini', method: 'post', path: '/api/learner/join', body: { code: 'ABCDEFGH' }, expect: 403 },
+  { name: 'teacher → POST /api/guardian/link', as: 'msDlamini', method: 'post', path: '/api/guardian/link', body: { code: 'ABCDEFGH' }, expect: 403 },
+  { name: 'learner → POST /api/guardian/link', as: 'lerato', method: 'post', path: '/api/guardian/link', body: { code: 'ABCDEFGH' }, expect: 403 },
+
+  // ── wrong object → 404 ───────────────────────────────────────────────────────────────
+  { name: 'learner A revokes learner B’s guardian', as: 'thabo', method: 'delete', path: `/api/me/guardians/${P.mmaLerato.id}`, expect: 404 },
+  { name: 'learner revokes a guardian that is not linked', as: 'lerato', method: 'delete', path: `/api/me/guardians/${P.msBotha.id}`, expect: 404 },
+  { name: 'learner revokes with a non-UUID id', as: 'lerato', method: 'delete', path: '/api/me/guardians/not-a-uuid', expect: 404 },
+  { name: 'teacher 11B → class 12A', as: 'mrNaidoo', method: 'get', path: `/api/teacher/classes/${C['12A'].id}`, expect: 404 },
+  { name: 'teacher 12A → class 11B', as: 'msDlamini', method: 'get', path: `/api/teacher/classes/${C['11B'].id}`, expect: 404 },
+  { name: 'teacher → unknown class', as: 'msDlamini', method: 'get', path: '/api/teacher/classes/019a0b02-0000-7000-8000-00000000c999', expect: 404 },
+  { name: 'guardian → an unknown invite code', as: 'mmaLerato', method: 'post', path: '/api/guardian/link', body: { code: 'ABCDEFGH' }, expect: 404 },
+  { name: 'learner → an unknown class code', as: 'lerato', method: 'post', path: '/api/learner/join', body: { code: 'ABCDEFGH' }, expect: 404 },
+  { name: 'anyone → an unapproved or unknown item', as: 'lerato', method: 'get', path: '/api/items/019a0b02-0000-7000-8000-0000000fffff', expect: 404 },
+
+  // ── another school → 404 (spec 03 §9.2) ──────────────────────────────────────────────
+  { name: 'Riverside teacher → Sentinel class 12A', as: 'msBotha', method: 'get', path: `/api/teacher/classes/${C['12A'].id}`, expect: 404 },
+  { name: 'Riverside teacher → Sentinel class 11B', as: 'msBotha', method: 'get', path: `/api/teacher/classes/${C['11B'].id}`, expect: 404 },
+  { name: 'Sentinel teacher → Riverside class 10C', as: 'msDlamini', method: 'get', path: `/api/teacher/classes/${C['10C'].id}`, expect: 404 },
+  { name: 'Sentinel teacher creates a class in Riverside', as: 'msDlamini', method: 'post', path: '/api/teacher/classes', body: { name: '12B', schoolId: SEED_SCHOOLS.riverside.id }, expect: 404 },
+
+  // ── the happy rows the denials are measured against ──────────────────────────────────
+  { name: 'teacher 12A reads class 12A', as: 'msDlamini', method: 'get', path: `/api/teacher/classes/${C['12A'].id}`, expect: 200 },
+  { name: 'teacher 11B reads class 11B', as: 'mrNaidoo', method: 'get', path: `/api/teacher/classes/${C['11B'].id}`, expect: 200 },
+  { name: 'Riverside teacher reads class 10C', as: 'msBotha', method: 'get', path: `/api/teacher/classes/${C['10C'].id}`, expect: 200 },
+  { name: 'learner revokes their linked guardian', as: 'lerato', method: 'delete', path: `/api/me/guardians/${P.mmaLerato.id}`, expect: 204 },
+  { name: 'learner lists items', as: 'lerato', method: 'get', path: '/api/items', expect: 200 },
+  { name: 'guardian lists items', as: 'mmaLerato', method: 'get', path: '/api/items', expect: 200 },
+]
+
+let ctx: TestContext
+const cookies = new Map<SeedPersonKey, string>()
+
+async function cookieFor(who: SeedPersonKey | null): Promise<string | null> {
+  if (!who) return null
+  let cookie = cookies.get(who)
+  if (!cookie) {
+    cookie = await signInAs(ctx.app, who)
+    cookies.set(who, cookie)
+  }
+  return cookie
+}
+
+beforeAll(async () => {
+  ctx = await freshContext()
+})
+afterAll(async () => {
+  await ctx.close()
+})
+
+describe('permission harness (routes)', () => {
+  // Rows run in order: the 204 revoke at the end depends on the earlier 404s not touching data.
+  for (const c of CASES) {
+    it(`${c.name} → ${c.expect}`, async () => {
+      const cookie = await cookieFor(c.as)
+      let req = request(ctx.app)[c.method](c.path).set('Origin', 'https://guardianbook.test')
+      if (cookie) req = req.set('Cookie', cookie)
+      if (c.body) req = req.send(c.body)
+      const res = await req
+      expect(res.status, JSON.stringify(res.body)).toBe(c.expect)
+      if (res.status >= 400) {
+        expect(res.body).toMatchObject({ error: { code: expect.any(String), message: expect.any(String) } })
+      }
+    })
+  }
+})
+
+describe('permission harness (resolvers the later briefs call)', () => {
+  it('attempts: owner and class teacher only; never a guardian, another class or another school', async () => {
+    const { db } = ctx
+    const [item] = await db.select({ id: items.id, revision: items.revision }).from(items).limit(1)
+    if (!item) throw new Error('no item')
+    const [attempt] = await db
+      .insert(attempts)
+      .values({
+        learnerId: P.lerato.id,
+        itemId: item.id,
+        itemRevision: item.revision,
+        kind: 'typed',
+        answerText: 'x = 2 or x = 3',
+        idempotencyKey: 'harness-1',
+        provenance: 'student_provided',
+      })
+      .returning({ id: attempts.id })
+    if (!attempt) throw new Error('no attempt')
+    const subject = (who: SeedPersonKey) => ({
+      userId: P[who].id,
+      role: P[who].role,
+      schoolId: P[who].school ? SEED_SCHOOLS[P[who].school].id : null,
+    })
+    const resource = { type: 'attempt', id: attempt.id } as const
+
+    expect(await can(db, subject('lerato'), 'attempt.read', resource)).toBe(true)
+    expect(await can(db, subject('msDlamini'), 'attempt.read', resource)).toBe(true)
+    expect(await can(db, subject('thabo'), 'attempt.read', resource)).toBe(false) // classmate
+    expect(await can(db, subject('mrNaidoo'), 'attempt.read', resource)).toBe(false) // other class
+    expect(await can(db, subject('msBotha'), 'attempt.read', resource)).toBe(false) // other school
+    expect(await can(db, subject('mmaLerato'), 'attempt.read', resource)).toBe(false) // guardians never
+    expect(await can(db, subject('mmaLerato'), 'item.guideline.read', { type: 'item', id: item.id })).toBe(false)
+
+    // The guideline rule: the learner after their own attempt; the class teacher; no one else.
+    expect(await can(db, subject('lerato'), 'item.guideline.read', { type: 'item', id: item.id })).toBe(true)
+    expect(await can(db, subject('thabo'), 'item.guideline.read', { type: 'item', id: item.id })).toBe(false)
+    expect(await can(db, subject('msDlamini'), 'item.guideline.read', { type: 'item', id: item.id })).toBe(true)
+    expect(await can(db, subject('mrNaidoo'), 'item.guideline.read', { type: 'item', id: item.id })).toBe(false)
+    expect(await can(db, subject('msBotha'), 'item.guideline.read', { type: 'item', id: item.id })).toBe(false)
+
+    // learner.read: self, class teacher, linked guardian (revoked above → false), nobody else.
+    const learner = { type: 'learner', id: P.lerato.id } as const
+    expect(await can(db, subject('lerato'), 'learner.read', learner)).toBe(true)
+    expect(await can(db, subject('msDlamini'), 'learner.read', learner)).toBe(true)
+    expect(await can(db, subject('mmaLerato'), 'learner.read', learner)).toBe(false)
+    expect(await can(db, subject('mrNaidoo'), 'learner.read', learner)).toBe(false)
+    expect(await can(db, subject('msBotha'), 'learner.read', learner)).toBe(false)
+    expect(await can(db, subject('thabo'), 'learner.read', learner)).toBe(false)
+  })
+})

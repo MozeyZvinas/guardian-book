@@ -43,6 +43,32 @@ folders (inputs, assessment, calendar, modelRuns, storage, bring, attempt, calen
    linked.
 5. **Brain** (`GET /api/me/brain`): skill chips with three marks (*with help*, *on your own*,
    *later*) and the evidence behind each; the growth timeline (events, newest first).
+   **Skill labels:** add `packages/shared/src/brain/skills.ts` exporting a label map (learner,
+   guardian and teacher wording) for the content pack's tags below, and a fallback that turns
+   any unknown tag into plain words (`factorise-trinomial` → "Factorise trinomial"). Chips
+   never show a raw tag. B06 and B07 import the same map.
+
+| Tag | Learner | Guardian | Teacher |
+|---|---|---|---|
+| `algebra.standard_form` | Getting the equation equal to zero | Setting up the equation | Standard form |
+| `algebra.factorising` | Factorising into two brackets | Factorising (splitting an expression into two brackets) | Factorising trinomials |
+| `algebra.zero_product` | Solving from the brackets | Finding the answers from the brackets | Zero-product law |
+| `algebra.quadratic_formula` | Using the quadratic formula | Using the quadratic formula | Quadratic formula |
+| `algebra.quadratic_inequality` | Solving inequalities | Inequalities (finding a range of answers) | Quadratic inequalities |
+| `algebra.substitution` | Substituting one equation into the other | Solving two equations together | Simultaneous equations (substitution) |
+| `seq.arithmetic_general_term` | Arithmetic patterns: the general term | Number patterns that add the same amount | Arithmetic sequences: Tn |
+| `seq.arithmetic_sum` | Adding up an arithmetic series | Adding up a number pattern | Arithmetic series: Sn |
+| `seq.geometric_general_term` | Geometric patterns: finding r | Number patterns that multiply by the same amount | Geometric sequences: Tn and r |
+| `seq.geometric_sum` | Adding up a geometric series | Adding up a multiplying pattern | Geometric series: Sn |
+| `seq.convergence` | When a series converges | When a pattern settles to a total | Convergence (−1 < r < 1) |
+| `seq.sum_to_infinity` | Sum to infinity | The total a pattern settles to | Sum to infinity |
+| `calc.first_principles` | Derivatives from first principles | Working out a rate of change step by step | First principles |
+| `calc.power_rule` | Differentiation rules | Rules for rates of change | Differentiation rules |
+| `calc.exponent_form` | Writing terms as powers first | Rewriting before calculating | Exponential form before differentiating |
+| `calc.tangent_line` | Equation of a tangent | The line that touches a curve | Equation of a tangent |
+| `calc.stationary_points` | Turning points | Where a graph turns | Stationary points |
+| `functions.evaluate` | Substituting into a function | Putting a number into a formula | Evaluating f(a) |
+
 6. **Web:** **L0** (four prompts, one per step → four editable cards; skip allowed),
    **L1 Today** (one pink primary: Bring anything; the check-in card outranks tonight's step
    when due), **L6 Brain** (the plain line "Secure means you did it on your own, and again

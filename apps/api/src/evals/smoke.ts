@@ -9,14 +9,15 @@ import { verifiedCall } from '../gateway/verifiedCall.js'
 import { logger } from '../logger.js'
 
 /**
- * `pnpm smoke:live`: the manual live smoke test (B03 item 7). Two original seed items,
- * each with a correct typed answer and a wrong one: four verified calls. Prints model ID,
+ * `pnpm smoke:live`: the manual live smoke test (B03 item 7). Two original items from
+ * `fixtures/items`, each with a correct typed answer and a wrong one: four verified calls. Prints model ID,
  * request IDs, tokens, cost and latency. Never prints the key. Not run in CI.
  */
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(here, '../../../..')
-const itemsDir = path.resolve(here, '../../seed/items')
+/** Eval fixtures, not seeds: B02's `db:seed` loads everything under `apps/api/seed/items`. */
+const itemsDir = path.resolve(here, 'fixtures/items')
 
 const seedItemSchema = z.looseObject({
   slug: z.string(),
