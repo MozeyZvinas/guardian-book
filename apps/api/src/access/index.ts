@@ -23,6 +23,8 @@ export type Action =
   | 'item.read'
   | 'item.guideline.read'
   | 'attempt.read'
+  // B05 (spec 03 §4): the Brain, skill evidence, timeline
+  | 'progress.read'
   // B04 (spec 03 §8.2, §9.2)
   | 'input.create'
   | 'input.read'
@@ -263,6 +265,14 @@ export async function can(db: DbOrTx, subject: Subject, action: Action, resource
       if (learnerOwns(subject, resource.id)) return true
       if (subject.role === 'teacher') return teacherOfLearner(db, subject, resource.id)
       if (subject.role === 'guardian') return guardianLinkedTo(db, subject.userId, resource.id)
+      return false
+
+    case 'progress.read':
+      // Spec 03 §4: progress (the Brain, skill evidence, timeline) is the learner's own or
+      // their class teacher's. Guardians get the Help Plan's guardian view only (§8.2).
+      if (resource.type !== 'learner') return false
+      if (learnerOwns(subject, resource.id)) return true
+      if (subject.role === 'teacher') return teacherOfLearner(db, subject, resource.id)
       return false
 
     case 'guardian_code.issue':

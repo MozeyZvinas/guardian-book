@@ -47,8 +47,8 @@ the same files.
 | B01 Scaffold + CI + deploy skeleton | 31 Oct | P0-13 (part) | F2 (F4 for the deploy) | A (promo) / $15 | done (PR #1 merged 1 Nov; reviewed by planning) |
 | B02 ∥ Database, auth, the circle, schools, provenance, seeds, permission harness (D35 tables) | 2 Nov | P0-01, P0-11b | B01 | A (promo) / $30 | review (PR open 3 Nov; see questions below) |
 | B03 ∥ Model gateway, verifier, cost log, live smoke | 2 Nov | P0-11, P0-04 (model) | B01, F3 | B (subscription) / $25 | todo |
-| B04 Bring anything: inputs, work check → attempt → assessment (guideline approval enforced, provenance written), notice reader → calendar, `model_runs` | 2–3 Nov | P0-03, P0-04, P0-06 | B02 + B03 merged | A / $30 | review (PR open 3 Nov; live smoke 2 calls, $0.024; see questions below) |
-| B05 ∥ Profile cards, Today (+ check-in due), Brain page (assisted / independent / retained evidence), timeline | 3 Nov | P0-02, P0-07 | B02 + B03 merged | B / $20 | todo |
+| B04 Bring anything: inputs, work check → attempt → assessment (guideline approval enforced, provenance written), notice reader → calendar, `model_runs` | 2–3 Nov | P0-03, P0-04, P0-06 | B02 + B03 merged | A / $30 | done (PR #5 merged 4 Nov SAST; live smoke 2 calls, $0.024) |
+| B05 ∥ Profile cards, Today (+ check-in due), Brain page (assisted / independent / retained evidence), timeline | 3 Nov | P0-02, P0-07 | B02 + B03 merged | B / $20 | review (PR #4, branch `b05-profile-today-brain`; brought up to date with B04 on 4 Nov: assessed events through `evidencePayload()`, profile cards through `runModel`, KaTeX `MathText`; see questions below) |
 | B06 Help Plan agent, guardian view (Teacher-reviewed labels), "We did it", fix it → check it alone → follow-up check | 3 Nov | P0-05, P0-08, P0-09 | B04, B05 | A / $30 | todo |
 | B07 ∥ Teacher view: guidelines approval, class picture, confirm queue, review with feedback controls (agree / correct / add / audience), release, interventions (owner, follow-up, outcome, close), notes with origin labels, class notice, learner profile | 3 Nov | P0-10 | B04 | B / $30 | review (PR open 4 Nov; see questions below) |
 | B08 Eval runner results + proof page `/evidence` | 3 Nov | P0-12 | B03, E1 | B / $10 | todo |
@@ -84,6 +84,16 @@ Add any question here, linked to a task ID.
 - **B02 · migrations at boot** (default on; `DB_MIGRATE_ON_BOOT=false` opts out) so the first
   deploy after merge works on the phone without a Railway settings change. Spec 03 §2 says
   "a release step": confirm, or ask the founder to set the pre-deploy command.
+- **B05 · `confidence_sure_*`:** read as the learner's own "I'm sure" call (`payload.sure`)
+  against the outcome; nothing collects it yet. Confirm, or say what it should measure.
+- **B05 · `GET /api/me/checks`** is built here (spec 03 §9.3 names no brief): open
+  interventions due today or earlier, plus retention checks derived from events (2 days
+  after a correct independent check, until a retention outcome is recorded). B06/B07 can
+  rely on it.
+- **B05 · resolved by D37 and the 4 Nov update of PR #4:** Playwright (in the repo from
+  B04), the evidence payload contract (B04's `assessed` event now writes `skills_correct` /
+  `skills_lost` / `mode` through `evidencePayload()`), and `model_runs` rows (the profile
+  route calls B04's `runModel`, so the daily caps apply; `recordRuns.ts` is gone).
 - **B04 · two schema additions to confirm** (migration `0003`, additive): `attempts.assessing_started_at`
   (the persisted "assessing" state the brief's 202 + poll and the 5-minute boot sweep need) and
   `inputs.idempotency_key` with UNIQUE(learner, key) (spec 03 §8.3 sends `idempotencyKey` on

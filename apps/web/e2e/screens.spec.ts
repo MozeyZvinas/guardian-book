@@ -22,7 +22,7 @@ async function noOverflow(page: Page) {
 }
 
 test('Bring and Calendar fit a 360 px phone', async ({ page }) => {
-  await signIn(page, 'thabo@demo.guardianbook.test', /\/me$/)
+  await signIn(page, 'thabo@demo.guardianbook.test', /\/today$/)
   await page.setViewportSize({ width: 360, height: 800 })
   await page.goto('/bring')
   await expect(page.getByRole('heading', { name: 'Bring anything' })).toBeVisible()
@@ -52,7 +52,7 @@ test('a teacher reads a typed notice, confirms the uncertain date, and it is pub
   await page.screenshot({ path: 'docs/screenshots/b04-teacher-notice-390.png', fullPage: true, animations: 'disabled' })
 
   // The learner in 12A now sees both on their calendar, with the source line.
-  await signIn(page, 'naledi@demo.guardianbook.test', /\/me$/)
+  await signIn(page, 'naledi@demo.guardianbook.test', /\/today$/)
   await page.goto('/calendar')
   await expect(page.getByText('Maths Paper 2', { exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Confirm' })).toHaveCount(0) // class events: the teacher decides

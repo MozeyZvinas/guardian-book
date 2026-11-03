@@ -14,5 +14,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    // Fonts stay files (never base64 in the CSS): the CSP allows fonts from 'self' only.
+    assetsInlineLimit: (filePath) => (/\.(woff2?|ttf)$/.test(filePath) ? false : undefined),
   },
 })
