@@ -21,7 +21,8 @@ folders (plans, resources, guardian routes, fix/check, learner fix and item scre
 
 ## Do
 1. **T7 Guidelines** (`/teacher/classes/:id/guidelines`): items for the class with their M/A/CA
-   steps; **Approve for [class]** per item revision; append `guideline_approved`.
+   steps; **Approve for [class]** per item revision; append `guideline_approved`. Items with
+   provenance `model_generated` carry the label **"AI-drafted: check before approving"**.
 2. **T2 Class picture:** shared gaps ("n of m lost the mark at step 2 of factorising") from
    confirmed or high-confidence evidence; **Needs you**; counts for the queue and draft notes;
    the **Interventions** panel (open first, by follow-up date) with **Assign** from a gap
