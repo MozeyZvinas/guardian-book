@@ -13,6 +13,7 @@
     "lint": "eslint . && node scripts/check-token-colours.mjs",
     "test": "vitest run --project shared --project api",
     "test:integration": "vitest run --project api-integration",
+    "test:e2e": "playwright test",
     "build": "pnpm -r build",
     "start": "node apps/api/dist/server.js",
     "db:generate": "pnpm --filter @guardian-book/api db:generate",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@playwright/test": "^1.64.1",
     "@types/node": "24.19.2",
     "eslint": "10.14.0",
     "eslint-plugin-react-hooks": "7.1.1",
