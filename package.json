@@ -18,7 +18,9 @@
     "db:generate": "pnpm --filter @guardian-book/api db:generate",
     "db:migrate": "pnpm --filter @guardian-book/api db:migrate",
     "db:seed": "pnpm --filter @guardian-book/api db:seed",
-    "content:load": "pnpm --filter @guardian-book/api content:load"
+    "content:load": "pnpm --filter @guardian-book/api content:load",
+    "eval:dev": "pnpm --filter @guardian-book/api eval:dev",
+    "smoke:live": "pnpm --filter @guardian-book/api smoke:live"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

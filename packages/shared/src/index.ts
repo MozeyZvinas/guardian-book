@@ -1,3 +1,4 @@
+export * from './contracts/model/index.js'
 export * from './status.js'
 export * from './ids.js'
 export * from './contracts/provenance.js'
