@@ -19,6 +19,22 @@ folders (plans, resources, guardian routes, fix/check, learner fix and item scre
   `review_feedback`, notes origin and audience), §9.2, §9.3
 - `docs/specs/05-screens-and-flows.md`: §4.4 T1–T6, §5, §6, §9 (T2, T3a, T7 changes)
 
+## Integration notes (planning session, 3 Nov, after reviewing B04 and B05)
+- **Review events move the Brain:** `review_confirmed` and `review_released` build their
+  payload with `evidencePayload(...)` from `packages/shared/src/brain/evidence.ts` (B05 PR #4,
+  merging shortly): `skills_correct` / `skills_lost` from the teacher's confirmed steps, and
+  `mode` from the attempt. Teacher-confirmed evidence overrides the model's for that attempt.
+- **Interventions feed the learner's check-ins:** `GET /api/me/checks` (B05) already reads open
+  interventions' `follow_up_on`; just write the rows and events.
+- **Every model call** (note drafting) goes through B04's `runModel` helper in
+  `apps/api/src/modelRuns/` so the daily caps and `model_runs` rows apply.
+- **Maths and skill names on screen:** before you open the PR, `git merge origin/main` to pick
+  up `apps/web/src/components/MathText.tsx` (KaTeX) and `packages/shared/src/brain/skills.ts`
+  (from the B05 merge), and render item prompts, guideline criteria and typed answers through
+  `MathText`, and skills in teacher wording. If they are not on main yet when you finish,
+  say so in the PR.
+- **Playwright** is in the repo (`pnpm test:e2e`, from B04); use it for the 1440×900 test.
+
 ## Do
 1. **T7 Guidelines** (`/teacher/classes/:id/guidelines`): items for the class with their M/A/CA
    steps; **Approve for [class]** per item revision; append `guideline_approved`. Items with
