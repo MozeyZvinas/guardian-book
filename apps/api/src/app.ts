@@ -6,6 +6,7 @@ import { signUpRouter } from './auth/signup.js'
 import type { AppConfig } from './config.js'
 import type { Db } from './db/client.js'
 import type { DbStatus } from './db/health.js'
+import { createGateway, type Gateway } from './gateway/gateway.js'
 import { HttpError, notConfigured } from './lib/http.js'
 import type { Logger } from './logger.js'
 import { requestLog } from './middleware/requestLog.js'
@@ -14,6 +15,7 @@ import { circleRouter } from './routes/circle.js'
 import { healthzRouter } from './routes/healthz.js'
 import { itemsRouter } from './routes/items.js'
 import { meRouter } from './routes/me.js'
+import { learnerSpaceRouter } from './routes/me/index.js'
 import { webStatic } from './static.js'
 
 export interface AppOptions {
@@ -28,10 +30,12 @@ export interface AppOptions {
   db?: Db | null
   /** Better Auth, when the database and `BETTER_AUTH_*` are configured. */
   auth?: Auth | null
+  /** The model gateway; a scripted one in tests. Defaults to the real one (unconfigured without a key). */
+  gateway?: Gateway | null
 }
 
 /** Route prefixes that need the database; with none configured they answer 503, not 404. */
-const API_PREFIXES = ['/api/auth', '/api/me', '/api/teacher', '/api/learner', '/api/guardian', '/api/items', '/api/schools']
+const API_PREFIXES = ['/api/auth', '/api/me', '/api/teacher', '/api/learner', '/api/learners', '/api/guardian', '/api/items', '/api/schools']
 
 function errorHandler(logger: Logger): ErrorRequestHandler {
   return (err: unknown, req, res, _next) => {
@@ -62,6 +66,7 @@ export function createApp(options: AppOptions): Express {
   const db = options.db ?? null
   const auth =
     options.auth ?? (db && config.auth.secret && config.auth.url ? createAuth(db, { secret: config.auth.secret, url: config.auth.url }) : null)
+  const gateway = options.gateway ?? createGateway({ config: config.meta, logger })
   const app = express()
 
   app.disable('x-powered-by')
@@ -80,6 +85,7 @@ export function createApp(options: AppOptions): Express {
     app.use('/api', express.json({ limit: '1mb' }))
     app.use('/api', attachSession(auth, db))
     app.use(meRouter(db))
+    app.use(learnerSpaceRouter(db, gateway, logger))
     app.use(circleRouter(db))
     app.use(itemsRouter(db))
   } else {

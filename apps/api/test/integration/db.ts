@@ -8,6 +8,7 @@ import { createDb, type Db, type DbHandle } from '../../src/db/client.js'
 import { runMigrations } from '../../src/db/migrate.js'
 import { seed, type SeedResult } from '../../src/db/seed.js'
 import { SEED_PEOPLE, type SeedPersonKey } from '../../src/db/seed-data.js'
+import type { Gateway } from '../../src/gateway/gateway.js'
 import { silentLogger } from '../../src/logger.js'
 import { integrationDatabaseUrl } from './harness.js'
 
@@ -39,7 +40,7 @@ export interface TestContext {
 }
 
 /** A fresh database, migrated and seeded, with the app wired to it over an https origin. */
-export async function freshContext(options: { seed?: boolean } = {}): Promise<TestContext> {
+export async function freshContext(options: { seed?: boolean; gateway?: Gateway } = {}): Promise<TestContext> {
   await resetDatabase()
   const handle = createDb(databaseUrl, 4)
   const seeded =
@@ -56,6 +57,7 @@ export async function freshContext(options: { seed?: boolean } = {}): Promise<Te
     webDistDir: path.join(import.meta.dirname, 'no-dist'),
     version: 'integration',
     db: handle.db,
+    ...(options.gateway ? { gateway: options.gateway } : {}),
   })
   return { handle, db: handle.db, app, seeded, close: () => handle.close() }
 }
