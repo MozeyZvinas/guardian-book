@@ -41,6 +41,10 @@
    `ageAttested: true` and `role` in (learner, guardian, teacher). A `profiles` row is
    created in the same transaction with `age_attested_at`. Cookies `HttpOnly; Secure;
    SameSite=Lax`. Session lookup is one middleware used by every `/api` route.
+4b. **The one event writer** (`apps/api/src/evidence/append.ts`): `appendEvent(tx, event)`
+   validates the event with a Zod schema from `packages/shared/src/contracts/events.ts` (every
+   `learning_events.kind` in spec 03 §2, §8.1 and §9.1) and inserts it. It is the only code
+   path that writes `learning_events`; later briefs import it. Unit-test the schema.
 4a. **Provenance contract** (`packages/shared/src/contracts/provenance.ts`): the Zod enums for
    provenance and training permission, and a helper `provenanceFor(kind)`. Every insert B02
    writes (seeds, content loader, sign-up) sets provenance; `training_permission` defaults to

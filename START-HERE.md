@@ -1,7 +1,7 @@
 # START HERE
 
 Read this first, every session. Chats hold no state; this page does.
-**Updated:** 2 Nov 2026, planning session (D35).
+**Updated:** 3 Nov 2026, planning session (briefs B04–B08 ready).
 
 ## What we're doing right now
 
@@ -130,6 +130,26 @@ Read CLAUDE.md, START-HERE.md and docs/decisions.md (D13, D24, D26, D34, D35). C
 **Review loop.** Paste each PR link to the planning session. It reviews the diff against the
 brief and replies "merge" or with the fixes to paste back into the same session. You merge
 (`gh pr merge <n> --squash`), Railway deploys, you open the URL in a fresh tab.
+
+
+## The build schedule (3–4 Nov; the cut order in spec 02 §6 applies the moment a step slips)
+
+| When | Terminal A (promotional credits) | Terminal B (subscription) | Optional Terminal C (subscription) |
+|---|---|---|---|
+| Now | B02 (`fable -w b02`) | B03 (`fable -w b03`) | — |
+| After B02 + B03 merge | B04 (`fable -w b04`) | B05 (`fable -w b05`) | B08 (`fable -w b08`) |
+| After B04 (+ B05) merge | B06 (`fable -w b06`) | B07 (`fable -w b07`) | — |
+| 3 Nov, 20:00 (or as soon as B06 + B07 merge) | **The full run on your phone** | | |
+| 4 Nov, morning | B09 polish and PWA | B10 hardening | Record the video and the X cut |
+| 4 Nov, by 20:00 SAST | **Submit** | | |
+
+The prompt for every brief follows the same pattern (replace NN and the decision list):
+```
+Read CLAUDE.md, START-HERE.md and docs/BUILD-PLAN.md. Carry out prompts/BNN-....md and only that brief, in this worktree, touching only the folders the brief says you own. Report the repo state and your plan in one message, then proceed. Small commits; push the branch; open the PR with the completion report; stop when CI has finished. Do not merge.
+```
+Send every PR link to the planning session; merge only after its review
+(`gh pr merge <n> --merge --delete-branch`, then `git pull` in the main folder before the next
+`fable -w`).
 
 ## Last session handover
 

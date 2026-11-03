@@ -34,7 +34,7 @@ edit, and make targeted edits only.
 | C5 | Dev eval cases (`EVAL_DIR`): 10 typed + volunteer photos; held-out set frozen 1 Nov 12:00 (D34) | 1 Nov | todo |
 | C2 | Specs 01–04, B01 brief, CLAUDE.md, decisions D17–D27 | 27 Oct | done (awaiting push) |
 | C3 | Briefs B02–B03 | 31 Oct | done |
-| C6 | Briefs B04–B08 | 1 Nov | todo |
+| C6 | Briefs B04–B08 | 3 Nov | done |
 
 ## Build briefs (in order; scope v2, D34)
 
