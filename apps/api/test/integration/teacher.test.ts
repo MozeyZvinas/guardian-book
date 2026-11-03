@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm'
 import request from 'supertest'
+import { dayOf } from '@guardian-book/shared'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { items } from '../../src/db/schema.js'
 import { SEED_CLASSES, SEED_PEOPLE } from '../../src/db/seed-data.js'
@@ -207,6 +208,13 @@ describe('T3 · queue and T3a · review', () => {
     expect(releasedEvent.basis).toBe('teacher_confirmed')
     expect(releasedEvent.payload).toMatchObject({ skills_correct: ['factorise-trinomial'], skills_lost: ['solve-quadratic-by-factors'], mode: 'assisted', total: 3, max_marks: 4 })
 
+    // The Brain (B05) counts the teacher's result once per skill: confirm then release is one statement, and it overrides the model's for this attempt.
+    const brain = await request(app()).get('/api/me/brain').set('Cookie', thabo)
+    expect(brain.status).toBe(200)
+    const counted = Object.fromEntries((brain.body.skills as Array<{ tag: string; assisted: { correct: number; total: number } }>).map((skill) => [skill.tag, skill.assisted]))
+    expect(counted['factorise-trinomial']).toEqual({ correct: 1, total: 1 })
+    expect(counted['solve-quadratic-by-factors']).toEqual({ correct: 0, total: 1 })
+
     // Change the ID: another class's teacher, another school's teacher, a guardian, a learner.
     const naidoo = await signInAs(app(), 'mrNaidoo')
     expect((await request(app()).get(`/api/teacher/attempts/${attemptId}`).set('Cookie', naidoo)).status).toBe(404)
@@ -238,13 +246,20 @@ describe('T2 · class picture and interventions', () => {
 
   it('assign from a gap; closing needs an outcome and evidence; the follow-up check is the evidence', async () => {
     const dlamini = await signInAs(app(), 'msDlamini')
-    const body = { learnerId: P.thabo.id, classId: C['12A'].id, skillTag: 'solve-quadratic-by-factors', action: 'Redo one factorising question with me at break.', followUpOn: '2026-11-06' }
+    const followUpOn = dayOf(new Date()) // due today, so the learner's check-in list shows it at once
+    const body = { learnerId: P.thabo.id, classId: C['12A'].id, skillTag: 'solve-quadratic-by-factors', action: 'Redo one factorising question with me at break.', followUpOn }
     const created = await origin(request(app()).post('/api/teacher/interventions').set('Cookie', dlamini)).send(body)
     expect(created.status).toBe(201)
     const intervention = created.body.intervention
-    expect(intervention).toMatchObject({ status: 'open', outcome: null, followUpOn: '2026-11-06', learner: { nickname: 'Thabo' }, owner: { nickname: 'Ms Dlamini' }, evidence: [] })
+    expect(intervention).toMatchObject({ status: 'open', outcome: null, followUpOn, learner: { nickname: 'Thabo' }, owner: { nickname: 'Ms Dlamini' }, evidence: [] })
     const assigned = await ctx.db.execute<{ kind: string; skill_tag: string }>(`select kind, skill_tag from learning_events where learner_id = '${P.thabo.id}' and kind = 'intervention_assigned'`)
     expect(assigned.rows).toEqual([{ kind: 'intervention_assigned', skill_tag: 'solve-quadratic-by-factors' }])
+
+    // The learner's Today reads it through B05's check-ins: the action and the date, nothing else.
+    const thabo = await signInAs(app(), 'thabo')
+    const due = await request(app()).get('/api/me/checks').set('Cookie', thabo)
+    expect(due.status).toBe(200)
+    expect(due.body.checks).toEqual([expect.objectContaining({ kind: 'intervention', interventionId: intervention.id, skillTag: 'solve-quadratic-by-factors', action: body.action, dueOn: followUpOn, overdueDays: 0 })])
 
     const list = await request(app()).get(`/api/teacher/classes/${C['12A'].id}/interventions`).set('Cookie', dlamini)
     expect(list.body.interventions.map((i: { id: string }) => i.id)).toEqual([intervention.id])
@@ -265,6 +280,7 @@ describe('T2 · class picture and interventions', () => {
     expect(closed.status).toBe(200)
     expect(closed.body.intervention).toMatchObject({ status: 'closed', outcome: 'improved', outcomeEvidenceEventIds: [check.id] })
     expect(closed.body.intervention.closedAt).not.toBeNull()
+    expect((await request(app()).get('/api/me/checks').set('Cookie', thabo)).body.checks).toEqual([]) // closed: nothing due
     const closedEvent = await ctx.db.execute<{ payload: { outcome: string } }>(`select payload from learning_events where learner_id = '${P.thabo.id}' and kind = 'intervention_closed'`)
     expect(closedEvent.rows[0]?.payload.outcome).toBe('improved')
     expect((await origin(request(app()).patch(`/api/teacher/interventions/${intervention.id}`).set('Cookie', dlamini)).send({ action: 'x' })).status).toBe(409)
@@ -391,10 +407,10 @@ describe('T6 · learner profile', () => {
     expect(profile.body.classes).toEqual([{ id: C['12A'].id, name: '12A' }])
     expect(profile.body.cards).toEqual({ subjects: ['Mathematics', 'Physical Sciences'], hardestSubject: 'Mathematics' })
     expect(JSON.stringify(profile.body)).not.toMatch(/SECRET/)
-    expect(profile.body.skills).toEqual([
-      { skillTag: 'solve-quadratic-by-factors', lost: 1, found: 1, latest: 'lost', lastCheckedAt: expect.any(String) },
-      { skillTag: 'factorise-trinomial', lost: 0, found: 2, latest: 'found', lastCheckedAt: expect.any(String) },
-    ])
+    // Skills are the Brain's projection in teacher wording: the released review (assisted) and the follow-up check (retained).
+    const skills = new Map((profile.body.skills as Array<{ tag: string }>).map((skill) => [skill.tag, skill]))
+    expect(skills.get('factorise-trinomial')).toMatchObject({ label: 'Factorise trinomial', state: 'practising', assisted: { correct: 1, total: 1 }, independent: { correct: 0, total: 0 }, retained: { correct: 0, total: 0 } })
+    expect(skills.get('solve-quadratic-by-factors')).toMatchObject({ state: 'practising', assisted: { correct: 0, total: 1 }, retained: { correct: 1, total: 1 } })
     expect(profile.body.attempts).toHaveLength(1)
     expect(profile.body.attempts[0]).toMatchObject({ status: 'uncertain', review: { state: 'released', total: 3 } })
     expect(profile.body.interventions).toEqual([]) // closed above

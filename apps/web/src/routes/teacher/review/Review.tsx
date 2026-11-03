@@ -1,16 +1,16 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router'
-import type { FeedbackKind, MeResponse, NoteAudience, ProposalStep, ReviewAttemptResponse } from '@guardian-book/shared'
+import { skillLabel, type FeedbackKind, type MeResponse, type NoteAudience, type ProposalStep, type ReviewAttemptResponse } from '@guardian-book/shared'
 import { ApiRequestError } from '../../../api/client'
 import { attemptImageUrl } from '../../../api/practice'
 import { addFeedback, confirmReview, releaseAttempt, reviewAttempt } from '../../../api/teacher'
 import { RequireRole } from '../../../app/RequireRole'
 import { Button, Card, FormError } from '../../../components/Form'
+import { MathText } from '../../../components/MathText'
 import { CONFIDENCE_LABEL } from '../../../components/StepMap'
 import { WorkViewer } from '../../../components/WorkViewer'
 import { ChecksList, OriginChip } from '../shell/ChecksList'
 import { ClassEyebrow, TeacherShell, formatWhen, useLoad } from '../shell/TeacherShell'
-import { skillWords } from '../shell/skillWords'
 
 /**
  * T3a · Review (spec 05 §4.4, §9; spec 03 §2, §4; brief B07 §3). Two panes from 1024 px:
@@ -109,7 +109,7 @@ function Loaded({ me, data, reload }: { me: MeResponse; data: ReviewAttemptRespo
           <p className="m-0 text-sm text-fg-muted">
             {attempt.itemTopic} · {attempt.itemSlug} · {attempt.kind === 'photo' ? 'photo' : 'typed'} · {attempt.mode} · {formatWhen(attempt.createdAt)}
           </p>
-          <p className="m-0 font-serif whitespace-pre-wrap">{attempt.itemPromptMd}</p>
+          <MathText as="p" text={attempt.itemPromptMd} className="m-0 font-serif whitespace-pre-wrap" />
           <WorkViewer imageUrl={attempt.hasImage ? attemptImageUrl(attempt.id) : null} text={attempt.answerText} boxes={lostBoxes} alt={`${attempt.learner.nickname}’s working`} />
           <p className="m-0 text-sm text-fg-muted">
             <Link to={`/teacher/learners/${attempt.learner.id}`}>{attempt.learner.nickname}’s profile</Link>
@@ -233,9 +233,9 @@ function StepRow({ step, award, locked, onAward }: { step: ProposalStep; award: 
             <span aria-hidden="true" className={earned ? 'text-progress' : 'text-fg'}>
               {earned ? '✓' : award > 0 ? '◐' : '✗'}{' '}
             </span>
-            Step {step.stepNo} · {step.stepType} · {skillWords(step.skillTag)}
+            Step {step.stepNo} · {step.stepType} · {skillLabel(step.skillTag, 'teacher')}
           </p>
-          <p className="m-0 font-serif text-sm">{step.criterion}</p>
+          <MathText as="p" text={step.criterion} className="m-0 font-serif text-sm" />
         </div>
         <label className="flex items-center gap-2 text-sm tnum">
           <span className="sr-only">Marks for step {step.stepNo}</span>

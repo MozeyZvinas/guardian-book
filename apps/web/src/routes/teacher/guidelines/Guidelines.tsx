@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useParams } from 'react-router'
-import { AI_DRAFTED_GUIDELINE_LABEL, type GuidelineItemView, type MeResponse } from '@guardian-book/shared'
+import { AI_DRAFTED_GUIDELINE_LABEL, skillLabel, type GuidelineItemView, type MeResponse } from '@guardian-book/shared'
 import { approveGuideline, guidelines as fetchGuidelines } from '../../../api/teacher'
 import { RequireRole } from '../../../app/RequireRole'
 import { Button, FormError } from '../../../components/Form'
+import { MathText } from '../../../components/MathText'
 import { ClassEyebrow, NotMine, TeacherShell, formatWhen, useLoad } from '../shell/TeacherShell'
-import { skillWords } from '../shell/skillWords'
 
 /**
  * T7 · Guidelines (spec 05 §9; brief B07 §1): the items the class will use, each with its
@@ -60,7 +60,7 @@ function GuidelinesScreen({ me }: { me: MeResponse }) {
                 <p className="m-0 text-sm text-fg-muted">{item.topic}</p>
                 <h2 className="m-0 text-lg font-semibold">{item.slug}</h2>
                 <p className="m-0 text-sm text-fg-muted tnum">
-                  {item.maxMarks} marks · revision {item.revision} · {item.skillTags.map(skillWords).join(', ')}
+                  {item.maxMarks} marks · revision {item.revision} · {item.skillTags.map((tag) => skillLabel(tag, 'teacher')).join(', ')}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-1">
@@ -84,7 +84,7 @@ function GuidelinesScreen({ me }: { me: MeResponse }) {
                 ) : null}
               </div>
             </div>
-            <p className="m-0 font-serif whitespace-pre-wrap">{item.promptMd}</p>
+            <MathText as="p" text={item.promptMd} className="m-0 font-serif whitespace-pre-wrap" />
             <table className="w-full border-collapse text-sm">
               <caption className="sr-only">Marking guideline for {item.slug}</caption>
               <thead>
@@ -117,10 +117,10 @@ function GuidelinesScreen({ me }: { me: MeResponse }) {
                     </td>
                     <td className="py-2 pr-3 tnum">{step.marks}</td>
                     <td className="py-2 pr-3">
-                      <span className="font-serif">{step.criterion}</span>
+                      <MathText text={step.criterion} className="font-serif" />
                       {step.notes ? <span className="block text-fg-muted">{step.notes}</span> : null}
                     </td>
-                    <td className="py-2">{skillWords(step.skillTag)}</td>
+                    <td className="py-2">{skillLabel(step.skillTag, 'teacher')}</td>
                   </tr>
                 ))}
               </tbody>

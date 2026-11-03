@@ -1,15 +1,14 @@
 import { Link, useParams } from 'react-router'
-import type { MeResponse } from '@guardian-book/shared'
+import { skillLabel, type MeResponse } from '@guardian-book/shared'
 import { learnerProfile } from '../../../api/teacher'
 import { RequireRole } from '../../../app/RequireRole'
 import { Card, FormError } from '../../../components/Form'
-import { StatusChip } from '../../../components/StatusChip'
+import { MARK_LABELS, Mark, SkillStateBadge } from '../../../components/SkillChip'
 import { TeacherShell, formatDate, formatWhen, useLoad } from '../shell/TeacherShell'
-import { skillWords } from '../shell/skillWords'
 
 /**
- * T6 · Learner profile (spec 05 §4.4; brief B07 §5): skill chips from trusted results (raw
- * counts until B05's projection lands), recent attempts and their status, subjects and the
+ * T6 · Learner profile (spec 05 §4.4; brief B07 §5): skill chips from the Brain's projection
+ * (B05: three marks, teacher wording), recent attempts and their status, subjects and the
  * hardest subject (never the dream or the raw text), open interventions.
  */
 export function TeacherLearner() {
@@ -27,27 +26,30 @@ function LearnerScreen({ me }: { me: MeResponse }) {
     )
   }
   const firstClass = data.classes[0]
+  const evidenced = data.skills.filter((skill) => skill.evidenceCount > 0)
+  const unseen = data.skills.length - evidenced.length
   return (
     <TeacherShell me={me} classId={firstClass?.id} title={data.learner.nickname} eyebrow={data.classes.map((c) => c.name).join(', ')}>
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Skills">
-          <p className="m-0 text-sm text-fg-muted">
-            Steps lost and found across confirmed results and sure proposals. Labels in three levels arrive with the Brain. <StatusChip status="PROTOTYPE" />
-          </p>
-          {data.skills.length === 0 ? <p className="m-0 text-sm text-fg-muted">No trusted result yet.</p> : null}
-          <ul className="m-0 flex list-none flex-wrap gap-2 p-0" aria-label="Skills">
-            {data.skills.map((skill) => (
-              <li key={skill.skillTag} className={['inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm', skill.latest === 'lost' ? 'bg-surface ring-1 ring-fg/40' : 'bg-[color-mix(in_srgb,var(--color-progress)_14%,var(--color-ground))]'].join(' ')}>
-                <span aria-hidden="true" className={skill.latest === 'lost' ? 'text-fg' : 'text-progress'}>
-                  {skill.latest === 'lost' ? '✗' : '✓'}
+          <p className="m-0 text-sm text-fg-muted">From the Brain: with help, on their own, and later. Your confirmed results override the model’s for the same attempt.</p>
+          {evidenced.length === 0 ? <p className="m-0 text-sm text-fg-muted">No evidence yet.</p> : null}
+          <ul className="m-0 flex list-none flex-col gap-2 p-0" aria-label="Skills">
+            {evidenced.map((skill) => (
+              <li key={skill.tag} className="flex flex-col gap-2 rounded-card bg-ground p-3">
+                <span className="flex items-start justify-between gap-3">
+                  <span className="font-medium">{skill.label}</span>
+                  <SkillStateBadge state={skill.state} />
                 </span>
-                <span className="font-medium">{skillWords(skill.skillTag)}</span>
-                <span className="text-fg-muted tnum">
-                  {skill.found} found · {skill.lost} lost
+                <span className="flex flex-wrap gap-x-4 gap-y-1">
+                  <Mark label={MARK_LABELS.assisted} mark={skill.assisted} />
+                  <Mark label={MARK_LABELS.independent} mark={skill.independent} />
+                  <Mark label={MARK_LABELS.retained} mark={skill.retained} />
                 </span>
               </li>
             ))}
           </ul>
+          {unseen > 0 ? <p className="m-0 text-xs text-fg-muted tnum">{unseen} more skills in the pack with no evidence yet.</p> : null}
         </Card>
 
         <Card title="About">
@@ -85,7 +87,7 @@ function LearnerScreen({ me }: { me: MeResponse }) {
         <ul className="m-0 flex list-none flex-col gap-2 p-0">
           {data.interventions.map((i) => (
             <li key={i.id} className="text-sm">
-              <span className="font-medium">{skillWords(i.skillTag)}</span> · {i.action} <span className="text-fg-muted tnum">· follow-up {formatDate(i.followUpOn)}</span>
+              <span className="font-medium">{skillLabel(i.skillTag, 'teacher')}</span> · {i.action} <span className="text-fg-muted tnum">· follow-up {formatDate(i.followUpOn)}</span>
             </li>
           ))}
         </ul>

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { brainSkillSchema } from '../brain/contracts.js'
 import { guidelineStepSchema, guidelineStepTypeSchema } from './items.js'
 import { confidenceSchema, isoDateSchema } from './model/common.js'
 import { attemptModeSchema, attemptStatusSchema } from './practice.js'
@@ -480,23 +481,13 @@ export type GuardianNotesResponse = z.infer<typeof guardianNotesResponseSchema>
 
 // ── T6 learner profile ─────────────────────────────────────────────────────────────────────
 
-export const teacherSkillSummarySchema = z.object({
-  skillTag: z.string(),
-  /** Steps on this skill lost / found across trusted results. */
-  lost: z.number().int().nonnegative(),
-  found: z.number().int().nonnegative(),
-  /** The latest trusted result on the skill: lost or found. */
-  latest: z.enum(['lost', 'found']).nullable(),
-  lastCheckedAt: z.string().nullable(),
-})
-export type TeacherSkillSummary = z.infer<typeof teacherSkillSummarySchema>
-
 export const teacherLearnerResponseSchema = z.object({
   learner: personRef,
   classes: z.array(classRef),
   /** Spec 03 §8.2: a teacher sees subjects and the hardest subject only, never the dream or the raw text. */
   cards: z.object({ subjects: z.array(z.string()), hardestSubject: z.string().nullable() }).nullable(),
-  skills: z.array(teacherSkillSummarySchema),
+  /** The Brain's projection in teacher wording (B05): three marks per skill, teacher-confirmed results overriding the model's. */
+  skills: z.array(brainSkillSchema),
   attempts: z.array(
     z.object({
       id: uuid,

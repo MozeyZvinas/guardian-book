@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, gte, inArray, isNull } from 'drizzle-orm'
 import {
+  skillLabel,
   TEACHER_ORIGIN_LABEL,
   originAfterApproval,
   provenanceColumns,
@@ -23,7 +24,6 @@ import { HttpError, notFound } from '../lib/http.js'
 import { runModel } from '../modelRuns/index.js'
 import type { TeacherDeps } from '../teacher/deps.js'
 import { skillOutcomes, trustedOutcomes, type AttemptOutcome } from '../teacher/outcomes.js'
-import { skillWords } from '../teacher/skillWords.js'
 import { weekStartSast } from '../teacher/week.js'
 import { NOTE_MAX_TOKENS, NOTE_PROMPT_VERSION, NOTE_TIMEOUT_MS, buildNoteSystem, buildNoteUser, evidenceAlias, type NoteWeekSummary } from './notePrompt.v1.js'
 
@@ -124,13 +124,13 @@ export function weekSummary(outcomes: readonly AttemptOutcome[], evidence: Array
         const key = `${outcome.itemSlug}#${step.stepNo}`
         const entry = lostSteps.get(key)
         if (entry) entry.times += 1
-        else lostSteps.set(key, { skill: skillWords(step.skillTag), step: step.criterion, topic: outcome.itemTopic, times: 1 })
+        else lostSteps.set(key, { skill: skillLabel(step.skillTag, 'guardian'), step: step.criterion, topic: outcome.itemTopic, times: 1 })
       } else {
         stepsFound += 1
       }
     }
     lostByAttempt.set(outcome.attemptId, anyLost)
-    for (const tag of skillOutcomes(outcome.steps).correct) found.add(skillWords(tag))
+    for (const tag of skillOutcomes(outcome.steps).correct) found.add(skillLabel(tag, 'guardian'))
   }
   return {
     week_start: weekStart,

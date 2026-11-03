@@ -1,5 +1,5 @@
 import { and, desc, eq, gte, inArray } from 'drizzle-orm'
-import type { EventPayload, GapView } from '@guardian-book/shared'
+import { evidencePayload, outcomesOf, type BrainEvent, type EventBasis, type EventPayload, type GapView, type LearningEventKind } from '@guardian-book/shared'
 import type { DbOrTx } from '../db/client.js'
 import { assessments, attempts, guidelineSteps, items, reviews } from '../db/schema.js'
 
@@ -130,14 +130,13 @@ export function skillOutcomes(steps: readonly OutcomeStep[]): { correct: string[
 }
 
 /**
- * The learning-event payload for a teacher-confirmed result, in the shape the Brain's
- * reducer reads (B05, `packages/shared/src/brain/evidence.ts`, `evidencePayload()`):
- * `skills_correct`, `skills_lost` and `mode`. Mirrored here while B05 is not on main; swap
- * for the shared helper once it merges (the keys are the contract).
+ * The learning-event payload for a teacher-confirmed result, built with the one payload
+ * shape that moves the Brain (D37; B05's `evidencePayload()`): `skills_correct`,
+ * `skills_lost` from the confirmed steps and `mode` from the attempt.
  */
 export function reviewEvidencePayload(steps: readonly OutcomeStep[], mode: AttemptOutcome['mode'], extra: EventPayload = {}): EventPayload {
   const { correct, lost } = skillOutcomes(steps)
-  return { ...extra, skills_correct: correct, skills_lost: lost, mode }
+  return evidencePayload({ skills_correct: correct, skills_lost: lost, mode }, extra)
 }
 
 interface LatestSkill {
@@ -203,34 +202,28 @@ export function repeatedSkills(outcomes: readonly AttemptOutcome[]): string[] {
     .sort()
 }
 
-/** Event kinds that can state a per-skill outcome (mirrors B05's `EVIDENCE_KINDS`). */
-export const EVIDENCE_EVENT_KINDS: ReadonlySet<string> = new Set([
-  'assessed',
-  'retried',
-  'review_confirmed',
-  'review_released',
-  'fixed_independently',
-  'independent_check_completed',
-  'retention_check_completed',
-])
-
-const tagList = (value: unknown): string[] => (Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [])
-
 /**
- * What one learning event says about one skill: `correct` from a single-skill event
- * (`skill_tag` + `correct`), or from the `skills_correct` / `skills_lost` lists (B04's
- * `assessed` wrote `lost_skills`; read that too). Null when the event is silent on it.
+ * What one learning event says about one skill, read exactly as the Brain's reducer reads
+ * it (B05's `outcomesOf`): a single-skill event (`skill_tag` + `correct`) or the
+ * `skills_correct` / `skills_lost` lists, with the mode defaulting by kind. Null when the
+ * event is not evidence (basis `none`, a kind outside `EVIDENCE_KINDS`) or is silent on
+ * the skill.
  */
 export function eventSkillOutcome(
   event: { kind: string; basis: string; skillTag: string | null; payload: unknown },
   skillTag: string,
 ): { correct: boolean; mode: string | null } | null {
-  if (event.basis === 'none' || !EVIDENCE_EVENT_KINDS.has(event.kind)) return null
-  const payload = (event.payload !== null && typeof event.payload === 'object' ? event.payload : {}) as Record<string, unknown>
-  const mode = typeof payload['mode'] === 'string' ? (payload['mode'] as string) : null
-  if (event.skillTag === skillTag && typeof payload['correct'] === 'boolean') return { correct: payload['correct'], mode }
-  const lost = [...tagList(payload['skills_lost']), ...tagList(payload['lost_skills'])]
-  if (lost.includes(skillTag)) return { correct: false, mode }
-  if (tagList(payload['skills_correct']).includes(skillTag)) return { correct: true, mode }
-  return null
+  const brainEvent: BrainEvent = {
+    id: '',
+    attemptId: null,
+    itemId: null,
+    occurredAt: new Date(0),
+    // Rows carry the stored tokens; an unknown kind is simply not in EVIDENCE_KINDS.
+    kind: event.kind as LearningEventKind,
+    basis: event.basis as EventBasis,
+    skillTag: event.skillTag,
+    payload: event.payload !== null && typeof event.payload === 'object' && !Array.isArray(event.payload) ? (event.payload as EventPayload) : {},
+  }
+  const outcome = outcomesOf(brainEvent).find((candidate) => candidate.skillTag === skillTag)
+  return outcome ? { correct: outcome.correct, mode: outcome.mode } : null
 }

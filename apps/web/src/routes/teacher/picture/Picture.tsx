@@ -1,11 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router'
-import type { GapView, InterventionOutcome, InterventionView, MeResponse, PictureResponse } from '@guardian-book/shared'
+import { skillLabel, type GapView, type InterventionOutcome, type InterventionView, type MeResponse, type PictureResponse } from '@guardian-book/shared'
 import { createIntervention, interventions as fetchInterventions, picture as fetchPicture, patchIntervention } from '../../../api/teacher'
 import { RequireRole } from '../../../app/RequireRole'
 import { Button, Card, Field, FormError, TextInput } from '../../../components/Form'
 import { NotMine, TeacherShell, datePlus, formatDate, formatWhen, useLoad } from '../shell/TeacherShell'
-import { skillWords } from '../shell/skillWords'
 
 /**
  * T2 · Class picture (spec 05 §4.4, §9; brief B07 §2): shared gaps ("6 of 14 lost the mark
@@ -74,7 +73,7 @@ function PictureScreen({ me }: { me: MeResponse }) {
                     <span className="text-fg-muted tnum">
                       {row.uncertain > 0 ? `${row.uncertain} not sure` : ''}
                       {row.uncertain > 0 && row.repeatedSkills.length > 0 ? ' · ' : ''}
-                      {row.repeatedSkills.length > 0 ? `repeated: ${row.repeatedSkills.map(skillWords).join(', ')}` : ''}
+                      {row.repeatedSkills.length > 0 ? `repeated: ${row.repeatedSkills.map((tag) => skillLabel(tag, 'teacher')).join(', ')}` : ''}
                     </span>
                   </li>
                 ))}
@@ -130,7 +129,7 @@ function GapRow({ gap, picture, classId, onChanged }: { gap: GapView; picture: P
     }
   }
 
-  const words = skillWords(gap.skillTag)
+  const words = skillLabel(gap.skillTag, 'teacher')
   return (
     <li className="flex flex-col gap-2 rounded-card bg-ground p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -241,7 +240,7 @@ function InterventionRow({ row, onChanged }: { row: InterventionView; onChanged:
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="m-0 font-medium text-fg">
-            <Link to={`/teacher/learners/${row.learner.id}`}>{row.learner.nickname}</Link> · {skillWords(row.skillTag)}
+            <Link to={`/teacher/learners/${row.learner.id}`}>{row.learner.nickname}</Link> · {skillLabel(row.skillTag, 'teacher')}
           </p>
           <p className="m-0">{row.action}</p>
           <p className="m-0 text-fg-muted tnum">

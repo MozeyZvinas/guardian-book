@@ -3,11 +3,9 @@ import { originAfterApproval, originForFeedback, publicOriginLabel } from '@guar
 import { PromptSafetyError } from '../gateway/promptSafety.js'
 import { buildNoteUser } from '../notes/notePrompt.v1.js'
 import { citedEventIds, weekSummary } from '../notes/service.js'
-import { skillSummaries } from './learner.js'
 import { eventSkillOutcome, repeatedSkills, reviewEvidencePayload, sharedGaps, skillOutcomes, type AttemptOutcome } from './outcomes.js'
 import { sortQueue } from './queue.js'
 import { buildReviewSteps } from './review.js'
-import { skillWords } from './skillWords.js'
 import { sastDatePlus, weekStartSast } from './week.js'
 
 const step = (stepNo: number, skillTag: string, awarded: number, available = 1, criterion = `step ${stepNo}`) => ({ stepId: `s${stepNo}`, stepNo, criterion, skillTag, awarded, available })
@@ -52,17 +50,12 @@ describe('trusted outcomes → skills, gaps, repeats', () => {
       outcome('L2', '2026-11-03T09:00:00Z', [step(1, 'factorise', 1), step(2, 'solve', 0)]),
     ]
     expect(repeatedSkills(mine)).toEqual(['solve'])
-    const summary = skillSummaries(mine)
-    expect(summary).toEqual([
-      { skillTag: 'solve', lost: 2, found: 0, latest: 'lost', lastCheckedAt: '2026-11-03T09:00:00.000Z' },
-      { skillTag: 'factorise', lost: 1, found: 1, latest: 'found', lastCheckedAt: '2026-11-03T09:00:00.000Z' },
-    ])
   })
 
-  it('reads a skill outcome out of an event in either payload shape, never from basis none', () => {
-    expect(eventSkillOutcome({ kind: 'retention_check_completed', basis: 'model_high', skillTag: 'solve', payload: { correct: true, mode: 'retention' } }, 'solve')).toEqual({ correct: true, mode: 'retention' })
+  it('reads a skill outcome out of an event as the reducer does: either payload shape, mode by kind, never from basis none', () => {
+    expect(eventSkillOutcome({ kind: 'retention_check_completed', basis: 'model_high', skillTag: 'solve', payload: { correct: true } }, 'solve')).toEqual({ correct: true, mode: 'retention' })
     expect(eventSkillOutcome({ kind: 'review_released', basis: 'teacher_confirmed', skillTag: null, payload: { skills_lost: ['solve'], skills_correct: ['factorise'], mode: 'assisted' } }, 'solve')).toEqual({ correct: false, mode: 'assisted' })
-    expect(eventSkillOutcome({ kind: 'assessed', basis: 'model_high', skillTag: 'solve', payload: { lost_skills: ['solve'] } }, 'factorise')).toBeNull()
+    expect(eventSkillOutcome({ kind: 'assessed', basis: 'model_high', skillTag: 'solve', payload: { skills_lost: ['solve'] } }, 'factorise')).toBeNull()
     expect(eventSkillOutcome({ kind: 'assessed', basis: 'none', skillTag: 'solve', payload: { correct: false } }, 'solve')).toBeNull()
     expect(eventSkillOutcome({ kind: 'intervention_assigned', basis: 'none', skillTag: 'solve', payload: {} }, 'solve')).toBeNull()
   })
@@ -167,11 +160,5 @@ describe('notes home', () => {
     expect(() => buildNoteUser({ ...base, topics: ['mail me@example.com'] })).toThrow(PromptSafetyError)
     // A forbidden key anywhere in the structure is a bug upstream, not something to filter.
     expect(() => buildNoteUser({ ...base, ...({ learner_name: 'x' } as object) })).toThrow(PromptSafetyError)
-  })
-
-  it('skill words from a tag', () => {
-    expect(skillWords('factorise-trinomial')).toBe('Factorise trinomial')
-    expect(skillWords('calc.chain_rule')).toBe('Chain rule')
-    expect(skillWords('')).toBe('Skill')
   })
 })
