@@ -153,6 +153,10 @@ Send every PR link to the planning session; merge only after its review
 
 ## Last session handover
 
+- 3 Nov: D36 (domains): `guardianbook.app` is the front door; `.co.za` and `www` redirect
+  to it; DNS on Cloudflare. Steps in `docs/runbooks/deploy.md` § Domains. First Railway
+  deploy failed on a leftover `pnpm` start command: clear Settings → Deploy → Custom Start
+  Command.
 - 2 Nov: D35 (the student success direction; the learner support loop; six mechanics).
   Spec 02 v2.1, spec 03 §9, spec 05 §9, B02 updated (schools, provenance, new tables; cap
   $30), B03 boundary note. Gate moved to 3 Nov 20:00. (31 Oct)

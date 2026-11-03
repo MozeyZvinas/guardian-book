@@ -36,14 +36,32 @@ founder sets it all in the Railway dashboard.
    chat, a commit or a doc.
 5. **Postgres → Backups:** turn on the **daily** schedule (spec 04 §7). The restore drill
    into a scratch environment is B11.
-6. **Domain:** generate the Railway domain, then set `BETTER_AUTH_URL` to it.
+6. **Domain (D36):** generate the Railway domain (target port 8080) and set the variable
+   `PORT=8080`. Set `BETTER_AUTH_URL` to the Railway URL until `guardianbook.app` is green,
+   then to `https://guardianbook.app`.
+
+## Domains (D36): `guardianbook.app` is the front door
+
+Both domains are registered at GoDaddy; their DNS lives on Cloudflare (free plan).
+
+| Name | Cloudflare record | What it does |
+|---|---|---|
+| `guardianbook.app` | `CNAME @ → <value Railway shows>` (proxied) + Railway's `TXT` (exact name and value) | The product. Railway custom domain, port 8080 |
+| `www.guardianbook.app` | `CNAME www → guardianbook.app` (proxied) | Redirect rule "WWW to root", 301 |
+| `guardianbook.co.za`, `www.guardianbook.co.za` | `A @ → 192.0.2.1` (proxied, placeholder) + `CNAME www → guardianbook.co.za` (proxied) | Redirect rule: `concat("https://guardianbook.app", http.request.uri.path)`, 301, keep query |
+
+Cloudflare settings on both zones: SSL/TLS **Full** (never Full (strict)); Universal SSL on;
+Always Use HTTPS on. Limits the app must respect behind the proxy: **100 s** per request
+(model calls must finish or fail inside it) and **100 MB** per upload.
+If a custom domain shows a 404 after the CNAME resolves, the `TXT` record is missing or
+wrong. If the browser loops (`ERR_TOO_MANY_REDIRECTS`), SSL/TLS is not on **Full**.
 
 ## Every deploy
 
 1. CI green on the PR → the founder merges (`gh pr merge <n> --squash`).
 2. Railway builds and swaps when `/healthz` returns 200.
 3. **Check in a fresh tab** (PWA cache trap) and on the phone:
-   `https://<service>.up.railway.app/healthz` must show `"ok":true` and the expected
+   `https://guardianbook.app/healthz` (or the `*.up.railway.app` URL) must show `"ok":true` and the expected
    `configured` flags; `/` must render the landing screen.
 
 ## Rollback
