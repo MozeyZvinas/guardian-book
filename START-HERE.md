@@ -117,12 +117,25 @@ Read CLAUDE.md, START-HERE.md, docs/decisions.md (D16, D19–D27, D34) and docs/
 ```
 When CI is green, send the PR link to the planning session. Merge only after its review.
 
-**Terminal A, after B01 merges (B02):** start with `fable -w b02`, then paste:
+**Opening a session in its own worktree.** `fable` has no `-w` flag (its options are
+`--model`, `--budget`, `--effort`, `--resume`), so make the worktree with git first. Replace
+`b02` and the branch name for each brief; run from the main folder after `git pull`:
+```bash
+cd ~/projects/guardian-book && git pull --rebase && git fetch origin
+git worktree add .claude/worktrees/b02 -b b02-data-auth-circle origin/main
+cp .env .claude/worktrees/b02/.env
+cd .claude/worktrees/b02 && fable --budget 30
+```
+Terminal B (subscription): `unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN` before `fable`; if
+`fable` needs an API key, run `claude --model claude-fable-5-1` instead. After a merge:
+`git worktree remove .claude/worktrees/b02` from the main folder.
+
+**Terminal A (B02):** worktree `b02`, branch `b02-data-auth-circle`, `fable --budget 30`, then paste:
 ```
 Read CLAUDE.md, START-HERE.md and docs/decisions.md (D19, D21, D24, D34, D35). Carry out prompts/B02-data-auth-circle.md and only that brief, in this worktree. Do not touch apps/api/src/gateway, apps/api/src/verify or packages/shared/src/contracts/model (another session owns them). Report the repo state and your plan in one message, then proceed. Small commits; push branch b02-data-auth-circle; open the PR with the completion report; stop when CI has finished. Do not merge.
 ```
 
-**Terminal B, after B01 merges (B03):** start with `fable -w b03`, then paste:
+**Terminal B (B03):** worktree `b03`, branch `b03-gateway-verifier`, `fable --budget 25`, then paste:
 ```
 Read CLAUDE.md, START-HERE.md and docs/decisions.md (D13, D24, D26, D34, D35). Carry out prompts/B03-gateway-verifier.md and only that brief, in this worktree. Own only apps/api/src/gateway, apps/api/src/verify, packages/shared/src/contracts/model and apps/api/src/evals; create no database tables and no authenticated routes. Read the three Meta doc pages named in the brief before writing the gateway and quote the lines you rely on in code comments with today's date. If META_API_KEY is absent from .env, stop at the mocked tests and say so. Report the repo state and your plan in one message, then proceed. Small commits; push branch b03-gateway-verifier; open the PR with the completion report; stop when CI has finished. Do not merge.
 ```
@@ -136,9 +149,9 @@ brief and replies "merge" or with the fixes to paste back into the same session.
 
 | When | Terminal A (promotional credits) | Terminal B (subscription) | Optional Terminal C (subscription) |
 |---|---|---|---|
-| Now | B02 (`fable -w b02`) | B03 (`fable -w b03`) | — |
-| After B02 + B03 merge | B04 (`fable -w b04`) | B05 (`fable -w b05`) | B08 (`fable -w b08`) |
-| After B04 (+ B05) merge | B06 (`fable -w b06`) | B07 (`fable -w b07`) | — |
+| Now | B02 (worktree `b02`) | B03 (worktree `b03`) | — |
+| After B02 + B03 merge | B04 (worktree `b04`) | B05 (worktree `b05`) | B08 (worktree `b08`) |
+| After B04 (+ B05) merge | B06 (worktree `b06`) | B07 (worktree `b07`) | — |
 | 3 Nov, 20:00 (or as soon as B06 + B07 merge) | **The full run on your phone** | | |
 | 4 Nov, morning | B09 polish and PWA | B10 hardening | Record the video and the X cut |
 | 4 Nov, by 20:00 SAST | **Submit** | | |
@@ -149,7 +162,7 @@ Read CLAUDE.md, START-HERE.md and docs/BUILD-PLAN.md. Carry out prompts/BNN-....
 ```
 Send every PR link to the planning session; merge only after its review
 (`gh pr merge <n> --merge --delete-branch`, then `git pull` in the main folder before the next
-`fable -w`).
+worktree).
 
 ## Last session handover
 

@@ -38,7 +38,7 @@ edit, and make targeted edits only.
 
 ## Build briefs (in order; scope v2, D34)
 
-Two Fable sessions may run at once in separate worktrees (`fable -w <name>`): one on the
+Two Fable sessions may run at once in separate worktrees (`git worktree add .claude/worktrees/<name> -b <branch> origin/main`, then `fable` inside it; see START-HERE): one on the
 promotional credits, one on the subscription. Briefs marked ∥ are designed not to touch
 the same files.
 
