@@ -1,0 +1,47 @@
+{
+  "slug": "alg-12-factorise-trinomial",
+  "topic": "Algebra: equations",
+  "skill_tags": ["factorise-trinomial", "solve-quadratic-by-factors"],
+  "prompt_md": "Solve for $x$:\n\n$$x^2 - 5x + 6 = 0$$",
+  "diagram_key": null,
+  "max_marks": 4,
+  "author": "Guardian Book planning session (original item, written for this build)",
+  "reviewer": "pending",
+  "reviewed_at": null,
+  "source": "original",
+  "provenance": "original_human",
+  "guideline_steps": [
+    {
+      "step_no": 1,
+      "step_type": "M",
+      "criterion": "Recognises a quadratic in standard form and attempts to factorise (two brackets, or an equivalent method such as the formula).",
+      "marks": 1,
+      "skill_tag": "factorise-trinomial",
+      "notes": "The quadratic formula with correct substitution earns this mark."
+    },
+    {
+      "step_no": 2,
+      "step_type": "A",
+      "criterion": "Correct factors: $(x - 2)(x - 3) = 0$.",
+      "marks": 1,
+      "skill_tag": "factorise-trinomial",
+      "notes": "Order of the brackets does not matter. Sign errors lose this mark but not step 3 if followed through."
+    },
+    {
+      "step_no": 3,
+      "step_type": "CA",
+      "criterion": "Sets each factor equal to zero.",
+      "marks": 1,
+      "skill_tag": "solve-quadratic-by-factors",
+      "notes": "Consistent accuracy: earned when applied correctly to the learner's own factors."
+    },
+    {
+      "step_no": 4,
+      "step_type": "A",
+      "criterion": "Both solutions stated: $x = 2$ and $x = 3$.",
+      "marks": 1,
+      "skill_tag": "solve-quadratic-by-factors",
+      "notes": "A correct final answer earns this mark even if the working is partial (final-answer rule)."
+    }
+  ]
+}

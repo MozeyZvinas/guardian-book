@@ -25,9 +25,19 @@ const optionalPositiveInt = z.preprocess(
   z.coerce.number().int().positive().optional(),
 )
 
+const optionalBoolean = z.preprocess(
+  blankToUndefined,
+  z
+    .enum(['true', 'false', '1', '0'])
+    .transform((value) => value === 'true' || value === '1')
+    .optional(),
+)
+
 const envSchema = z.object({
   PORT: optionalPositiveInt,
   DATABASE_URL: optionalString,
+  /** Default true: pending migrations run before the server listens (spec 03 §2). */
+  DB_MIGRATE_ON_BOOT: optionalBoolean,
   BETTER_AUTH_SECRET: optionalString,
   BETTER_AUTH_URL: optionalString,
   META_API_KEY: optionalString,
@@ -48,6 +58,7 @@ type Env = z.infer<typeof envSchema>
 export interface DbConfig {
   configured: boolean
   url: string | null
+  migrateOnBoot: boolean
 }
 
 export interface AuthConfig {
@@ -139,6 +150,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     db: {
       configured: Boolean(values.DATABASE_URL),
       url: values.DATABASE_URL ?? null,
+      migrateOnBoot: values.DB_MIGRATE_ON_BOOT ?? true,
     },
     auth: {
       configured: Boolean(values.BETTER_AUTH_SECRET && values.BETTER_AUTH_URL),
