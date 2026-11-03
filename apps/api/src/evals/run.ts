@@ -3,9 +3,10 @@ import { fileURLToPath } from 'node:url'
 import { loadConfig } from '../config.js'
 import { createGateway } from '../gateway/gateway.js'
 import { logger } from '../logger.js'
-import { loadCases } from './runner.js'
 import { createMockGateway } from './mockGateway.js'
-import { runEval } from './runner.js'
+import { defaultPrivacyHarnessPath, readPrivacyHarness } from './privacyHarness.js'
+import { loadCases, runEval } from './runner.js'
+import { DEFAULT_DATASET_LABEL, buildEvidence, writeEvidence } from './summary.js'
 
 /**
  * `pnpm eval:dev`: run the work check over every case in EVAL_DIR and write the results.
@@ -13,8 +14,13 @@ import { runEval } from './runner.js'
  *   EVAL_DIR=/path/outside/the/repo pnpm eval:dev            # live, needs META_API_KEY
  *   EVAL_DIR=/path/outside/the/repo EVAL_MOCK=1 pnpm eval:dev # mocked model, no spend
  *
- * Results go to EVAL_OUT_DIR (default `evals/results/` at the repo root, git-ignored).
- * Case files are never committed; result files only when the planning session says so.
+ * Two files go to EVAL_OUT_DIR (default `evals/results/` at the repo root): the raw
+ * per-case results (git-ignored, never committed) and `latest.json`, the summary the proof
+ * page reads (B08; committed when the planning session says so). Real case files are never
+ * committed. Optional: EVAL_DATASET_LABEL (plain words: what the cases are and who scored
+ * them), EVAL_HELD_OUT=1 (only for the frozen teacher-scored set), EVAL_NOT_YET (extra
+ * "what doesn't work yet" lines, separated by ";"), EVAL_PRIVACY_FILE (the permission
+ * harness output; default `evals/results/privacy-harness.json`, written by `pnpm test:integration`).
  */
 
 const here = path.dirname(fileURLToPath(import.meta.url))
@@ -47,7 +53,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`eval:dev: ${cases.length} case(s) from ${evalDir}; model ${gateway.model}${mocked ? ' (mocked)' : ''}`)
-  const { results, filePath, latestPath } = await runEval({
+  const { results, filePath } = await runEval({
     evalDir,
     outDir,
     gateway,
@@ -70,7 +76,24 @@ async function main(): Promise<void> {
     ].join(' · '),
   )
   console.log(`checks blocked: ${JSON.stringify(s.checks_blocked_by_code)} · latency p50 ${s.latency_ms.p50} ms, p95 ${s.latency_ms.p95} ms · cost $${s.cost_usd.total}`)
-  console.log(`wrote ${path.relative(process.cwd(), filePath)} and ${path.relative(process.cwd(), latestPath)}`)
+
+  const privacyPath = process.env['EVAL_PRIVACY_FILE'] ?? defaultPrivacyHarnessPath()
+  const privacy = await readPrivacyHarness(privacyPath)
+  if (!privacy) console.log(`no permission harness file at ${path.relative(process.cwd(), privacyPath)}: the privacy suite is left out (run pnpm test:integration first)`)
+  const evidence = buildEvidence({
+    results,
+    privacy,
+    datasetLabel: process.env['EVAL_DATASET_LABEL'] ?? DEFAULT_DATASET_LABEL,
+    heldOut: process.env['EVAL_HELD_OUT'] === '1',
+    notYet: (process.env['EVAL_NOT_YET'] ?? '')
+      .split(';')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0),
+  })
+  const latestPath = path.join(outDir, 'latest.json')
+  await writeEvidence(evidence, latestPath)
+  console.log(`suites: ${evidence.suites.map((suite) => `${suite.key} n=${suite.n}`).join(', ')} · dataset: ${evidence.dataset.label}`)
+  console.log(`wrote ${path.relative(process.cwd(), filePath)} (raw, git-ignored) and ${path.relative(process.cwd(), latestPath)} (the summary)`)
 }
 
 main().catch((err: unknown) => {

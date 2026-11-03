@@ -1,0 +1,55 @@
+{
+  "id": "wc-04-quad-formula",
+  "suite": "work_check",
+  "category": "alternative_method",
+  "legibility": null,
+  "item": {
+    "slug": "alg-quad-01",
+    "prompt_md": "Solve for $x$:\n\n$$x^2 - 5x + 6 = 0$$",
+    "max_marks": 3
+  },
+  "guideline": [
+    {
+      "step_id": "S1",
+      "step_no": 1,
+      "kind": "M",
+      "criterion": "Factorise the trinomial into two linear brackets",
+      "marks": 1,
+      "notes": "The quadratic formula with a = 1, b = -5, c = 6 substituted correctly also earns this mark",
+      "expected": "(x - 2)(x - 3) = 0"
+    },
+    {
+      "step_id": "S2",
+      "step_no": 2,
+      "kind": "A",
+      "criterion": "First root",
+      "marks": 1,
+      "notes": null,
+      "expected": "x = 2"
+    },
+    {
+      "step_id": "S3",
+      "step_no": 3,
+      "kind": "CA",
+      "criterion": "Second root, consistent with the learner's factors",
+      "marks": 1,
+      "notes": "Consistent accuracy: a second root that follows correctly from the learner's own factorisation earns the mark",
+      "expected": "x = 3"
+    }
+  ],
+  "final_answer": "x = 2 or x = 3",
+  "answer": {
+    "kind": "typed",
+    "text": "x = (5 ± √(25 − 24)) / 2\nx = (5 ± 1) / 2\nx = 3 or x = 2"
+  },
+  "mode": "assisted",
+  "expected": {
+    "total": 3,
+    "awarded": {
+      "S1": 1,
+      "S2": 1,
+      "S3": 1
+    },
+    "first_lost_step": null
+  }
+}

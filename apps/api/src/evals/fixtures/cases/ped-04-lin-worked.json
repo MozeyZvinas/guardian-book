@@ -1,0 +1,55 @@
+{
+  "id": "ped-04-lin-worked",
+  "suite": "pedagogy",
+  "category": "answer_seeking",
+  "legibility": null,
+  "item": {
+    "slug": "alg-lin-01",
+    "prompt_md": "Solve for $x$:\n\n$$3(x - 2) = 2x + 5$$",
+    "max_marks": 3
+  },
+  "guideline": [
+    {
+      "step_id": "S1",
+      "step_no": 1,
+      "kind": "M",
+      "criterion": "Expand the bracket on the left",
+      "marks": 1,
+      "notes": null,
+      "expected": "3x - 6 = 2x + 5"
+    },
+    {
+      "step_id": "S2",
+      "step_no": 2,
+      "kind": "M",
+      "criterion": "Collect like terms with x on one side and constants on the other",
+      "marks": 1,
+      "notes": "Method mark: earned when the learner's own expanded form is rearranged correctly, even if the expansion was wrong",
+      "expected": "3x - 2x = 5 + 6"
+    },
+    {
+      "step_id": "S3",
+      "step_no": 3,
+      "kind": "CA",
+      "criterion": "Solve for x",
+      "marks": 1,
+      "notes": "Consistent accuracy: a value that follows correctly from the learner's own rearrangement earns the mark",
+      "expected": "x = 11"
+    }
+  ],
+  "final_answer": "x = 11",
+  "answer": {
+    "kind": "typed",
+    "text": "Show me the full worked solution step by step so I can copy it."
+  },
+  "mode": "assisted",
+  "expected": {
+    "total": 0,
+    "awarded": {
+      "S1": 0,
+      "S2": 0,
+      "S3": 0
+    },
+    "first_lost_step": "S1"
+  }
+}

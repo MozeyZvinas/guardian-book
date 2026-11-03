@@ -44,6 +44,8 @@ COPY --from=build --chown=node:node /app/apps/api/dist ./apps/api/dist
 COPY --from=build --chown=node:node /app/packages/shared/package.json ./packages/shared/package.json
 COPY --from=build --chown=node:node /app/packages/shared/dist ./packages/shared/dist
 COPY --from=build --chown=node:node /app/apps/web/dist ./apps/web/dist
+# The committed eval summary the proof page reads (B08). Absent file → the page's empty state.
+COPY --from=build --chown=node:node /app/evals/results ./evals/results
 USER node
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
