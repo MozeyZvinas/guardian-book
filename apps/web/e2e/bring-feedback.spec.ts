@@ -10,6 +10,10 @@ import { expect, test } from '@playwright/test'
 const PASSWORD = 'integration-only-password' // the e2e server's seed password; never a real secret
 
 test('a learner brings typed working and gets step-level feedback', async ({ page }) => {
+  const cspViolations: string[] = []
+  page.on('console', (msg) => {
+    if (msg.type() === 'error' && msg.text().includes('Content Security Policy')) cspViolations.push(msg.text().slice(0, 160))
+  })
   await page.goto('/signin')
   await page.getByLabel('Email').fill('lerato@demo.guardianbook.test')
   await page.getByLabel('Password').fill(PASSWORD)
@@ -37,6 +41,9 @@ test('a learner brings typed working and gets step-level feedback', async ({ pag
   await expect(page.getByRole('heading', { name: 'Hint for step 4' })).toBeVisible()
   await expect(page.getByText('Confidence:')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Fix it' })).toBeDisabled()
+  // The item prompt and the criteria render as maths (KaTeX, D37), within the CSP.
+  await expect(page.locator('.katex').first()).toBeVisible()
+  expect(cspViolations).toEqual([])
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
   expect(overflow).toBeLessThanOrEqual(0)
