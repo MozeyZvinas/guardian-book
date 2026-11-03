@@ -8,7 +8,10 @@ import { createDb, type Db, type DbHandle } from '../../src/db/client.js'
 import { runMigrations } from '../../src/db/migrate.js'
 import { seed, type SeedResult } from '../../src/db/seed.js'
 import { SEED_PEOPLE, type SeedPersonKey } from '../../src/db/seed-data.js'
+import type { Gateway } from '../../src/gateway/gateway.js'
 import { silentLogger } from '../../src/logger.js'
+import { JobRegistry } from '../../src/modelRuns/jobs.js'
+import { memoryStorage, type Storage } from '../../src/storage/index.js'
 import { integrationDatabaseUrl } from './harness.js'
 
 /** Test-only fixture; never a real secret. Every seeded person signs in with it. */
@@ -35,29 +38,47 @@ export interface TestContext {
   db: Db
   app: Express
   seeded: SeedResult
+  jobs: JobRegistry
   close(): Promise<void>
 }
 
+export interface FreshContextOptions {
+  seed?: boolean
+  /** Extra env for `loadConfig` (caps, model ID). */
+  env?: Record<string, string>
+  /** A scripted gateway (B04 tests); default: unconfigured, every call refused. */
+  gateway?: Gateway
+  /** `null` = uploads answer 503; default: in-memory storage. */
+  storage?: Storage | null
+  now?: () => Date
+}
+
 /** A fresh database, migrated and seeded, with the app wired to it over an https origin. */
-export async function freshContext(options: { seed?: boolean } = {}): Promise<TestContext> {
+export async function freshContext(options: FreshContextOptions = {}): Promise<TestContext> {
   await resetDatabase()
   const handle = createDb(databaseUrl, 4)
   const seeded =
     options.seed === false
       ? { classCodes: { '12A': '', '11B': '', '10C': '' }, items: { inserted: 0, updated: 0, unchanged: 0 } }
       : await seed(handle.db, { password: TEST_PASSWORD })
+  const jobs = new JobRegistry(silentLogger)
   const app = createApp({
     config: loadConfig({
       DATABASE_URL: databaseUrl,
       BETTER_AUTH_SECRET: 'integration-only-secret-0123456789abcdef',
       BETTER_AUTH_URL: TEST_ORIGIN,
+      ...(options.env ?? {}),
     }),
     logger: silentLogger,
     webDistDir: path.join(import.meta.dirname, 'no-dist'),
     version: 'integration',
     db: handle.db,
+    ...(options.gateway ? { gateway: options.gateway } : {}),
+    storage: options.storage === undefined ? memoryStorage() : options.storage,
+    jobs,
+    ...(options.now ? { now: options.now } : {}),
   })
-  return { handle, db: handle.db, app, seeded, close: () => handle.close() }
+  return { handle, db: handle.db, app, seeded, jobs, close: () => handle.close() }
 }
 
 /** Signs in as a seeded person and returns the Cookie header to send back. */
