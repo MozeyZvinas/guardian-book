@@ -413,3 +413,11 @@ Add any question here, linked to a task ID.
   Item swap one line each. Merge conflicts were the mock's type-import line and the B15/B16
   rows in this table; both kept both sides.
 
+
+## Post-submission list (test-only fixes; nothing here changes product behaviour)
+
+- **B11 e2e flake:** `apps/web/e2e/teacher-space-script.spec.ts:53` asserts the transient
+  "Reading the script" text after "Read and mark"; on a fast runner the mocked read finishes
+  and navigates before the check, so main's e2e went red once on the B15 merge (ffa1e6f) and
+  passed on re-run. Fix: drop the transient assertion or make it tolerant, keep the 30 s wait
+  for the review URL. Test-only. (4 Nov, coordinator)
