@@ -272,16 +272,7 @@ function costOf(total: number, cases: number, assumption: string): EvidenceSuite
 
 const DATASET = { label: NSC_DATASET_LABEL, held_out: true }
 
-/**
- * A person's reading of each miss (`<EVAL_DIR>/guide-reading.json`, outside the repo): true
- * when the guide's answer is the memo's in another form. Used only when it covers every miss.
- */
-export interface GuideReading {
-  read_by: string
-  equivalent: Record<string, boolean>
-}
-
-export function nscGuideSuite(results: NscGuideResult[], source: string, reading: GuideReading | null = null): EvidenceSuite | null {
+export function nscGuideSuite(results: NscGuideResult[], source: string): EvidenceSuite | null {
   if (results.length === 0) return null
   const runs = results.flatMap((result) => result.runs)
   const calls = runs.filter((run) => run.status !== 'failed')
@@ -301,6 +292,12 @@ export function nscGuideSuite(results: NscGuideResult[], source: string, reading
       reachedOf(shown),
     ),
     metrics: [
+      metric(
+        'ready_other_answer',
+        'Worked steps shown, answer not the memo’s',
+        'what a learner sees: questions shown with worked steps whose final answer the same fixed comparison does not match to the memo’s (wrong, or right in another form) ÷ questions shown with worked steps',
+        ratio(ready.filter((result) => result.reached === false).length, ready.length),
+      ),
       metric('reached_typed', 'Typed questions', 'questions without a figure, typed in: the memo’s final answer reached ÷ such questions the guide read', reachedOf(shown.filter((result) => !result.with_figure))),
       metric(
         'reached_with_figure',
@@ -315,13 +312,6 @@ export function nscGuideSuite(results: NscGuideResult[], source: string, reading
         'questions with worked steps shown whose answer matches the memo’s ÷ questions with worked steps shown',
         ratio(ready.filter((result) => result.reached === true).length, ready.length),
       ),
-      metric(
-        'ready_other_answer',
-        'Worked steps shown with another answer',
-        'questions with worked steps shown whose answer does not match the memo’s (wrong, or right in another form) ÷ questions with worked steps shown',
-        ratio(ready.filter((result) => result.reached === false).length, ready.length),
-      ),
-      ...readingMetrics(shown, ready, reading),
       metric('schema_validity', 'Passed every check first time', 'model calls that passed every verifier check ÷ model calls', ratio(calls.filter((run) => run.checks.every((check) => check.passed)).length, calls.length)),
       metric('failed', 'Failed', 'questions where no read was accepted (timeout, provider error, checks) ÷ questions', ratio(results.filter((result) => result.status === 'failed').length, results.length)),
     ],
@@ -335,27 +325,6 @@ export function nscGuideSuite(results: NscGuideResult[], source: string, reading
       `one learner asks for help with ${NSC_LEARNER_WEEK} questions a week; each question is two reads; cost per learner-week is the mean cost per question × ${NSC_LEARNER_WEEK}`,
     ),
   }
-}
-
-function readingMetrics(shown: NscGuideResult[], ready: NscGuideResult[], reading: GuideReading | null): EvidenceMetric[] {
-  if (!reading) return []
-  const misses = shown.filter((result) => result.reached === false)
-  if (misses.some((result) => reading.equivalent[result.id] === undefined)) return []
-  const same = (result: NscGuideResult): boolean => result.reached === true || reading.equivalent[result.id] === true
-  return [
-    metric(
-      'reached_by_reading',
-      'Reached, counting other forms of the same answer',
-      `as the headline, with each miss read by ${reading.read_by}: a miss counts when it states the memo’s answer in another form ÷ questions the guide read`,
-      ratio(shown.filter(same).length, shown.length),
-    ),
-    metric(
-      'ready_different_by_reading',
-      'Worked steps shown with a different answer, by reading',
-      `questions with worked steps shown whose answer differs from the memo’s after that reading ÷ questions with worked steps shown`,
-      ratio(ready.filter((result) => result.reached !== null && !same(result)).length, ready.length),
-    ),
-  ]
 }
 
 export function nscWorkCheckSuite(results: EvalCaseResult[], source: string): EvidenceSuite | null {

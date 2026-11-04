@@ -20,7 +20,6 @@ import {
   selectWorkCheckCases,
   sessionCasePattern,
   withNscSuites,
-  type GuideReading,
   type NscGuideResult,
 } from './nsc.js'
 
@@ -125,12 +124,9 @@ async function main(): Promise<void> {
     const guideFile = `${ranAt.toISOString().replace(/[:.]/g, '-')}-nsc-guide${saved ? '-rescored' : ''}.json`
     const guideRaw = saved ? { ran_at: saved.ran_at, rescored_at: ranAt.toISOString(), model: gateway.model, results } : { ran_at: ranAt.toISOString(), model: gateway.model, results }
     writeFileSync(path.join(resultsDir, guideFile), `${JSON.stringify(guideRaw, null, 2)}\n`)
-    const readingFile = path.join(heldOutDir, 'guide-reading.json')
-    const reading = existsSync(readingFile) ? (JSON.parse(readFileSync(readingFile, 'utf8')) as GuideReading) : null
     const suite = nscGuideSuite(
       results,
       `pnpm eval:nsc · ${gateway.model} · ${GUIDE_PROMPT_VERSION} + ${GUIDE_CHECK_PROMPT_VERSION} · ${saved ? `${saved.ran_at}, re-scored ${ranAt.toISOString()}` : ranAt.toISOString()}`,
-      reading,
     )
     if (suite) suites.push(suite)
     notYet.push(

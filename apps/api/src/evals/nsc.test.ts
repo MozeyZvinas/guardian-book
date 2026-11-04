@@ -196,15 +196,6 @@ describe('the held-out suites', () => {
     expect(nscGuideSuite([], 'x')).toBeNull()
   })
 
-  it('adds the reading-based figures only when the reading covers every miss', () => {
-    const results = [{ ...guideResult(true, 'ready'), id: 'a' }, { ...guideResult(false, 'ready'), id: 'b' }, { ...guideResult(false, 'unsure'), id: 'c' }]
-    const keys = (reading: Parameters<typeof nscGuideSuite>[2]) => Object.fromEntries((nscGuideSuite(results, 'x', reading)?.metrics ?? []).map((m) => [m.key, m.ratio]))
-    expect(keys({ read_by: 'a reader', equivalent: { b: true } })['reached_by_reading']).toBeUndefined()
-    const both = keys({ read_by: 'a reader', equivalent: { b: true, c: false } })
-    expect(both['reached_by_reading']).toMatchObject({ n: 2, d: 3 })
-    expect(both['ready_different_by_reading']).toMatchObject({ n: 0, d: 2 })
-  })
-
   it('scores the lost step on changed answers and full marks on the control', () => {
     const result = (category: string, over: Partial<EvalCaseResult>): EvalCaseResult =>
       ({ id: category, suite: 'work_check', category, legibility: null, status: 'accepted', expected_total: 2, model_total: 2, exact_total: true, within_one: true, expected_first_lost_step: null, model_first_lost_step: null, lost_step_match: null, all_steps_high_confidence: true, answer_revealed: null, calls: 1, cost_usd: 0.01, latency_ms: 1000, output: null, runs: [], error: null, ...over }) as EvalCaseResult
