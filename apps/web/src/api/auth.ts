@@ -12,13 +12,13 @@ export const signOut = () => api('/api/auth/sign-out', signOutResponseSchema, { 
 
 export const me = () => api('/api/me', meResponseSchema)
 
-/** Where each role lands after sign-in (spec 05 §4; the guardian week arrives with B06). */
+/** Where each role lands after sign-in (spec 05 §4): `/guardian` opens the first linked learner's week, else G0 Link. */
 export function homeFor(role: Role): string {
   switch (role) {
     case 'learner':
       return '/today'
     case 'guardian':
-      return '/guardian/link'
+      return '/guardian'
     case 'teacher':
       return '/teacher'
     default:

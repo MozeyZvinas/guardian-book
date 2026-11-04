@@ -22,6 +22,7 @@
   --color-muted: #5e6664; /* muted text, 5.9:1 on white */
   --color-pink-light: #ff5a7a; /* action on dark */
   --color-teal-light: #3dd6c6; /* progress on dark */
+  --color-green: #153f38; /* the guardian portal's header and chips only (white on green 11.7:1) */
 
   --radius-*: initial;
   --radius-card: 12px;

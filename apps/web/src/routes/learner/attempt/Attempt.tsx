@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, Navigate, useNavigate, useParams } from 'react-router'
+import { checkAlone } from '../../../api/loop'
 import type { AttemptResponse } from '@guardian-book/shared'
 import { ApiRequestError } from '../../../api/client'
 import { assess, attemptImageUrl, getAttempt } from '../../../api/practice'
@@ -8,14 +9,14 @@ import { Button, Card, FormError } from '../../../components/Form'
 import { HintCard } from '../../../components/HintCard'
 import { LearnerShell } from '../../../components/LearnerShell'
 import { MathText } from '../../../components/MathText'
-import { StatusChip } from '../../../components/StatusChip'
 import { ConfidenceLabel, StepMap } from '../../../components/StepMap'
 import { WorkViewer } from '../../../components/WorkViewer'
 
 /**
- * L3 · Feedback (spec 05 §4.2, §7): the learner's own work as the hero, the step map,
+ * L3 · Feedback (spec 05 §4.2, §7, §9): the learner's own work as the hero, the step map,
  * where it slipped, the hint, confidence. Polls every 2 s while the check runs, with
- * skeleton rows. Uncertain: one sentence, no marks. Fix it arrives with B06.
+ * skeleton rows. Uncertain: one sentence, no marks. Fix it opens L4 (B06); an independent
+ * or follow-up check reads "You did it on your own" or "Not yet; here's a hint for next time".
  */
 export function Attempt() {
   return <RequireRole roles={['learner', 'teacher']}>{() => <AttemptScreen />}</RequireRole>
@@ -30,6 +31,8 @@ function AttemptScreen() {
   const [error, setError] = useState<unknown>(null)
   const [paused, setPaused] = useState<string | null>(null)
   const [tick, setTick] = useState(0)
+  const [busy, setBusy] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
     let cancelled = false
@@ -73,11 +76,30 @@ function AttemptScreen() {
   }
 
   const { attempt, assessment, guideline, hintsVisible } = data
+  // A retry lives on its parent's fix-it page.
+  if (attempt.parentAttemptId) return <Navigate to={`/attempts/${attempt.parentAttemptId}/fix?retry=${attempt.id}`} replace />
   const assessing = attempt.status === 'assessing' || attempt.status === 'submitted'
   const proposed = assessment?.status === 'proposed' ? assessment : null
   const lost = proposed?.steps.find((step) => step.awarded < step.available) ?? null
   const lostName = lost ? guideline.find((step) => step.id === lost.stepId) : null
   const boxes = proposed?.steps.flatMap((step) => (step.box ? [{ box: step.box, label: step.stepId, lost: step.awarded < step.available }] : [])) ?? []
+  const independent = attempt.mode !== 'assisted'
+
+  async function checkAgain(skill: string) {
+    setBusy(true)
+    try {
+      const match = await checkAlone(skill, 'independent', attempt.id)
+      if (!match.item) {
+        setError(new Error('No new question for this skill yet. Your teacher can add one.'))
+        return
+      }
+      void navigate(`/items/${match.item.id}?from=${attempt.id}&mode=independent&skill=${encodeURIComponent(skill)}`, { state: { why: match.why } })
+    } catch (err) {
+      setError(err)
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
     <LearnerShell>
@@ -128,6 +150,18 @@ function AttemptScreen() {
         </Card>
       ) : null}
 
+      {proposed && independent ? (
+        <Card>
+          <p className="m-0 font-medium">
+            <span aria-hidden="true">{lost ? '◐ ' : '✓ '}</span>
+            {lost ? 'Not yet; here’s a hint for next time.' : 'You did it on your own.'}
+          </p>
+          <p className="m-0 text-sm text-fg-muted">
+            {attempt.mode === 'retention' ? 'A follow-up check, no hints: this is what moves a skill to secure.' : 'Checked alone, no hints. A follow-up check in two days shows if it stuck.'}
+          </p>
+        </Card>
+      ) : null}
+
       {proposed && lost && lostName ? (
         <Card title={`Where it slipped: step ${lostName.stepNo}`}>
           <MathText as="p" text={lostName.criterion} className="m-0" />
@@ -135,7 +169,7 @@ function AttemptScreen() {
           <p className="m-0 text-sm">{lost.feedback}</p>
         </Card>
       ) : null}
-      {proposed && !lost ? (
+      {proposed && !lost && !independent ? (
         <Card>
           <p className="m-0 font-medium">
             <span aria-hidden="true">✓ </span>Every step found. Your teacher confirms the marks.
@@ -146,21 +180,26 @@ function AttemptScreen() {
       {proposed && lost?.hint && hintsVisible ? <HintCard hint={lost.hint} stepNo={lostName?.stepNo ?? 0} /> : null}
       {proposed ? <ConfidenceLabel steps={proposed.steps} /> : null}
 
-      {proposed && lost ? (
+      {proposed && lost && !independent ? (
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="button" disabled aria-describedby="fix-it-next">
+          <Link to={`/attempts/${attempt.id}/fix`} className="inline-flex min-h-11 items-center justify-center rounded-card bg-action px-5 font-medium text-ground no-underline">
             Fix it
+          </Link>
+          <span className="text-sm text-fg-muted">Redo step {lostName?.stepNo}, then check it alone.</span>
+        </div>
+      ) : null}
+      {proposed && lost && independent && lost.skillTag ? (
+        <div>
+          <Button type="button" variant="quiet" onClick={() => void checkAgain(lost.skillTag)} disabled={busy}>
+            {busy ? 'Finding a question…' : 'Try one more alone'}
           </Button>
-          <span id="fix-it-next" className="text-sm text-fg-muted">
-            Next: B06. Fix it, then check it alone: <StatusChip status="PLANNED" />
-          </span>
         </div>
       ) : null}
 
       <FormError error={error} />
       <p className="text-sm text-fg-muted">
-        <Link to="/bring">Bring something else</Link>
-        {attempt.mode !== 'assisted' ? ` · ${attempt.mode === 'independent' ? 'Independent' : 'Follow-up check'}` : ''}
+        <Link to="/bring">Bring something else</Link> · <Link to="/today">Today</Link>
+        {independent ? ` · ${attempt.mode === 'independent' ? 'Independent' : 'Follow-up check'}` : ''}
       </p>
     </LearnerShell>
   )

@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from 'react'
+import { Link } from 'react-router'
 import type { MeResponse } from '@guardian-book/shared'
 import { linkGuardian } from '../../api/circle'
 import { RequireRole } from '../../app/RequireRole'
 import { Button, Card, Field, FormError, TextInput } from '../../components/Form'
 import { Page } from '../../components/Page'
 import { SignOutButton } from '../../components/SignOutButton'
-import { StatusChip } from '../../components/StatusChip'
 import { useMe } from '../../state/me'
 
 /** G0 · Link (spec 05 §4.3): enter the learner's code; what you will and will not see. */
@@ -70,16 +70,13 @@ function LinkScreen({ me }: { me: MeResponse }) {
             {me.learners.map((learner) => (
               <li key={learner.learnerId}>
                 <span aria-hidden="true">● </span>
-                {learner.nickname}
+                <Link to={`/guardian/learners/${learner.learnerId}`}>This week with {learner.nickname}</Link>
               </li>
             ))}
           </ul>
         ) : (
           <p className="text-sm text-fg-muted">Nobody yet. Enter a code above.</p>
         )}
-        <p className="text-sm text-fg-muted">
-          “This week with…” arrives with the next build. <StatusChip status="PLANNED" />
-        </p>
       </Card>
 
       <Card title="What you will see">

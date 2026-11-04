@@ -12,3 +12,15 @@
     transform: none;
   }
 }
+
+/* The crest fans open (DESIGN §1.1a(iv)): each page rotates out from upright. */
+@keyframes crest-fan {
+  from {
+    transform: translateX(-50%) rotate(0deg);
+    opacity: 0.4;
+  }
+  to {
+    transform: translateX(-50%) rotate(var(--fan, 0deg));
+    opacity: 1;
+  }
+}

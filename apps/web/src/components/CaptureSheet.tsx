@@ -17,7 +17,18 @@ export interface Capture {
  * camera or a file (photo or PDF) and downscales photos before upload; Ask is typed for
  * now and says so (voice is P1-a, PLANNED).
  */
-export function CaptureSheet({ onCapture, disabled }: { onCapture: (capture: Capture) => void; disabled?: boolean }) {
+export function CaptureSheet({
+  onCapture,
+  disabled,
+  modes = ['snap', 'type', 'ask'],
+  typeLabel = 'Your working, line by line',
+}: {
+  onCapture: (capture: Capture) => void
+  disabled?: boolean
+  /** Which targets to show; the fix and follow-up screens take Snap and Type only (B06). */
+  modes?: readonly CaptureMode[]
+  typeLabel?: string
+}) {
   const [mode, setMode] = useState<CaptureMode | null>(null)
   const [preparing, setPreparing] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
@@ -50,7 +61,8 @@ export function CaptureSheet({ onCapture, disabled }: { onCapture: (capture: Cap
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-3 gap-3">
+      <div className={['grid gap-3', modes.length === 3 ? 'grid-cols-3' : 'grid-cols-2'].join(' ')}>
+        {modes.includes('snap') ? (
         <label htmlFor={fileId} className={[target, disabled || preparing ? 'opacity-60' : 'cursor-pointer'].join(' ')}>
           <span aria-hidden="true" className="text-2xl">
             ▣
@@ -67,6 +79,8 @@ export function CaptureSheet({ onCapture, disabled }: { onCapture: (capture: Cap
             disabled={disabled || preparing}
           />
         </label>
+        ) : null}
+        {modes.includes('type') ? (
         <button type="button" className={[target, mode === 'type' ? 'ring-2 ring-fg' : ''].join(' ')} onClick={() => setMode('type')} disabled={disabled}>
           <span aria-hidden="true" className="text-2xl">
             ✎
@@ -74,6 +88,8 @@ export function CaptureSheet({ onCapture, disabled }: { onCapture: (capture: Cap
           Type
           <span className="text-xs font-normal text-fg-muted">your working</span>
         </button>
+        ) : null}
+        {modes.includes('ask') ? (
         <button type="button" className={[target, mode === 'ask' ? 'ring-2 ring-fg' : ''].join(' ')} onClick={() => setMode('ask')} disabled={disabled}>
           <span aria-hidden="true" className="text-2xl">
             ?
@@ -81,6 +97,7 @@ export function CaptureSheet({ onCapture, disabled }: { onCapture: (capture: Cap
           Ask
           <span className="text-xs font-normal text-fg-muted">about a step</span>
         </button>
+        ) : null}
       </div>
       {preparing ? (
         <p className="text-sm text-fg-muted" aria-live="polite">
@@ -105,7 +122,7 @@ export function CaptureSheet({ onCapture, disabled }: { onCapture: (capture: Cap
           }}
         >
           <label htmlFor={textId} className="text-sm font-medium">
-            {mode === 'type' ? 'Your working, line by line' : 'Your question'}
+            {mode === 'type' ? typeLabel : 'Your question'}
           </label>
           <textarea
             id={textId}
