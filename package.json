@@ -23,6 +23,7 @@
     "resources:load": "pnpm --filter @guardian-book/api resources:load",
     "eval:dev": "pnpm --filter @guardian-book/api eval:dev",
     "smoke:live": "pnpm --filter @guardian-book/api smoke:live",
+    "eval:nsc": "pnpm --filter @guardian-book/api eval:nsc",
     "corpus:list": "pnpm --filter @guardian-book/api corpus:list",
     "corpus:download": "pnpm --filter @guardian-book/api corpus:download",
     "corpus:extract": "pnpm --filter @guardian-book/api corpus:extract",

@@ -16,6 +16,7 @@
     "resources:load": "tsx src/resources/load.ts",
     "eval:dev": "tsx src/evals/run.ts",
     "smoke:live": "tsx src/evals/smoke.ts",
+    "eval:nsc": "tsx src/evals/runNsc.ts",
     "corpus:list": "tsx src/corpus/list.ts",
     "corpus:download": "tsx src/corpus/download.ts",
     "corpus:extract": "tsx src/corpus/extract.ts",
