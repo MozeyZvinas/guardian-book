@@ -59,7 +59,7 @@ export async function freshContext(options: FreshContextOptions = {}): Promise<T
   const handle = createDb(databaseUrl, 4)
   const seeded =
     options.seed === false
-      ? { classCodes: { '12A': '', '11B': '', '10C': '' }, items: { inserted: 0, updated: 0, unchanged: 0 } }
+      ? { classCodes: { '12A': '', '11B': '', '10C': '', try: '' }, items: { inserted: 0, updated: 0, unchanged: 0 } }
       : await seed(handle.db, { password: TEST_PASSWORD })
   const jobs = new JobRegistry(silentLogger)
   const app = createApp({
@@ -67,6 +67,8 @@ export async function freshContext(options: FreshContextOptions = {}): Promise<T
       DATABASE_URL: databaseUrl,
       BETTER_AUTH_SECRET: 'integration-only-secret-0123456789abcdef',
       BETTER_AUTH_URL: TEST_ORIGIN,
+      // B09: the seeded try-it class is reachable, as in production once the founder sets the variable.
+      ...(seeded.classCodes.try ? { PUBLIC_TRY_CLASS_CODE: seeded.classCodes.try } : {}),
       ...(options.env ?? {}),
     }),
     logger: silentLogger,

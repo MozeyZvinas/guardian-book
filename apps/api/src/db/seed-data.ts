@@ -46,7 +46,13 @@ export const SEED_PEOPLE = {
   // Riverside Secondary, for cross-school tests
   msBotha: person('ms-botha', '00131', 'teacher', 'Ms Botha', 'riverside'),
   anele: person('anele', '00132', 'learner', 'Anele', 'riverside'),
+  // B09: the public "Try it" class is taught by a seeded teacher nobody can sign in as
+  // (the seed gives this account a random password it never prints).
+  tryTeacher: person('try-teacher', '00141', 'teacher', 'Ms Demo', 'sentinel'),
 } as const
+
+/** Seeded people whose account gets an unusable (random, unprinted) password. */
+export const SEED_PEOPLE_WITHOUT_LOGIN: readonly SeedPersonKey[] = ['tryTeacher']
 
 export type SeedPersonKey = keyof typeof SEED_PEOPLE
 
@@ -72,6 +78,15 @@ export const SEED_CLASSES = {
     school: 'riverside' as const,
     learners: ['anele'] as SeedPersonKey[],
   },
+  // B09: judges who sign up through /try join this class (server-side, from
+  // PUBLIC_TRY_CLASS_CODE). Every approved item's guideline is approved for it.
+  try: {
+    id: '019a0b02-0000-7000-8000-00000000c004',
+    name: 'Try it (fictional)',
+    teacher: 'tryTeacher' as SeedPersonKey,
+    school: 'sentinel' as const,
+    learners: [] as SeedPersonKey[],
+  },
 } as const
 
 export type SeedClassKey = keyof typeof SEED_CLASSES
@@ -81,5 +96,5 @@ export const SEED_GUARDIAN_LINKS: { learner: SeedPersonKey; guardian: SeedPerson
   { learner: 'lerato', guardian: 'mmaLerato' },
 ]
 
-/** Classes whose teacher has approved the sample items (12A only: assessing for 11B is refused). */
-export const SEED_GUIDELINE_APPROVALS: SeedClassKey[] = ['12A']
+/** Classes whose teacher has approved the sample items (12A and the try-it class: assessing for 11B is refused). */
+export const SEED_GUIDELINE_APPROVALS: SeedClassKey[] = ['12A', 'try']
