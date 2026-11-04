@@ -253,3 +253,10 @@ Add any question here, linked to a task ID.
   - AF: *Hierdie week het Lerato aan algebra gewerk. Een stap het geglip: om die finale
     antwoorde na faktorisering neer te skryf. Vra Lerato asseblief om daardie stap vanaand
     vir jou te verduidelik; 10 minute is genoeg. Ms Dlamini*
+- **B12 · synced with main (B11) on 4 Nov by merge commit:** two conflicts, both additive
+  (the `AuditAction` list in `audit/record.ts`; the B11 and B12 rows above), kept both sides;
+  no migration clash (main added none, 0004 stands). Running the whole e2e suite, not only
+  the B12 spec, showed `guardian-language.spec` leaving the parent in isiZulu on the shared
+  e2e server, so `loop.spec` (B06) read a mock-translated week; the spec now switches the
+  parent back to English at its end (test only, no product change). Typecheck, lint, unit,
+  integration (throwaway Postgres on 5438), build and all 9 e2e green after the merge.

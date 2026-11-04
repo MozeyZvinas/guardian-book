@@ -75,4 +75,15 @@ test('the parent picks isiZulu; This week shows the AI label, Show English works
 
   // Nothing of the work itself reaches this screen.
   await expect(page.getByText('(x − 2)(x − 3)')).toHaveCount(0)
+
+  // Back to English: the AI label goes, and the shared e2e server is as the seed left it for
+  // the specs that run after this one (loop.spec reads the same parent's week in English).
+  await page.getByRole('link', { name: 'Settings' }).click()
+  await page.getByLabel('Read This week and Notes in').selectOption('en')
+  await page.getByRole('button', { name: 'Save' }).click()
+  await expect(page.getByText('Saved · English')).toBeVisible()
+  await page.getByRole('link', { name: 'This week' }).click()
+  await expect(page.getByRole('heading', { name: 'Tonight, one thing' })).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByText('Ask them to teach you step 2')).toBeVisible()
+  await expect(page.getByText(AI_LABEL)).toHaveCount(0)
 })
