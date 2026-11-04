@@ -57,7 +57,7 @@ the same files.
 | B10 Release hardening, restore drill, history scan, README | 3 Nov | P0-13 | B09 | B / $8 | todo |
 | B11 Red ink on the learner's photo; teacher uploads a learner's script (P1-c, P1-g) | 4 Nov | P1 | B04, B07 | subscription | todo |
 | B12 Parent's home language (af, zu, xh, tn, st) + Share to WhatsApp (D38, P1-e) | 4 Nov | P1 | B06, B07 | subscription | todo |
-| B13 Ask about a step by voice or typing (Muse Voice Transcribe, P1-a) | 4 Nov | P1 | B04, B06 | subscription | todo |
+| B13 Ask about a step by voice or typing (Muse Voice Transcribe, P1-a) | 4 Nov | P1 | B04, B06 | subscription | PR open (branch `b13-ask-by-voice`; mocked tests, verifier rules, screens and e2e done; live check not run: no `.env` in the worktree) |
 | B14 Open-weight comparison row (Muse Spark Open, P1-d) | 4 Nov | P1 | B08; founder's partner-host key | subscription | todo |
 | V1 Record the demo + X cut | 4 Nov, morning | — | B10 | Founder + planning | todo |
 | B11 Freeze + submit by 20:00 SAST | 4 Nov | — | V1 | Founder | todo |
@@ -67,6 +67,24 @@ Corpus waves (W1 English done; practical, home languages, Afrikaans catalogued) 
 
 ## Questions for the planning session
 Add any question here, linked to a task ID.
+
+- **B13 · the clip is WAV, not webm/opus or mp4/aac.** Meta's file endpoint
+  (`POST /v1/asr/transcribe`, "Transcribe a recording", read 4 Nov) accepts one container
+  only: "a RIFF/WAVE container holding mono integer PCM at 16 kHz or 24 kHz" (10 min, 32 MB).
+  With no new runtime dependency allowed there is nothing on the server to decode
+  `MediaRecorder` output, so the browser captures through the Web Audio API and writes the
+  WAV itself (16 kHz mono 16-bit; 60 s is about 1.9 MB, under the 5 MB cap) and the server
+  refuses anything else before a byte leaves it. Everything else in the brief stands (hold to
+  talk, 60 s, 5 MB, audio never stored, `model_runs` row). Confirm, or rule otherwise.
+- **B13 · live check not run.** The worktree had no `.env` when the PR was opened (the
+  coordinator's copy was denied by the permission system), so the one real transcription and
+  the one real hint are still to do, and the model ID `muse-voice-transcribe-1.0` is still to
+  be confirmed on the account's model list. The script is ready:
+  `say -o /tmp/q.aiff "I don't get why it's minus six" && afconvert -f WAVE -d LEI16@16000 -c 1 /tmp/q.aiff /tmp/q.wav && pnpm --filter @guardian-book/api exec tsx src/voice/live-smoke.ts /tmp/q.wav`
+  (prints latency and cost for both calls; record them under B13 here). Expected cost:
+  under $0.001 for a 5 s clip ($0.18 per hour of audio) plus one Muse Spark hint call.
+- **B13 · `.env.example`** could not be edited (writes to `.env*` are denied): please add
+  `META_MODEL_TRANSCRIBE=` (default `muse-voice-transcribe-1.0`; Standard tier only).
 
 - **B02 · `.env.example` could not be edited** (the session's permission settings deny
   writes to `.env*`). Please append these lines (also in the PR body):

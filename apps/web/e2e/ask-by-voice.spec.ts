@@ -78,8 +78,8 @@ test('Lerato asks about the step that slipped: by voice, then by typing; the hin
 
 test('check it alone: asking is paused until the learner submits', async ({ page }) => {
   await signIn(page, 'lerato@demo.guardianbook.test')
-  await page.goto('/today')
-  // Reach L5 in independent mode from the fix screen of the attempt above.
+  await expect(page).toHaveURL(/\/today$/)
+  // Reach L5 in independent mode: bring work, lose a step, fix it, then Check it alone.
   await page.goto('/bring')
   await page.getByRole('button', { name: /Type/ }).click()
   await page.getByLabel('Your working, line by line').fill('x² − 5x + 6 = 0\n(x − 2)(x − 3) = 0')
