@@ -55,7 +55,7 @@ the same files.
 | **Gate P0:** full run on the founder's phone | 3 Nov, 20:00 (D35) | all P0 | — | — | todo |
 | B09 PWA, polish (landing hero by surface, D35), E2E in CI; the Bring question picker shows the question itself (MathText), not the slug; `robots.txt` (allow `/`, `/evidence`; disallow `/api/`, `/learner/`, `/guardian/`, `/teacher/`, invite and join links; D36); then P1 in order (incl. P1-g teacher uploads a script) (voice, see-it card, overlay, open-weight row, WhatsApp text) | 3 Nov | P0-13, P1 | Gate P0 | A + B | todo |
 | B10 Release hardening, restore drill, history scan, README | 3 Nov | P0-13 | B09 | B / $8 | todo |
-| B11 Red ink on the learner's photo; teacher uploads a learner's script (P1-c, P1-g) | 4 Nov | P1 | B04, B07 | subscription | todo |
+| B11 Red ink on the learner's photo; teacher uploads a learner's script (P1-c, P1-g) | 4 Nov | P1 | B04, B07 | subscription | review (branch `b11-red-ink`; questions below) |
 | B12 Parent's home language (af, zu, xh, tn, st) + Share to WhatsApp (D38, P1-e) | 4 Nov | P1 | B06, B07 | subscription | todo |
 | B13 Ask about a step by voice or typing (Muse Voice Transcribe, P1-a) | 4 Nov | P1 | B04, B06 | subscription | todo |
 | B14 Open-weight comparison row (Muse Spark Open, P1-d) | 4 Nov | P1 | B08; founder's partner-host key | subscription | todo |
@@ -94,6 +94,39 @@ Add any question here, linked to a task ID.
   interventions due today or earlier, plus retention checks derived from events (2 days
   after a correct independent check, until a retention outcome is recorded). B06/B07 can
   rely on it.
+- **B11 · the script's background read is its own job, not B04's `runAssessment`.** The brief
+  says both "runs B04's background assessment" and "nothing reaches the learner or the parent
+  until the teacher releases it"; B04's job ends in B06's `afterProposed`, which for an
+  independent attempt writes `independent_check_completed` and issues a same-day Help Plan
+  (the integration test showed Lerato's Today carrying "tonight" from a script she cannot
+  open). `apps/api/src/teacher/scripts.ts` therefore runs the same read (same prompt,
+  `runModel`, verifier, `writeAssessment`, same `assess:<id>` job key) without
+  `afterProposed`; the loop's independent evidence for a script comes from `review_released`.
+  Residual, not fixable from B11's folders: `writeAssessment` still appends the `assessed`
+  event (basis `model_high` when every step is sure), so the learner's timeline shows "You
+  brought work" and "Your work was checked" rows (words only, no marks, no link) and the
+  Brain's independent evidence can move before release. Rule: keep this, or let B04's job
+  take a `skipLoop` flag, or gate those events on release.
+- **B11 · access gate on `school_provided` attempts:** the owner's `attempt.read`,
+  `attempt.assess`, `attempt.fix` and `review.read` are refused (404) until a released
+  review exists; teachers unchanged; guardians never. The input row carries the teacher in
+  `inputs.learner_id` (D37's precedent), so the learner's Today and inputs list never show
+  it; the audit rows (`script.uploaded`, `attempt.assess_started`) name her as the actor.
+- **B11 · outside the listed folders, all additive:** the route in `apps/web/src/app/router.tsx`
+  (the screen has to exist), one "Mark a script" link in the class picture's nav
+  (`routes/teacher/picture/Picture.tsx`), the `ink-red` tokens in `design/tokens.css` (the
+  brief asks for them), seven harness rows in `apps/api/test/access.integration.test.ts`
+  (the harness asks for rows, not files), the e2e fixture `apps/web/e2e/fixtures/script.png`
+  (synthetic, drawn with sharp) and two e2e specs. No handwriting font ships (no OFL file
+  to hand): the pen writes in the bold system face, as the brief allows.
+- **B11 · live check (4 Nov, Muse Spark 1.3, the synthetic script image, one teacher upload):**
+  one call, accepted first time, 16.0 s, $0.0157, total 3/4, every step `high`. Boxes landed
+  on the right line for all four steps (nearest-line match 4/4); vertical drift 39–59 grid
+  units (4–6 % of the height, the ellipse sits on or just under the line); steps 1 and 2
+  shared one box (the factorised line), so repeated ticks now sit side by side. The ink
+  stays on the photo. A real photo of handwritten working is not in the repo: if the founder
+  has one (adult, consented), repeat with `E2E_LIVE=1` and the scratch driver, and record
+  the placement.
 - **B05 · resolved by D37 and the 4 Nov update of PR #4:** Playwright (in the repo from
   B04), the evidence payload contract (B04's `assessed` event now writes `skills_correct` /
   `skills_lost` / `mode` through `evidencePayload()`), and `model_runs` rows (the profile

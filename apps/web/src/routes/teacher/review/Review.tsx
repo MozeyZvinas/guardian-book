@@ -7,6 +7,8 @@ import { addFeedback, confirmReview, releaseAttempt, reviewAttempt } from '../..
 import { RequireRole } from '../../../app/RequireRole'
 import { Button, Card, FormError } from '../../../components/Form'
 import { MathText } from '../../../components/MathText'
+import { RedInk } from '../../../components/RedInk'
+import { planInk } from '../../../components/RedInkPlan'
 import { CONFIDENCE_LABEL } from '../../../components/StepMap'
 import { WorkViewer } from '../../../components/WorkViewer'
 import { ChecksList, OriginChip } from '../shell/ChecksList'
@@ -17,7 +19,9 @@ import { ClassEyebrow, TeacherShell, formatWhen, useLoad } from '../shell/Teache
  * the learner's work on the left; on the right the model's per-step proposal with
  * evidence and confidence, the checks list, the adjust controls, Confirm, then Release.
  * The proposal is never overwritten: the review is its own record with a version, and a
- * stale version says so. Feedback controls: Agree, Correct, Add, with an audience.
+ * stale version says so. Feedback controls: Agree, Correct, Add, with an audience. A photo
+ * carries the same red ink the learner sees (B11), redrawn live from the teacher's awards
+ * before she confirms; after release it reads Teacher-reviewed.
  */
 export function TeacherReview() {
   return <RequireRole roles={['teacher']}>{(me) => <ReviewScreen me={me} />}</RequireRole>
@@ -59,6 +63,12 @@ function Loaded({ me, data, reload }: { me: MeResponse; data: ReviewAttemptRespo
 
   const total = steps.reduce((acc, step) => acc + (awards[step.stepId] ?? 0), 0)
   const lostBoxes = steps.flatMap((step) => (step.proposed?.box ? [{ box: step.proposed.box, label: step.stepId, lost: (step.proposed?.awarded ?? 0) < step.marks }] : []))
+  // Red ink from the stored steps (B11): only a verifier-accepted proposal or a teacher's own
+  // review is inked, never a rejected (uncertain) output on its own; her live awards win.
+  const inkPlan =
+    attempt.kind === 'photo' && (assessment?.status === 'proposed' || review)
+      ? planInk(steps.map((step) => ({ stepId: step.stepId, stepNo: step.stepNo, available: step.marks, proposed: step.proposed, teacherAwarded: awards[step.stepId] ?? null })))
+      : null
 
   async function run(label: string, work: () => Promise<unknown>) {
     setBusy(label)
@@ -110,7 +120,11 @@ function Loaded({ me, data, reload }: { me: MeResponse; data: ReviewAttemptRespo
             {attempt.itemTopic} · {attempt.itemSlug} · {attempt.kind === 'photo' ? 'photo' : 'typed'} · {attempt.mode} · {formatWhen(attempt.createdAt)}
           </p>
           <MathText as="p" text={attempt.itemPromptMd} className="m-0 font-serif whitespace-pre-wrap" />
-          <WorkViewer imageUrl={attempt.hasImage ? attemptImageUrl(attempt.id) : null} text={attempt.answerText} boxes={lostBoxes} alt={`${attempt.learner.nickname}’s working`} />
+          {inkPlan ? (
+            <RedInk imageUrl={attempt.hasImage ? attemptImageUrl(attempt.id) : null} text={attempt.answerText} alt={`${attempt.learner.nickname}’s working`} plan={inkPlan} label={released ? 'reviewed' : 'checked'} />
+          ) : (
+            <WorkViewer imageUrl={attempt.hasImage ? attemptImageUrl(attempt.id) : null} text={attempt.answerText} boxes={lostBoxes} alt={`${attempt.learner.nickname}’s working`} />
+          )}
           <p className="m-0 text-sm text-fg-muted">
             <Link to={`/teacher/learners/${attempt.learner.id}`}>{attempt.learner.nickname}’s profile</Link>
           </p>
