@@ -26,6 +26,12 @@ export const CHECK_CODES = [
   'TOOL_UNKNOWN',
   'STEPS_EXCEEDED',
   'PLAN_MISSING',
+  // B12: translations
+  'PLACEHOLDER_MISSING',
+  'LENGTH_OUT_OF_RANGE',
+  'NUMBER_ADDED',
+  'URL_ADDED',
+  'NOT_TRANSLATED',
 ] as const
 export type CheckCode = (typeof CHECK_CODES)[number]
 
@@ -105,6 +111,16 @@ export interface NoteContext {
 export type ProfileCardsContext = Record<string, never>
 export type ClassifyContext = Record<string, never>
 
+/** B12: what the server knows about a translation request (the source after placeholders). */
+export interface TranslateContext {
+  /** The source text as sent: every name, number, date and link already a placeholder. */
+  sourceText: string
+  /** The placeholders in the source (`{{L}}`, `{{T}}`, `{{N1}}`…); each must come back exactly once. */
+  placeholders: string[]
+  /** The target language code (never `en`). */
+  language: string
+}
+
 export interface CheckContexts {
   classify: ClassifyContext
   profile_cards: ProfileCardsContext
@@ -112,6 +128,7 @@ export interface CheckContexts {
   notice: NoticeContext
   plan: PlanContext
   note: NoteContext
+  translate: TranslateContext
 }
 
 export type CheckContextFor<P extends ModelPurpose> = CheckContexts[P]

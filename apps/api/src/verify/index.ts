@@ -35,5 +35,19 @@ export {
   stepsExceeded,
   toolUnknown,
 } from './checks/plan.js'
+export {
+  LENGTH_MAX_RATIO,
+  LENGTH_MIN_RATIO,
+  NOT_TRANSLATED_RATIO,
+  PLACEHOLDER_PATTERN,
+  TRANSLATE_RULES,
+  lengthOutOfRange,
+  notTranslated,
+  numberAdded,
+  placeholderMissing,
+  stripPlaceholders,
+  translationWords,
+  urlAdded,
+} from './checks/translate.js'
 export { PLAIN_LANGUAGE_MAX_MEDIAN_WORDS, evidenceRefs, inferenceForbidden, plainLanguage, stringsIn } from './checks/common.js'
 export * from './text.js'
