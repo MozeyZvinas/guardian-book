@@ -7,14 +7,15 @@ import { EmptyState } from '../../../components/EmptyState'
 import { Button, FormError } from '../../../components/Form'
 import { LearnerShell } from '../../../components/LearnerShell'
 import { Skeleton } from '../../../components/Skeleton'
-import { MARK_LABELS, Mark, SkillChip, SkillStateBadge } from '../../../components/SkillChip'
+import { MARK_LABELS, MARK_LEGEND, Mark, SkillChip, SkillStateBadge } from '../../../components/SkillChip'
 import { TimelineRow } from '../../../components/TimelineRow'
 import { shortDate } from '../../../lib/dates'
+import { plainEvidence } from './evidence'
 
 /**
- * L6 · Brain (spec 05 §4.2, §9): what Guardian Book believes about you, and the evidence.
- * Chips per skill with three marks; tap one to see the events behind it; the growth
- * timeline, newest first.
+ * L6 · Brain (spec 05 §4.2, §9; B16 §3): what you can do, and how sure we are. A legend
+ * for the three marks, chips per skill, the evidence behind a chip in plain words, and
+ * the growth timeline, newest first.
  */
 export function Brain() {
   return <RequireRole roles={['learner']}>{() => <BrainScreen />}</RequireRole>
@@ -86,29 +87,34 @@ function BrainScreen() {
     <LearnerShell>
       <div className="flex flex-col gap-2">
         <h1 className="text-display font-semibold text-balance">Your Brain</h1>
-        <p className="text-fg-muted">What Guardian Book believes about you, and the evidence.</p>
-        <p className="text-sm">
-          <strong>Secure</strong> means you did it on your own, and again later.
-        </p>
-        <p className="text-sm text-fg-muted">Only checked work and your teacher’s confirmations move these. One good day never does.</p>
+        <p className="text-fg-muted">This is what you can do, and how sure we are.</p>
       </div>
+
+      <section aria-labelledby="legend-heading" className="flex flex-col gap-2 rounded-card bg-surface p-4">
+        <h2 id="legend-heading" className="text-sm font-semibold">
+          The three marks
+        </h2>
+        <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+          {MARK_LEGEND.map((mark) => (
+            <div key={mark.label} className="contents">
+              <dt className="font-medium">{mark.label}</dt>
+              <dd className="m-0 text-fg-muted">= {mark.means}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="text-xs text-fg-muted">Only checked work and your teacher’s confirmations move these. One good day never does.</p>
+      </section>
 
       <section aria-labelledby="skills-heading" className="flex flex-col gap-3">
         <h2 id="skills-heading" className="text-lg font-semibold">
           Skills
         </h2>
-        <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-fg-muted">
-          <span>Marks:</span>
-          <span>{MARK_LABELS.assisted}</span>
-          <span>{MARK_LABELS.independent}</span>
-          <span>{MARK_LABELS.retained}</span>
-        </p>
         {skills.length === 0 ? (
-          <EmptyState title="Nothing here yet" action={<Link to="/bring">Bring something</Link>}>
-            Your first checked piece of work starts the map.
+          <EmptyState title="Bring your first piece of work and your Brain starts here." action={<Link to="/bring">Bring something</Link>}>
+            Every skill you show gets a chip; tap one to see the evidence behind it.
           </EmptyState>
         ) : (
-          <ul className="m-0 grid list-none gap-2 p-0 sm:grid-cols-2">
+          <ul aria-label="Skills" className="m-0 grid list-none gap-2 p-0 sm:grid-cols-2">
             {skills.map((skill) => (
               <li key={skill.tag}>
                 <SkillChip skill={skill} selected={skill.tag === selectedTag} onSelect={() => setSelectedTag(skill.tag === selectedTag ? null : skill.tag)} />
@@ -118,6 +124,8 @@ function BrainScreen() {
         )}
         {withEvidence.length === 0 && skills.length > 0 ? (
           <p className="text-sm text-fg-muted">Every skill is new: nothing checked yet. Bring something and the first one moves.</p>
+        ) : skills.length > 0 ? (
+          <p className="text-sm text-fg-muted">Tap a skill to see the evidence behind it.</p>
         ) : null}
       </section>
 
@@ -128,7 +136,7 @@ function BrainScreen() {
           Growth timeline
         </h2>
         {brain.timeline.length === 0 ? (
-          <p className="text-sm text-fg-muted">Your first day. Attempts, fixes, your teacher’s confirmations and help at home will appear here.</p>
+          <p className="text-sm text-fg-muted">Your first day. Work you bring, fixes, your teacher’s confirmations and help at home will appear here.</p>
         ) : (
           <ul className="m-0 flex list-none flex-col gap-1 p-0">
             {brain.timeline.map((event) => (
@@ -143,6 +151,7 @@ function BrainScreen() {
 
 function Evidence({ skill, brain }: { skill: BrainSkill; brain: BrainResponse }) {
   const events = brain.timeline.filter((event) => skill.evidenceEventIds.includes(event.id))
+  const words = plainEvidence(events, new Date())
   return (
     <section aria-labelledby="evidence-heading" className="flex flex-col gap-3 rounded-card bg-surface p-4">
       <div className="flex items-start justify-between gap-3">
@@ -156,6 +165,16 @@ function Evidence({ skill, brain }: { skill: BrainSkill; brain: BrainResponse })
         <Mark label={MARK_LABELS.independent} mark={skill.independent} />
         <Mark label={MARK_LABELS.retained} mark={skill.retained} />
       </p>
+      {words.length > 0 ? (
+        <p className="text-sm" data-testid="evidence-words">
+          {words.map((line, index) => (
+            <span key={index}>
+              {index > 0 ? <span className="text-fg-muted"> · </span> : null}
+              {line}
+            </span>
+          ))}
+        </p>
+      ) : null}
       <p className="text-sm text-fg-muted tnum">
         {skill.evidenceCount} {skill.evidenceCount === 1 ? 'piece' : 'pieces'} of evidence
         {skill.lastCheckedAt ? ` · last checked ${shortDate(skill.lastCheckedAt)}` : ''}
@@ -163,11 +182,11 @@ function Evidence({ skill, brain }: { skill: BrainSkill; brain: BrainResponse })
       </p>
       <p className="text-sm">
         {skill.state === 'secure'
-          ? 'Secure: you did it on your own and again later, on different days.'
+          ? 'Secure: with help, on your own, and still right later. All three.'
           : skill.state === 'practising'
             ? skill.independent.correct > 0
-              ? 'Practising: you did it on your own. A check later will show if it stuck.'
-              : 'Practising: so far with help or hints. Checking it alone comes next.'
+              ? 'Practising: right on your own. A check two days later will show if it stuck.'
+              : 'Practising: right with hints so far. Checking it alone comes next.'
             : 'New: nothing checked on this yet.'}
       </p>
       {events.length > 0 ? (
