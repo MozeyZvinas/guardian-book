@@ -10,6 +10,7 @@ import {
   type DraftNotesResponse,
   type DraftSkipReason,
   type GuardianNoteView,
+  type Language,
   type NoteView,
   type NotesResponse,
 } from '@guardian-book/shared'
@@ -25,6 +26,7 @@ import { runModel } from '../modelRuns/index.js'
 import type { TeacherDeps } from '../teacher/deps.js'
 import { skillOutcomes, trustedOutcomes, type AttemptOutcome } from '../teacher/outcomes.js'
 import { weekStartSast } from '../teacher/week.js'
+import { preferredLanguage, translationFor, type TranslateDeps } from '../translate/service.js'
 import { NOTE_MAX_TOKENS, NOTE_PROMPT_VERSION, NOTE_TIMEOUT_MS, buildNoteSystem, buildNoteUser, evidenceAlias, type NoteWeekSummary } from './notePrompt.v1.js'
 
 /**
@@ -340,20 +342,30 @@ export async function sendNote(db: Db, actor: Actor, noteId: string, requestId?:
 
 // ── the guardian's side ────────────────────────────────────────────────────────────────────
 
-function guardianView(row: NoteRow, people: Map<string, string>): GuardianNoteView {
+/**
+ * A sent note as its guardian reads it, with its translation state in the guardian's
+ * language (B12): the cached translation, or `pending` while the background job writes it.
+ * Only a `sent` row ever reaches this function, so nothing is translated before sending.
+ */
+async function guardianView(deps: TranslateDeps, actor: Actor, row: NoteRow, people: Map<string, string>, language: Language): Promise<GuardianNoteView> {
   const teacherNickname = people.get(row.teacherId) ?? 'Your teacher'
+  const learnerNickname = people.get(row.learnerId) ?? 'Learner'
+  const text = row.finalText ?? row.draftText
   return {
     id: row.id,
-    learner: { id: row.learnerId, nickname: people.get(row.learnerId) ?? 'Learner' },
+    learner: { id: row.learnerId, nickname: learnerNickname },
     teacher: { id: row.teacherId, nickname: teacherNickname },
     label: publicOriginLabel(row.origin, teacherNickname),
-    text: row.finalText ?? row.draftText,
+    text,
     sentAt: (row.sentAt ?? row.createdAt).toISOString(),
+    translation: await translationFor(deps, { kind: 'note', id: row.id, text, names: { learner: learnerNickname, teacher: teacherNickname } }, language, actor.userId),
   }
 }
 
 /** `GET /api/guardian/notes`: sent notes addressed to this guardian, for linked learners, newest first (spec 03 §8.2, §8.3). */
-export async function guardianNotes(db: Db, actor: Actor): Promise<GuardianNoteView[]> {
+export async function guardianNotes(deps: TranslateDeps, actor: Actor, language?: Language): Promise<GuardianNoteView[]> {
+  const { db } = deps
+  const lang = language ?? (await preferredLanguage(db, actor.userId))
   const rows = await db
     .select({ note: notes })
     .from(notes)
@@ -362,13 +374,16 @@ export async function guardianNotes(db: Db, actor: Actor): Promise<GuardianNoteV
     .orderBy(desc(notes.sentAt))
   const list = rows.map((row) => row.note)
   const people = await nicknames(db, list.flatMap((row) => [row.learnerId, row.teacherId]))
-  return list.map((row) => guardianView(row, people))
+  const out: GuardianNoteView[] = []
+  for (const row of list) out.push(await guardianView(deps, actor, row, people, lang))
+  return out
 }
 
 /** One note, for its guardian, once sent; anything else is a 404 (a `draft` note requested by its guardian → 404). */
-export async function guardianNote(db: Db, actor: Actor, noteId: string): Promise<GuardianNoteView> {
+export async function guardianNote(deps: TranslateDeps, actor: Actor, noteId: string): Promise<GuardianNoteView> {
+  const { db } = deps
   if (!(await can(db, actor, 'note.read', { type: 'note', id: noteId }))) throw notFound()
   const [row] = await db.select().from(notes).where(eq(notes.id, noteId)).limit(1)
   if (!row || row.status !== 'sent' || row.audience !== 'guardian') throw notFound()
-  return guardianView(row, await nicknames(db, [row.learnerId, row.teacherId]))
+  return guardianView(deps, actor, row, await nicknames(db, [row.learnerId, row.teacherId]), await preferredLanguage(db, actor.userId))
 }
