@@ -116,14 +116,7 @@ async function readPage(
     timeoutMs: EXTRACT_TIMEOUT_MS,
     ...(options.maxCalls !== undefined ? { maxCalls: options.maxCalls } : {}),
   })
-  await recordModelRuns(ctx.db, {
-    purpose: 'extract',
-    subjectType: 'corpus_paper',
-    subjectId: ctx.runId,
-    promptVersion: EXTRACT_PROMPT_VERSION,
-    fallbackModel: ctx.gateway.model,
-    runs: result.runs,
-  })
+  await recordWithRetry(ctx, result.runs)
   ctx.spent.calls += result.runs.length
   ctx.spent.costUsd = round(ctx.spent.costUsd + result.totalCostUsd)
   const record: PageRecord = {
@@ -146,6 +139,30 @@ async function readPage(
     `    ${document} p${String(page).padStart(2, '0')}${options.onlyNumbers ? ` [${options.onlyNumbers.join(',')}]` : ''}: ${record.status} · ${record.output?.entries.length ?? 0} entr${record.output?.entries.length === 1 ? 'y' : 'ies'} · ${record.calls} call(s) · ${Math.round(record.latencyMs / 1000)} s · $${record.costUsd.toFixed(4)}${failed.length ? ` · blocked: ${[...new Set(failed)].join(',')}` : ''}`,
   )
   return record
+}
+
+/** The underlying error behind a driver's "Failed query" wrapper, in one line. */
+export function causeOf(err: unknown): string {
+  const parts: string[] = []
+  let current: unknown = err
+  for (let depth = 0; current && depth < 4; depth += 1) {
+    const { message, code } = current as { message?: unknown; code?: unknown }
+    if (typeof message === 'string') parts.push(`${typeof code === 'string' ? `${code}: ` : ''}${message.split('\n')[0]?.slice(0, 200) ?? ''}`)
+    current = (current as { cause?: unknown }).cause
+  }
+  return parts.join(' <- ') || String(err)
+}
+
+/** Every call is a `model_runs` row: one retry after a dropped connection, then the run stops. */
+async function recordWithRetry(ctx: Ctx, runs: VerifiedRun[]): Promise<void> {
+  const input = { purpose: 'extract' as const, subjectType: 'corpus_paper', subjectId: ctx.runId, promptVersion: EXTRACT_PROMPT_VERSION, fallbackModel: ctx.gateway.model, runs }
+  try {
+    await recordModelRuns(ctx.db, input)
+  } catch (err) {
+    console.error(`    model_runs insert failed, retrying once: ${causeOf(err)}`)
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+    await recordModelRuns(ctx.db, input)
+  }
 }
 
 function pageFile(dirs: CorpusDirs, paperId: string, document: string, page: number): string {
@@ -340,7 +357,7 @@ async function main(): Promise<void> {
   const selected = catalogue.filter((paper) => (args.sessions.size === 0 || args.sessions.has(sessionKey(paper.ref))) && args.papers.has(paper.ref.paper))
   console.log(`corpus:extract: ${selected.length} paper(s) of ${catalogue.length}; held out: ${args.heldOut.join(', ') || 'none'}; model ${gateway.model}; concurrency ${args.concurrency}`)
 
-  const handle = createDb(config.db.url, 2)
+  const handle = createDb(config.db.url, args.concurrency + 1)
   const ctx: Ctx = { db: handle.db, gateway, dirs, runId: uuidv7(), concurrency: args.concurrency, spent: { calls: 0, costUsd: 0 } }
   const ledger = path.join(dirs.root, 'spend.json')
   type SpendRow = { at: string; paper: string; calls: number; costUsd: number }
@@ -373,6 +390,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err: unknown) => {
-  console.error('corpus:extract failed:', err instanceof Error ? err.message : err)
+  console.error('corpus:extract failed:', causeOf(err))
   process.exit(1)
 })
