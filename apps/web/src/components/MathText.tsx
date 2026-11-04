@@ -1,4 +1,5 @@
 import { lazy, Suspense, type ElementType } from 'react'
+import { hasMath, normaliseMath, segments } from './MathText.logic'
 
 /**
  * MathText (D37: `katex` for maths on screen). Renders a string whose maths is written
@@ -7,36 +8,13 @@ import { lazy, Suspense, type ElementType } from 'react'
  * only when a string actually contains maths, so the shell and the route chunks stay
  * inside spec 06 §6's budget; until it arrives, the source text shows as written.
  *
+ * B16: the string is normalised first (`MathText.logic.ts`), so `\( … \)`, `\[ … \]` and
+ * bare `\frac{a}{b}` pasted from elsewhere render too; a learner never sees a raw backslash.
+ *
  * Use it wherever an item prompt, a guideline criterion or a hint reaches the screen.
  */
 
-/**
- * `$$…$$` anywhere; `$…$` only when the delimiters hug the expression (no space inside)
- * and the closer is not followed by a digit (pandoc's rule), so "costs $5 and $10" stays text.
- */
-export const MATH_PATTERN = /\$\$([\s\S]+?)\$\$|\$(?!\s)([^$\n]+?)(?<!\s)\$(?!\d)/
-
-export function hasMath(text: string): boolean {
-  return MATH_PATTERN.test(text)
-}
-
-export type Segment = { kind: 'text'; text: string } | { kind: 'math'; tex: string; display: boolean }
-
-/** Splits text into plain and maths segments; a lone or unmatched `$` stays as text. */
-export function segments(text: string): Segment[] {
-  const out: Segment[] = []
-  const pattern = new RegExp(MATH_PATTERN.source, 'g')
-  let last = 0
-  for (const match of text.matchAll(pattern)) {
-    const start = match.index
-    if (start > last) out.push({ kind: 'text', text: text.slice(last, start) })
-    if (match[1] !== undefined) out.push({ kind: 'math', tex: match[1], display: true })
-    else if (match[2] !== undefined) out.push({ kind: 'math', tex: match[2], display: false })
-    last = start + match[0].length
-  }
-  if (last < text.length) out.push({ kind: 'text', text: text.slice(last) })
-  return out
-}
+export { MATH_PATTERN, hasMath, normaliseMath, segments, type Segment } from './MathText.logic'
 
 const KatexText = lazy(() => import('./MathTextKatex').then((m) => ({ default: m.MathTextKatex })))
 
@@ -48,11 +26,12 @@ export interface MathTextProps {
 }
 
 export function MathText({ text, as: Tag = 'span', className }: MathTextProps) {
-  if (!hasMath(text)) return <Tag className={className}>{text}</Tag>
+  const normalised = normaliseMath(text)
+  if (!hasMath(normalised)) return <Tag className={className}>{normalised}</Tag>
   return (
     <Tag className={className}>
-      <Suspense fallback={text}>
-        <KatexText segments={segments(text)} />
+      <Suspense fallback={normalised}>
+        <KatexText segments={segments(normalised)} />
       </Suspense>
     </Tag>
   )

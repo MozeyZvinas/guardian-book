@@ -1,6 +1,6 @@
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
-import type { Segment } from './MathText'
+import type { Segment } from './MathText.logic'
 
 /**
  * The KaTeX half of `MathText`, in its own chunk. Only KaTeX's own output is set as HTML:
