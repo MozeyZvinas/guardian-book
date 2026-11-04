@@ -44,6 +44,10 @@ export type AuditAction =
   | 'note.created'
   | 'note.approved'
   | 'note.sent'
+  // B12
+  | 'guardian.language_set'
+  | 'translation.created'
+  | 'translation.refused'
 
 export interface AuditInput {
   actorId: string | null
