@@ -1,0 +1,55 @@
+{
+  "id": "wc-07-lin-expansion-error",
+  "suite": "work_check",
+  "category": "clear_conceptual_error",
+  "legibility": null,
+  "item": {
+    "slug": "alg-lin-01",
+    "prompt_md": "Solve for $x$:\n\n$$3(x - 2) = 2x + 5$$",
+    "max_marks": 3
+  },
+  "guideline": [
+    {
+      "step_id": "S1",
+      "step_no": 1,
+      "kind": "M",
+      "criterion": "Expand the bracket on the left",
+      "marks": 1,
+      "notes": null,
+      "expected": "3x - 6 = 2x + 5"
+    },
+    {
+      "step_id": "S2",
+      "step_no": 2,
+      "kind": "M",
+      "criterion": "Collect like terms with x on one side and constants on the other",
+      "marks": 1,
+      "notes": "Method mark: earned when the learner's own expanded form is rearranged correctly, even if the expansion was wrong",
+      "expected": "3x - 2x = 5 + 6"
+    },
+    {
+      "step_id": "S3",
+      "step_no": 3,
+      "kind": "CA",
+      "criterion": "Solve for x",
+      "marks": 1,
+      "notes": "Consistent accuracy: a value that follows correctly from the learner's own rearrangement earns the mark",
+      "expected": "x = 11"
+    }
+  ],
+  "final_answer": "x = 11",
+  "answer": {
+    "kind": "typed",
+    "text": "3(x − 2) = 2x + 5\n3x − 2 = 2x + 5\n3x − 2x = 5 + 2\nx = 7"
+  },
+  "mode": "assisted",
+  "expected": {
+    "total": 2,
+    "awarded": {
+      "S1": 0,
+      "S2": 1,
+      "S3": 1
+    },
+    "first_lost_step": "S1"
+  }
+}

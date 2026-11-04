@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { can } from '../src/access/index.js'
 import { attempts, items } from '../src/db/schema.js'
 import { SEED_CLASSES, SEED_PEOPLE, SEED_SCHOOLS, type SeedPersonKey } from '../src/db/seed-data.js'
+import { PRIVACY_HARNESS_VERSION, writePrivacyHarness } from '../src/evals/privacyHarness.js'
 import { freshContext, signInAs, type TestContext } from './integration/db.js'
 
 /**
@@ -89,6 +90,8 @@ const CASES: HarnessCase[] = [
 
 let ctx: TestContext
 const cookies = new Map<SeedPersonKey, string>()
+/** Rows (by index) whose assertions all held; the rest count as failed in the privacy suite. */
+const passedRows = new Set<number>()
 
 async function cookieFor(who: SeedPersonKey | null): Promise<string | null> {
   if (!who) return null
@@ -105,11 +108,17 @@ beforeAll(async () => {
 })
 afterAll(async () => {
   await ctx.close()
+  // The proof page's privacy suite (B08) counts these rows from this file; never the test output.
+  await writePrivacyHarness({
+    schema_version: PRIVACY_HARNESS_VERSION,
+    ran_at: new Date().toISOString(),
+    rows: CASES.map((c, index) => ({ name: c.name, expect: c.expect, passed: passedRows.has(index) })),
+  })
 })
 
 describe('permission harness (routes)', () => {
   // Rows run in order: the 204 revoke at the end depends on the earlier 404s not touching data.
-  for (const c of CASES) {
+  for (const [index, c] of CASES.entries()) {
     it(`${c.name} → ${c.expect}`, async () => {
       const cookie = await cookieFor(c.as)
       let req = request(ctx.app)[c.method](c.path).set('Origin', 'https://guardianbook.test')
@@ -120,6 +129,7 @@ describe('permission harness (routes)', () => {
       if (res.status >= 400) {
         expect(res.body).toMatchObject({ error: { code: expect.any(String), message: expect.any(String) } })
       }
+      passedRows.add(index)
     })
   }
 })

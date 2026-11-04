@@ -1,4 +1,6 @@
-# Eval result files are written here by `pnpm eval:dev`. They are committed only when the
-# planning session says so (git add -f), and never with personal data.
+# `pnpm eval:dev` writes the raw per-case results here (never committed: they hold answers
+# and model output) and `latest.json`, the summary the proof page reads. Only the summary is
+# committed, and only when the planning session says so; never with personal data.
 *
 !.gitignore
+!latest.json

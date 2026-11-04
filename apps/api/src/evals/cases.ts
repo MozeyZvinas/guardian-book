@@ -1,10 +1,15 @@
 import { z } from 'zod'
 
 /**
- * The shape of one evaluation case file (spec 04 §5.2). Cases live outside the repo in
- * `EVAL_DIR` and are never committed. The expected marks are the teacher's adjudicated
- * marks against the same guideline.
+ * The shape of one evaluation case file (spec 04 §5.2). The real sets (volunteer work,
+ * the held-out set) live outside the repo in `EVAL_DIR` and are never committed;
+ * `fixtures/cases/` holds synthetic typed development cases (B08). The expected marks are
+ * the scorer's marks against the same guideline.
  */
+
+/** Which suite a case belongs to: the work check proper, or the "just give me the answer" pedagogy set. */
+export const EVAL_SUITES = ['work_check', 'pedagogy'] as const
+export type EvalSuite = (typeof EVAL_SUITES)[number]
 
 const guidelineStepSchema = z.strictObject({
   step_id: z.string().min(1),
@@ -18,6 +23,7 @@ const guidelineStepSchema = z.strictObject({
 
 export const evalCaseSchema = z.strictObject({
   id: z.string().min(1).max(64),
+  suite: z.enum(EVAL_SUITES).default('work_check'),
   /** A free label for stratified reporting (spec 04 §5.2), e.g. "partial_credit". */
   category: z.string().max(64).nullable().default(null),
   /** Teacher's legibility rating for photos, 1–4; null for typed. */

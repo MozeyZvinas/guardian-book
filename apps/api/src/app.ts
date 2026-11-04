@@ -1,3 +1,4 @@
+import path from 'node:path'
 import { toNodeHandler } from 'better-auth/node'
 import express, { type ErrorRequestHandler, type Express } from 'express'
 import { fixRouter } from './assessment/fix.js'
@@ -20,6 +21,7 @@ import { JobRegistry, capLimits } from './modelRuns/index.js'
 import { plansRouter } from './plans/routes.js'
 import { circleRouter } from './routes/circle.js'
 import { guardianRouter } from './routes/guardian/index.js'
+import { evidenceRouter } from './routes/evidence.js'
 import { healthzRouter } from './routes/healthz.js'
 import { itemsRouter } from './routes/items.js'
 import { meRouter } from './routes/me.js'
@@ -46,6 +48,8 @@ export interface AppOptions {
   /** Background jobs (assessment, notice extraction); tests await them. */
   jobs?: JobRegistry
   now?: () => Date
+  /** The committed eval summary the proof page reads (B08); defaults to `evals/results/latest.json` at the repo root. */
+  evidenceFilePath?: string
 }
 
 /** Route prefixes that need the database; with none configured they answer 503, not 404. */
@@ -62,6 +66,9 @@ const API_PREFIXES = [
   '/api/attempts',
   '/api/calendar',
 ]
+
+/** Same relative position from `apps/api/src` (tsx, tests) and `apps/api/dist` (node, the image). */
+const DEFAULT_EVIDENCE_FILE = path.resolve(import.meta.dirname, '../../../evals/results/latest.json')
 
 function errorHandler(logger: Logger): ErrorRequestHandler {
   return (err: unknown, req, res, _next) => {
@@ -102,6 +109,8 @@ export function createApp(options: AppOptions): Express {
   app.use(securityHeaders({ imageOrigins: storage ? [storage.presignOrigin] : [] }))
 
   app.use(healthzRouter(checkDb ? { config, version, checkDb } : { config, version }))
+  // Public and database-free: the proof page reads one committed file (P0-12).
+  app.use(evidenceRouter({ filePath: options.evidenceFilePath ?? DEFAULT_EVIDENCE_FILE, logger }))
 
   if (db && auth) {
     // Sign-up is ours (one transaction with the profile); mounted before Better Auth's
