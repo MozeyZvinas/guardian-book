@@ -103,6 +103,14 @@ const CASES: HarnessCase[] = [
   { name: 'teacher 12A reads the 12A picture', as: 'msDlamini', method: 'get', path: `/api/teacher/classes/${C['12A'].id}/picture`, expect: 200 },
   { name: 'teacher 12A reads a 12A learner’s profile', as: 'msDlamini', method: 'get', path: `/api/teacher/learners/${P.lerato.id}`, expect: 200 },
   { name: 'guardian lists sent notes', as: 'mmaLerato', method: 'get', path: '/api/guardian/notes', expect: 200 },
+  // ── B11: a teacher uploads a learner's script (the object check runs before the body is read) ──
+  { name: 'anonymous → POST a script', as: null, method: 'post', path: `/api/teacher/classes/${C['12A'].id}/scripts`, body: {}, expect: 401 },
+  { name: 'learner → POST a script', as: 'lerato', method: 'post', path: `/api/teacher/classes/${C['12A'].id}/scripts`, body: {}, expect: 403 },
+  { name: 'guardian → POST a script', as: 'mmaLerato', method: 'post', path: `/api/teacher/classes/${C['12A'].id}/scripts`, body: {}, expect: 403 },
+  { name: 'teacher 11B → a script for class 12A', as: 'mrNaidoo', method: 'post', path: `/api/teacher/classes/${C['12A'].id}/scripts`, body: {}, expect: 404 },
+  { name: 'Riverside teacher → a script for Sentinel 12A', as: 'msBotha', method: 'post', path: `/api/teacher/classes/${C['12A'].id}/scripts`, body: {}, expect: 404 },
+  { name: 'teacher → a script for an unknown class', as: 'msDlamini', method: 'post', path: '/api/teacher/classes/019a0b02-0000-7000-8000-00000000c999/scripts', body: {}, expect: 404 },
+  { name: 'teacher 12A → a script for 12A with no photo (past the object check)', as: 'msDlamini', method: 'post', path: `/api/teacher/classes/${C['12A'].id}/scripts`, body: {}, expect: 400 },
 
   // ── the happy rows the denials are measured against ──────────────────────────────────
   { name: 'teacher 12A reads class 12A', as: 'msDlamini', method: 'get', path: `/api/teacher/classes/${C['12A'].id}`, expect: 200 },
