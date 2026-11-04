@@ -27,7 +27,7 @@ test('a learner brings typed working and gets step-level feedback', async ({ pag
   await page.getByRole('button', { name: 'Use this' }).click()
 
   await expect(page.getByText('Which question is this?')).toBeVisible()
-  await page.getByLabel('Which question is this?').selectOption({ index: 1 })
+  await page.getByRole('group', { name: 'Which question is this?' }).getByRole('radio').first().check()
   await page.getByRole('button', { name: 'Check my work' }).click()
 
   await expect(page).toHaveURL(/\/attempts\/[0-9a-f-]{36}$/)
