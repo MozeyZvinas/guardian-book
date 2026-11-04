@@ -166,6 +166,10 @@ worktree).
 
 ## Last session handover
 
+- 4 Nov, ~02:30: **B02–B08 all merged** (PRs #2–#8). Next: the phone run
+  (`docs/runbooks/phone-run.md`), then B09 polish and B10 hardening on the Claude subscription,
+  the video and the submission by 20:00. The Help Plan agent has not yet run against the live
+  model; the phone run is its first live test.
 - 3 Nov: D36 (domains): `guardianbook.app` is the front door; `.co.za` and `www` redirect
   to it; DNS on Cloudflare. Steps in `docs/runbooks/deploy.md` § Domains. First Railway
   deploy failed on a leftover `pnpm` start command: clear Settings → Deploy → Custom Start
