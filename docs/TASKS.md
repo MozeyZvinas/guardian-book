@@ -414,6 +414,61 @@ Add any question here, linked to a task ID.
   rows in this table; both kept both sides.
 
 
+## B17 · past-paper engine: phase A (extract) and phase C (measure)
+
+Branch `b17a-extract`. The tooling is in `apps/api/src/corpus/` and `apps/api/src/evals/nsc.ts`.
+Every PDF, page image, crop, extracted question, item file and raw eval result lives in
+`~/guardian-book-corpus/`, outside the repo (D40). Only counts, costs and reason codes appear here.
+
+**Phase A, per paper** (Mathematics Grade 12, English paper with its memo, newest first;
+`pnpm corpus:extract`). *Memo-aligned* means the memo answer was found by number, has steps, and
+its step marks add up to the paper's marks. A *draft* failed a check three times and is never loaded.
+
+| Paper | Held out (D31) | Questions | Memo-aligned | Approved | Draft (reasons) | Calls | Cost |
+|---|---|---|---|---|---|---|---|
+| May/June 2026 P1 | yes | 42 | 42 | 42 | 0 (—) | 20 | $0.58 |
+| May/June 2026 P2 | yes | 50 | 49 | 49 | 1 (marks_mismatch 1) | 48 | $1.12 |
+| November 2025 P1 | yes | 49 | 46 | 46 | 3 (marks_mismatch 3) | 46 | $0.96 |
+| May/June 2024 P1 | no | 49 | 47 | 47 | 2 (memo_missing 2) | 33 | $0.68 |
+| May/June 2024 P2 | no | 51 | 46 | 46 | 5 (marks_mismatch 3, memo_missing 2) | 55 | $1.12 |
+| November 2023 P1 | no | 51 | 51 | 51 | 0 (—) | 29 | $0.61 |
+| November 2023 P2 | no | 53 | 50 | 50 | 3 (marks_mismatch 3) | 53 | $1.10 |
+
+Running extraction total (`model_runs`, purpose `extract`): **$7.37** over 342 recorded calls = $6.15 on the papers above + $1.10 on 2 paper(s) still being read + $0.12 for a 6-call dry run. Not in `model_runs`: 2 call(s), $0.06 (logged by the gateway but never recorded: a dropped database connection, or a call still in flight when this was counted). Each paper's cost is the sum of its own `model_runs` rows, matched by request ID to the run logs (runs before 5 Nov used one subject ID per process; later runs record one per paper).
+
+**Phase C** (held-out session 2026 May/June, memos as truth; `pnpm eval:nsc`; cap $10):
+running total **$2.44** of $10.
+
+**Questions for the planning session (B17A)**
+- **Held-out set.** D31 names the held-out set as *2025 November and 2026 May/June*, frozen; the
+  brief says "the newest session". D31 outranks the brief, so both sessions load with
+  `held_out` (kept out of practice and the library), and phase C measures on 2026 May/June
+  only, with the brief's label. If 2025 November should be practice, re-run
+  `pnpm corpus:extract 2025-november --held-out=2026-may_june` (the page reads are cached, so it
+  costs nothing) and `pnpm content:load` again.
+- **`.env.example`.** The four `DBE_R2_*` names (read by `pnpm corpus:*` only) should be listed in
+  `.env.example`; this session is not allowed to read or write that file. Founder: please add the
+  names with empty values.
+- **Diagram crops.** The app bucket (`BUCKET_*`) is not configured locally, so crops wait in
+  `~/guardian-book-corpus/diagrams/`. After `pnpm content:load` on production, run
+  `pnpm corpus:diagrams` with the production bucket's variables; until then a question's figure
+  will not load.
+- **A repeatable equivalence check for answers?** The proof page publishes only the fixed
+  comparison: 46 of 78 held-out 2026 May/June questions reach the memo's final answer, and 14 of
+  the 51 shown with worked steps end on an answer it does not match. A hand reading of the 32
+  misses (not published) found 22 that give the memo's answer in another form (another coordinate
+  separator, words or units after the value, terms in another order, extra working after the
+  answer) and 10 that are different answers: P1 Q2.2.3, Q3.1, Q4.6, Q4.9, Q9.3, Q10.2.2; P2 Q1.2,
+  Q2.2, Q7.4, Q7.6. By that reading, 68 of 78 reach the memo's answer and 6 of the 51 shown with
+  worked steps are wrong. Rule whether to build a repeatable equivalence check (a second model
+  call judged by the verifier, or a teacher's answer key per question) before any such figure
+  goes public.
+- **Two reads agreeing on the same wrong answer pass B15's check.** Of the 51 held-out questions
+  shown with worked steps, 6 (by that reading) end on a wrong answer that both independent reads
+  agreed on: P1 Q3.1, Q4.6, Q4.9, Q9.3; P2 Q7.4, Q7.6. Self-consistency alone does not catch them.
+  Rule whether the guide should compare with the memo's final answer when the question matches a
+  bank item (B15's `matchBankItem` already finds it), or add a third check.
+
 ## Post-submission list (test-only fixes; nothing here changes product behaviour)
 
 - **B11 e2e flake:** `apps/web/e2e/teacher-space-script.spec.ts:53` asserts the transient
