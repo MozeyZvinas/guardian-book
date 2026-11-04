@@ -405,7 +405,11 @@ Add any question here, linked to a task ID.
   Playwright walk reaches real cards instead of "We could not make cards from that"; the
   notice tests live in a new `test/integration/notice-clarity.test.ts`. `MathTextKatex.tsx`
   now imports its `Segment` type from the new pure module `MathText.logic.ts`.
-- **B16 · step 6 (maths keyboard on Fix and Item):** B15's `MathInput` was not on
-  `origin/main` at merge time, so the Fix and Item screens are untouched; wire it in when
-  B15 lands (two typed boxes).
+- **B16 · step 6 (maths keyboard on Fix and Item), after merging B15 (`ffa1e6f`):** the
+  typed boxes on Fix (L4) and Item (L5) go through B15's `MathInput`. The smallest change
+  that kept `CaptureSheet` untouched: `routes/learner/fix/MathCapture.tsx` (Snap and Type
+  targets as before; Type is `MathInput`; it emits `CaptureSheet`'s `Capture`, so both
+  screens' handlers and the specs' Type → label → *Use this* path are unchanged); Fix and
+  Item swap one line each. Merge conflicts were the mock's type-import line and the B15/B16
+  rows in this table; both kept both sides.
 
