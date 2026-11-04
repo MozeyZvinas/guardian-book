@@ -12,6 +12,8 @@ import { writeEvidence } from './summary.js'
 import {
   figureFor,
   loadGuideCases,
+  keepSelected,
+  notYetRun,
   rescoreGuide,
   nscGuideSuite,
   nscWorkCheckSuite,
@@ -33,8 +35,9 @@ import {
  * `--sample=30` (changed answers; the unchanged memo working for the same questions runs
  * as the control), `--cap=10` (US dollars for phase C in all, across runs, from
  * `<CORPUS_DIR>/evals/spend.json`), `--concurrency=4`, `--only=guide|work_check`,
- * `--rescore-guide=<raw guide results file>` (score saved guide outputs again with the current
- * comparison: no model call, nothing spent).
+ * `--guide-from=<raw guide results>` and `--work-check-from=<raw work-check results>` (keep a
+ * saved run's results and run only the cases it lacks; with none missing, the guide is simply
+ * re-scored with the current comparison: no model call, nothing spent).
  */
 
 interface Args {
@@ -43,11 +46,12 @@ interface Args {
   cap: number
   concurrency: number
   only: 'guide' | 'work_check' | null
-  rescoreGuide: string | null
+  guideFrom: string | null
+  workCheckFrom: string | null
 }
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { session: HELD_OUT_SESSIONS[0] ?? '2026-may_june', sample: 30, cap: 10, concurrency: 4, only: null, rescoreGuide: null }
+  const args: Args = { session: HELD_OUT_SESSIONS[0] ?? '2026-may_june', sample: 30, cap: 10, concurrency: 4, only: null, guideFrom: null, workCheckFrom: null }
   for (const arg of argv) {
     const [name, value = ''] = arg.split('=')
     if (name === '--session') args.session = value
@@ -55,7 +59,8 @@ function parseArgs(argv: string[]): Args {
     else if (name === '--cap') args.cap = Math.max(0, Number(value) || 0)
     else if (name === '--concurrency') args.concurrency = Math.max(1, Number(value) || 1)
     else if (name === '--only' && (value === 'guide' || value === 'work_check')) args.only = value
-    else if (name === '--rescore-guide' && value.length > 0) args.rescoreGuide = value
+    else if (name === '--guide-from' && value.length > 0) args.guideFrom = value
+    else if (name === '--work-check-from' && value.length > 0) args.workCheckFrom = value
     else throw new Error(`unknown option ${arg}`)
   }
   return args
@@ -100,6 +105,11 @@ async function main(): Promise<void> {
   const suites: EvidenceSuite[] = []
   const notYet: string[] = []
   const stopped: string[] = []
+  const readSaved = <T,>(file: string): { ran_at: string; results: T[] } => JSON.parse(readFileSync(file, 'utf8')) as { ran_at: string; results: T[] }
+  const writeRaw = (name: string, saved: { ran_at: string } | null, results: unknown[]): void => {
+    const raw = { ran_at: saved?.ran_at ?? ranAt.toISOString(), ...(saved ? { merged_at: ranAt.toISOString() } : {}), model: gateway.model, results }
+    writeFileSync(path.join(resultsDir, `${ranAt.toISOString().replace(/[:.]/g, '-')}-${name}.json`), `${JSON.stringify(raw, null, 2)}\n`)
+  }
   const record = (suite: string, cases: number, costUsd: number): void => {
     writeFileSync(ledger, `${JSON.stringify([...readLedger(), { at: new Date().toISOString(), suite, cases, costUsd: Math.round(costUsd * 1e6) / 1e6 }], null, 2)}\n`)
   }
@@ -108,26 +118,22 @@ async function main(): Promise<void> {
     const selection = selectGuideCases(await loadGuideCases(path.join(heldOutDir, 'guide')), pattern)
     console.log(`  guide: ${selection.cases.length} question(s), ${selection.withFigure} with a figure attached; left out ${selection.givenResult} that print their result`)
     const before = spent
-    const saved = args.rescoreGuide ? (JSON.parse(readFileSync(args.rescoreGuide, 'utf8')) as { ran_at: string; results: NscGuideResult[] }) : null
-    const results = saved
-      ? rescoreGuide(saved.results)
-      : await pool(selection.cases, args.concurrency, async (guide): Promise<NscGuideResult | null> => {
-          if (left() <= 0.1) return null
-          const result = await runGuideCase(guide, gateway, await figureFor(guide, heldOutDir))
-          spent += result.cost_usd
-          console.log(`    ${guide.id}: ${result.status} · ${result.reached === null ? 'no answer' : result.reached ? 'memo answer' : 'other answer'} · ${result.calls} call(s) · ${Math.round(result.latency_ms / 1000)} s · $${result.cost_usd.toFixed(4)}`)
-          return result
-        })
-    if (saved) console.log(`  guide: re-scored ${results.length} saved result(s) from ${saved.ran_at}; no model call`)
-    else record('nsc_guide', results.length, spent - before)
+    const saved = args.guideFrom ? readSaved<NscGuideResult>(args.guideFrom) : null
+    const toRun = notYetRun(selection.cases, saved?.results ?? [])
+    const fresh = await pool(toRun, args.concurrency, async (guide): Promise<NscGuideResult | null> => {
+      if (left() <= 0.1) return null
+      const result = await runGuideCase(guide, gateway, await figureFor(guide, heldOutDir))
+      spent += result.cost_usd
+      console.log(`    ${guide.id}: ${result.status} · ${result.reached === null ? 'no answer' : result.reached ? 'memo answer' : 'other answer'} · ${result.calls} call(s) · ${Math.round(result.latency_ms / 1000)} s · $${result.cost_usd.toFixed(4)}`)
+      return result
+    })
+    const results = rescoreGuide(keepSelected(selection.cases, [...(saved?.results ?? []), ...fresh]))
+    if (saved) console.log(`  guide: ${results.length - fresh.length} saved result(s) from ${saved.ran_at} re-scored, ${fresh.length} new`)
+    record('nsc_guide', fresh.length, spent - before)
     if (results.length < selection.cases.length) stopped.push(`guide: ${selection.cases.length - results.length} question(s) not run (cost cap)`)
-    const guideFile = `${ranAt.toISOString().replace(/[:.]/g, '-')}-nsc-guide${saved ? '-rescored' : ''}.json`
-    const guideRaw = saved ? { ran_at: saved.ran_at, rescored_at: ranAt.toISOString(), model: gateway.model, results } : { ran_at: ranAt.toISOString(), model: gateway.model, results }
-    writeFileSync(path.join(resultsDir, guideFile), `${JSON.stringify(guideRaw, null, 2)}\n`)
-    const suite = nscGuideSuite(
-      results,
-      `pnpm eval:nsc · ${gateway.model} · ${GUIDE_PROMPT_VERSION} + ${GUIDE_CHECK_PROMPT_VERSION} · ${saved ? `${saved.ran_at}, re-scored ${ranAt.toISOString()}` : ranAt.toISOString()}`,
-    )
+    writeRaw(`nsc-guide${saved ? '-merged' : ''}`, saved, results)
+    const when = saved ? `${saved.ran_at}${fresh.length ? ` and ${ranAt.toISOString()}` : `, re-scored ${ranAt.toISOString()}`}` : ranAt.toISOString()
+    const suite = nscGuideSuite(results, `pnpm eval:nsc · ${gateway.model} · ${GUIDE_PROMPT_VERSION} + ${GUIDE_CHECK_PROMPT_VERSION} · ${when}`)
     if (suite) suites.push(suite)
     notYet.push(
       `Held-out NSC guide: ${selection.withFigure} question(s) printed with a figure went in typed with the figure attached as a photo (the app takes typed text or a photo, not both); ${selection.givenResult} that ask to prove or show a printed result were left out.`,
@@ -138,17 +144,21 @@ async function main(): Promise<void> {
     const cases = selectWorkCheckCases(await loadCases(heldOutDir), pattern, args.sample)
     console.log(`  work check: ${cases.length} case(s)`)
     const before = spent
-    const results = await pool(cases, args.concurrency, async (evalCase): Promise<EvalCaseResult | null> => {
+    const saved = args.workCheckFrom ? readSaved<EvalCaseResult>(args.workCheckFrom) : null
+    const fresh = await pool(notYetRun(cases, saved?.results ?? []), args.concurrency, async (evalCase): Promise<EvalCaseResult | null> => {
       if (left() <= 0.05) return null
       const result = await runCase(evalCase, heldOutDir, gateway)
       spent += result.cost_usd
       console.log(`    ${result.id}: ${result.status} · total ${result.model_total ?? '-'} (expected ${result.expected_total}) · lost ${result.model_first_lost_step ?? '-'} (expected ${result.expected_first_lost_step ?? '-'}) · $${result.cost_usd.toFixed(4)}`)
       return result
     })
-    record('nsc_work_check', results.length, spent - before)
+    const results = keepSelected(cases, [...(saved?.results ?? []), ...fresh])
+    if (saved) console.log(`  work check: ${results.length - fresh.length} saved result(s) from ${saved.ran_at} kept, ${fresh.length} new`)
+    record('nsc_work_check', fresh.length, spent - before)
     if (results.length < cases.length) stopped.push(`work check: ${cases.length - results.length} case(s) not run (cost cap)`)
-    writeFileSync(path.join(resultsDir, `${ranAt.toISOString().replace(/[:.]/g, '-')}-nsc-work-check.json`), `${JSON.stringify({ ran_at: ranAt.toISOString(), model: gateway.model, results }, null, 2)}\n`)
-    const suite = nscWorkCheckSuite(results, `pnpm eval:nsc · ${gateway.model} · ${WORK_CHECK_PROMPT_VERSION} · ${ranAt.toISOString()}`)
+    writeRaw(`nsc-work-check${saved ? '-merged' : ''}`, saved, results)
+    const when = saved ? `${saved.ran_at}${fresh.length ? ` and ${ranAt.toISOString()}` : ''}` : ranAt.toISOString()
+    const suite = nscWorkCheckSuite(results, `pnpm eval:nsc · ${gateway.model} · ${WORK_CHECK_PROMPT_VERSION} · ${when}`)
     if (suite) suites.push(suite)
   }
 

@@ -244,6 +244,18 @@ export async function runGuideCase(guide: GuideCase, gateway: Gateway, figure: I
   }
 }
 
+/** The cases a saved run has no result for. */
+export function notYetRun<T extends { id: string }>(cases: T[], saved: Array<{ id: string }>): T[] {
+  const done = new Set(saved.map((result) => result.id))
+  return cases.filter((item) => !done.has(item.id))
+}
+
+/** One result per selected case, in the cases' order: a later result for the same case wins. */
+export function keepSelected<R extends { id: string }>(cases: Array<{ id: string }>, results: R[]): R[] {
+  const byId = new Map(results.map((result) => [result.id, result]))
+  return cases.map((item) => byId.get(item.id)).filter((result): result is R => result !== undefined)
+}
+
 /** The saved results scored again with the current comparison: no model call, the same outputs. */
 export function rescoreGuide(results: NscGuideResult[]): NscGuideResult[] {
   return results.map((result) => ({ ...result, reached: result.final_answer === null ? null : answersMatch(result.expected_final_answer, result.final_answer) }))

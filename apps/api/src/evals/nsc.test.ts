@@ -6,7 +6,7 @@ import { capturingLogger, okResponse } from '../gateway/testing.js'
 import type { ChatRequest } from '../gateway/transport.js'
 import type { EvalCase } from './cases.js'
 import type { GuideCase } from './guideCases.js'
-import { NSC_DATASET_LABEL, answersMatch, nscGuideSuite, rescoreGuide, nscWorkCheckSuite, runGuideCase, selectGuideCases, selectWorkCheckCases, sessionCasePattern, stableSample, withNscSuites } from './nsc.js'
+import { NSC_DATASET_LABEL, answersMatch, keepSelected, notYetRun, nscGuideSuite, rescoreGuide, nscWorkCheckSuite, runGuideCase, selectGuideCases, selectWorkCheckCases, sessionCasePattern, stableSample, withNscSuites } from './nsc.js'
 import type { EvalCaseResult } from './runner.js'
 
 /** Synthetic questions only (never DBE text). */
@@ -159,6 +159,13 @@ describe('running the guide on a held-out question', () => {
 })
 
 describe('re-scoring saved results', () => {
+  it('runs only what a saved run lacks, and keeps one result per selected case', () => {
+    const cases = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
+    expect(notYetRun(cases, [{ id: 'b' }, { id: 'z' }]).map((c) => c.id)).toEqual(['a', 'c'])
+    const kept = keepSelected(cases, [{ id: 'z', v: 0 }, { id: 'c', v: 1 }, { id: 'a', v: 2 }, { id: 'c', v: 3 }])
+    expect(kept).toEqual([{ id: 'a', v: 2 }, { id: 'c', v: 3 }])
+  })
+
   it('scores the same outputs again with the current comparison and makes no call', () => {
     const saved = { id: 'g', with_figure: false, status: 'ready' as const, agreement: 'agree' as const, reached: false, final_answer: '$x \\approx 2.45$', expected_final_answer: '$x=2,45$', calls: 2, cost_usd: 0.03, latency_ms: 1, runs: [], error: null }
     expect(rescoreGuide([saved, { ...saved, final_answer: null }]).map((result) => result.reached)).toEqual([true, null])
