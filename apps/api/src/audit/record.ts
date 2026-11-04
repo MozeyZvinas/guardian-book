@@ -44,6 +44,11 @@ export type AuditAction =
   | 'note.created'
   | 'note.approved'
   | 'note.sent'
+  // B13
+  | 'attempt.asked'
+  | 'attempt.ask_refused'
+  | 'voice.transcribed'
+  | 'voice.transcribe_refused'
 
 export interface AuditInput {
   actorId: string | null

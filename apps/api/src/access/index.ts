@@ -37,6 +37,8 @@ export type Action =
   | 'plan.read'
   | 'plan.done'
   | 'attempt.fix'
+  // B13: ask about a step (owner only; the route refuses independent attempts itself)
+  | 'attempt.ask'
   // B07 (spec 03 §4, §8.2, §9.2): the teacher space
   | 'guideline.read'
   | 'guideline.approve'
@@ -389,8 +391,9 @@ export async function can(db: DbOrTx, subject: Subject, action: Action, resource
     case 'plan.done':
       return resource.type === 'learner' && subject.role === 'guardian' && guardianLinkedTo(db, subject.userId, resource.id)
 
-    case 'attempt.fix': {
-      // Only the owner redoes a step (spec 03 §8.3 `POST /api/attempts/:id/fix`: owner).
+    case 'attempt.fix':
+    case 'attempt.ask': {
+      // Only the owner redoes, or asks about, a step (spec 03 §8.3 `POST /api/attempts/:id/fix`: owner; B13 `/ask`).
       if (resource.type !== 'attempt') return false
       const [row] = await db.select({ learnerId: attempts.learnerId }).from(attempts).where(eq(attempts.id, resource.id)).limit(1)
       return Boolean(row) && learnerOwns(subject, row?.learnerId ?? '')
