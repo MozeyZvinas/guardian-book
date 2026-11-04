@@ -429,15 +429,27 @@ its step marks add up to the paper's marks. A *draft* failed a check three times
 | May/June 2026 P1 | yes | 42 | 42 | 42 | 0 (—) | 20 | $0.58 |
 | May/June 2026 P2 | yes | 50 | 49 | 49 | 1 (marks_mismatch 1) | 48 | $1.12 |
 | November 2025 P1 | yes | 49 | 46 | 46 | 3 (marks_mismatch 3) | 46 | $0.96 |
+| November 2025 P2 | yes | 54 | 53 | 53 | 1 (marks_mismatch 1) | 52 | $1.14 |
+| May/June 2025 P1 | no | 46 | 46 | 46 | 0 (—) | 28 | $0.61 |
 | May/June 2024 P1 | no | 49 | 47 | 47 | 2 (memo_missing 2) | 33 | $0.68 |
 | May/June 2024 P2 | no | 51 | 46 | 46 | 5 (marks_mismatch 3, memo_missing 2) | 55 | $1.12 |
 | November 2023 P1 | no | 51 | 51 | 51 | 0 (—) | 29 | $0.61 |
 | November 2023 P2 | no | 53 | 50 | 50 | 3 (marks_mismatch 3) | 53 | $1.10 |
+| May/June 2023 P1 | no | 52 | 52 | 52 | 0 (—) | 27 | $0.63 |
 
-Running extraction total (`model_runs`, purpose `extract`): **$7.37** over 342 recorded calls = $6.15 on the papers above + $1.10 on 2 paper(s) still being read + $0.12 for a 6-call dry run. Not in `model_runs`: 2 call(s), $0.06 (logged by the gateway but never recorded: a dropped database connection, or a call still in flight when this was counted). Each paper's cost is the sum of its own `model_runs` rows, matched by request ID to the run logs (runs before 5 Nov used one subject ID per process; later runs record one per paper).
+Running extraction total (`model_runs`, purpose `extract`): **$9.96** over 462 recorded calls = $8.54 on the papers above + $1.31 on 2 paper(s) still being read + $0.12 for a 6-call dry run. Not in `model_runs`: 3 call(s), $0.10 (logged by the gateway but never recorded: a dropped database connection, or a call still in flight when this was counted). Each paper's cost is the sum of its own `model_runs` rows, matched by request ID to the run logs (runs before 5 Nov used one subject ID per process; later runs record one per paper).
 
-**Phase C** (held-out session 2026 May/June, memos as truth; `pnpm eval:nsc`; cap $10):
-running total **$2.44** of $10.
+**Phase C** (held-out session 2026 May/June, memos as truth; `pnpm eval:nsc`; cap $10). Results
+in `evals/results/latest.json` and on `/evidence`, each with its interval:
+- Guide (B15, two reads as the app runs them), 78 questions (57 with their figure attached; 13
+  that ask to prove a printed result left out): the fixed comparison finds the memo's final answer
+  in 46 of 78; 51 were shown with worked steps, and 14 of those 51 end on an answer the comparison
+  does not match (wrong, or right in another form). 148 of 148 calls passed every check first time.
+- Work check, 128 cases: on 56 accepted answers with the final step's value changed, it named
+  that step as the first lost in 52; on 55 accepted unchanged memo answers it gave full marks to
+  51; 16 of 128 went to the teacher as uncertain; 4 of 105 high-confidence totals were wrong.
+
+running total **$4.49** of $10.
 
 **Questions for the planning session (B17A)**
 - **Held-out set.** D31 names the held-out set as *2025 November and 2026 May/June*, frozen; the
