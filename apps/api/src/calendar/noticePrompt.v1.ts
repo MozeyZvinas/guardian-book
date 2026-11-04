@@ -8,8 +8,14 @@ import { DATE_WINDOW_DAYS } from '../verify/checks/notice.js'
  */
 
 export const NOTICE_PROMPT_VERSION = 'notice-v1' as const
-export const NOTICE_MAX_TOKENS = 4_000
-export const NOTICE_TIMEOUT_MS = 45_000
+/**
+ * Budgets (B16 §5): the only server path to "could not be read right now" is a gateway
+ * failure, and Muse Spark reasons before its JSON (a page it must read line by line with
+ * nothing to list can reason longest). The work check already runs at 6,000 tokens and 90 s
+ * per call (D37) inside the 120 s whole-run deadline; the notice read now matches it.
+ */
+export const NOTICE_MAX_TOKENS = 6_000
+export const NOTICE_TIMEOUT_MS = 90_000
 
 export const NOTICE_SYSTEM = `You read one school notice or timetable and list every dated event in it, as one JSON object matching the schema you are given, nothing else.
 

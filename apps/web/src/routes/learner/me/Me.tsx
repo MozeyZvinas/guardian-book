@@ -13,7 +13,7 @@ import { StatusChip } from '../../../components/StatusChip'
 import { StatusLegend } from '../../../components/StatusLegend'
 import { useMe } from '../../../state/me'
 
-/** L8 · Me (spec 05 §4.2): the four cards (edit), invite a parent, join a class, what your parent can see. */
+/** L8 · Me (spec 05 §4.2; B16 §7): the four cards (edit), invite a parent, join a class, what your parent can see. */
 export function Me() {
   return <RequireRole roles={['learner']}>{(me) => <MeScreen me={me} />}</RequireRole>
 }
@@ -21,7 +21,10 @@ export function Me() {
 function MeScreen({ me }: { me: MeResponse }) {
   return (
     <LearnerShell footer={<StatusLegend />}>
-      <h1 className="text-display font-semibold text-balance">Hi {me.profile.nickname}</h1>
+      <div className="flex flex-col gap-2">
+        <h1 className="text-display font-semibold text-balance">Hi {me.profile.nickname}</h1>
+        <p className="text-fg-muted">Your cards, your parent, your class, and what a parent can see.</p>
+      </div>
       <ProfileCardsSection />
       <InviteGuardian me={me} />
       <JoinClass me={me} />
@@ -73,7 +76,7 @@ function ProfileCardsSection() {
       {load.status === 'error' ? <FormError error={load.error} /> : null}
       {load.status === 'ready' && !load.profile.cards ? (
         <>
-          <p className="text-sm text-fg-muted">Four quick questions start your cards. You can skip any of them.</p>
+          <p className="text-sm text-fg-muted">Five quick taps start your cards. Skip any of them.</p>
           <div>
             <Link to="/me/setup" className="inline-flex min-h-11 items-center rounded-card border border-fg-muted/50 bg-surface px-5 font-medium text-fg no-underline">
               Tell me about you

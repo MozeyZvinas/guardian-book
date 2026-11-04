@@ -11,6 +11,14 @@ const STATE_GLYPH = { new: '◯', practising: '◐', secure: '●' } as const
 
 export const MARK_LABELS = { assisted: 'with help', independent: 'on your own', retained: 'later' } as const
 
+/** The legend the Brain shows above the chips (B16 §3): what each mark means, and Secure. */
+export const MARK_LEGEND: ReadonlyArray<{ label: string; means: string }> = [
+  { label: 'With help', means: 'right with hints' },
+  { label: 'On your own', means: 'right in a check with no hints' },
+  { label: 'Later', means: 'still right two days later' },
+  { label: 'Secure', means: 'all three' },
+]
+
 export function SkillStateBadge({ state }: { state: BrainSkill['state'] }) {
   const look =
     state === 'secure'

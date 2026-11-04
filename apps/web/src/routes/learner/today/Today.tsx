@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import type { CheckIn, LearnerPractice, RecentInput, TodayResponse } from '@guardian-book/shared'
 import { getToday } from '../../../api/learner'
@@ -10,10 +10,12 @@ import { LearnerShell } from '../../../components/LearnerShell'
 import { Skeleton } from '../../../components/Skeleton'
 import { daysWord, shortDate, shortDateTime } from '../../../lib/dates'
 import { InstallHint } from '../../../sw/InstallHint'
+import { KIND_WORD, NEXT_ACTION_TITLE, nextAction, splitRecent, statusWords, type NextAction } from './status'
 
 /**
- * L1 · Today (spec 05 §4.2, §9): open → one next step. The check-in card outranks
- * tonight's step when one is due. Bring anything is the one pink action on the screen.
+ * L1 · Today (spec 05 §4.2, §9; B16 §2): open → one clear next action at the top (bring
+ * something / fix your step / check it alone / your follow-up check), then your recent
+ * work in plain statuses. Bring anything stays the one pink action on the screen.
  */
 export function Today() {
   return <RequireRole roles={['learner']}>{() => <TodayScreen />}</RequireRole>
@@ -70,11 +72,12 @@ function TodayScreen() {
   }
 
   const { today } = load
-  const checkIn = today.checkIns[0]
+  const action = nextAction(today)
   return (
     <LearnerShell>
       <div className="flex flex-col gap-2">
         <h1 className="text-display font-semibold text-balance">Hi {today.nickname}</h1>
+        <p className="text-fg-muted">Your one next step, then your recent work.</p>
         {today.exam ? (
           <p>
             <Link to="/calendar" className="inline-flex items-center gap-2 rounded-full bg-surface px-3 py-1 text-sm font-medium text-fg no-underline">
@@ -91,11 +94,9 @@ function TodayScreen() {
         )}
       </div>
 
-      {checkIn ? <CheckInCard check={checkIn} more={today.checkIns.length - 1} /> : null}
+      <NextActionCard action={action} more={today.checkIns.length - 1} />
 
-      <TonightCard today={today} />
-
-      <BringAnything />
+      {action.kind === 'bring' ? null : <BringAnything />}
 
       {today.practice.length > 0 ? <PracticeCard practice={today.practice} /> : null}
 
@@ -104,25 +105,12 @@ function TodayScreen() {
       </p>
 
       {!today.hasCards ? (
-        <EmptyState title="Tell me about you" action={<Link to="/me/setup">Four quick questions</Link>}>
-          A sentence each. They help us say why a step matters to you.
+        <EmptyState title="Tell me about you" action={<Link to="/me/setup">Five quick taps</Link>}>
+          Your grade, subjects and what you want to do one day. They help us say why a step matters to you.
         </EmptyState>
       ) : null}
 
-      <section aria-labelledby="recent-heading" className="flex flex-col gap-2">
-        <h2 id="recent-heading" className="text-lg font-semibold">
-          Recent
-        </h2>
-        {today.recent.length === 0 ? (
-          <p className="text-sm text-fg-muted">Nothing yet. Whatever you bring shows up here with its status.</p>
-        ) : (
-          <ul className="m-0 flex list-none flex-col gap-2 p-0">
-            {today.recent.map((input) => (
-              <RecentRow key={input.id} input={input} />
-            ))}
-          </ul>
-        )}
-      </section>
+      <RecentWork recent={today.recent} />
 
       {!today.guardianLinked ? (
         <p className="text-sm text-fg-muted">
@@ -146,7 +134,39 @@ function BringAnything() {
   )
 }
 
-function CheckInCard({ check, more }: { check: CheckIn; more: number }) {
+/** The one thing to do now, named the same way every time (B16 §2). */
+function NextActionCard({ action, more }: { action: NextAction; more: number }) {
+  const title = NEXT_ACTION_TITLE[action.kind]
+  if (action.kind === 'check_alone' || action.kind === 'follow_up') return <CheckInCard title={title} check={action.check} more={more} />
+  if (action.kind === 'fix') {
+    return (
+      <Card title={title}>
+        <p className="font-medium">{action.step}</p>
+        {action.why ? <p className="text-sm text-fg-muted">{action.why}</p> : null}
+        <div>
+          <Link to={`/attempts/${action.attemptId}/fix`} className="inline-flex min-h-11 items-center justify-center rounded-card border border-fg-muted/50 bg-surface px-5 font-medium text-fg no-underline">
+            Start
+          </Link>
+        </div>
+      </Card>
+    )
+  }
+  return (
+    <Card title={title}>
+      {action.step ? (
+        <>
+          <p className="font-medium">Tonight: {action.step}</p>
+          {action.why ? <p className="text-sm text-fg-muted">{action.why}</p> : null}
+        </>
+      ) : (
+        <p className="text-fg-muted">Homework, a school notice or a question. We start from whatever you bring.</p>
+      )}
+      <BringAnything />
+    </Card>
+  )
+}
+
+function CheckInCard({ title, check, more }: { title: string; check: CheckIn; more: number }) {
   const navigate = useNavigate()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>(null)
@@ -170,15 +190,15 @@ function CheckInCard({ check, more }: { check: CheckIn; more: number }) {
   }
 
   return (
-    <Card title="Check-in due">
+    <Card title={title}>
       <p>
         {check.kind === 'retention' ? (
           <>
-            Two days ago you did <strong>{check.label}</strong> on your own. Check it alone: one question, no hints.
+            Two days ago you did <strong>{check.label}</strong> on your own. One question, no hints: does it still hold?
           </>
         ) : (
           <>
-            Your teacher planned a check-in on <strong>{check.label}</strong> for {when}.
+            Your teacher planned a check on <strong>{check.label}</strong> for {when}. One question, no hints.
           </>
         )}
       </p>
@@ -240,41 +260,40 @@ function PracticeCard({ practice }: { practice: LearnerPractice[] }) {
   )
 }
 
-function TonightCard({ today }: { today: TodayResponse }) {
-  if (today.tonight.kind === 'none') {
-    return (
-      <Card title="Tonight’s step">
-        <p className="text-fg-muted">Bring something and we’ll start.</p>
-      </Card>
-    )
-  }
-  const target = today.tonight.attemptId ? `/attempts/${today.tonight.attemptId}/fix` : '/bring'
+/** Recent work in plain statuses; failed and abandoned pieces older than a day wait behind "Show all". */
+function RecentWork({ recent }: { recent: RecentInput[] }) {
+  const [showAll, setShowAll] = useState(false)
+  const split = useMemo(() => splitRecent(recent, new Date()), [recent])
+  const rows = showAll ? recent : split.shown
   return (
-    <Card title="Tonight’s step">
-      <p className="font-medium">{today.tonight.step}</p>
-      {today.tonight.why ? <p className="text-sm text-fg-muted">{today.tonight.why}</p> : null}
-      <div>
-        <Link to={target} className="inline-flex min-h-11 items-center justify-center rounded-card border border-fg-muted/50 bg-surface px-5 font-medium text-fg no-underline">
-          Start
-        </Link>
-      </div>
-    </Card>
+    <section aria-labelledby="recent-heading" className="flex flex-col gap-2">
+      <h2 id="recent-heading" className="text-lg font-semibold">
+        Your recent work
+      </h2>
+      {recent.length === 0 ? (
+        <p className="text-sm text-fg-muted">Nothing yet. Whatever you bring shows up here with where it stands.</p>
+      ) : rows.length === 0 ? (
+        <p className="text-sm text-fg-muted">Nothing new. Older pieces that could not be read are under Show all.</p>
+      ) : (
+        <ul className="m-0 flex list-none flex-col gap-2 p-0">
+          {rows.map((input) => (
+            <RecentRow key={input.id} input={input} />
+          ))}
+        </ul>
+      )}
+      {split.hidden.length > 0 ? (
+        <p className="text-sm">
+          <button type="button" onClick={() => setShowAll((on) => !on)} className="min-h-11 px-0 text-fg-muted underline" aria-expanded={showAll}>
+            {showAll ? 'Hide older' : `Show all (${split.hidden.length} older)`}
+          </button>
+        </p>
+      ) : null}
+    </section>
   )
 }
 
-const KIND_WORD = { work: 'Homework', notice: 'Notice', question: 'Question' } as const
-const STATUS_WORD: Record<RecentInput['status'], { glyph: string; text: string }> = {
-  reading: { glyph: '◌', text: 'Reading your work…' },
-  feedback_ready: { glyph: '●', text: 'Feedback ready' },
-  teacher_checking: { glyph: '◐', text: 'Your teacher is checking' },
-  fixed: { glyph: '✓', text: 'Fixed' },
-  failed: { glyph: '!', text: 'Could not be read. Try again.' },
-  read: { glyph: '●', text: 'Dates read' },
-  asked: { glyph: '?', text: 'Asked' },
-}
-
 function RecentRow({ input }: { input: RecentInput }) {
-  const status = STATUS_WORD[input.status]
+  const status = statusWords(input.status)
   const body = (
     <>
       <span className="flex flex-col">
@@ -284,7 +303,7 @@ function RecentRow({ input }: { input: RecentInput }) {
         </span>
       </span>
       <span className="text-sm">
-        <span aria-hidden="true" className={input.status === 'feedback_ready' || input.status === 'fixed' || input.status === 'read' ? 'text-progress' : 'text-fg-muted'}>
+        <span aria-hidden="true" className={status.done ? 'text-progress' : 'text-fg-muted'}>
           {status.glyph}{' '}
         </span>
         {status.text}
@@ -296,6 +315,10 @@ function RecentRow({ input }: { input: RecentInput }) {
     <li>
       {input.attemptId ? (
         <Link to={`/attempts/${input.attemptId}`} className={className}>
+          {body}
+        </Link>
+      ) : input.status === 'failed' ? (
+        <Link to="/bring" className={className}>
           {body}
         </Link>
       ) : (
