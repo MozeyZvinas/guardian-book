@@ -12,14 +12,20 @@ import { loadBrainEvents } from '../../evidence/projection.js'
  * date, nothing else; spec 03 §9.2), and retention checks derived from the events (two days
  * after a correct independent check, until one is recorded). Today reads the same list.
  */
-export function checksRouter(db: Db): Router {
+export interface ChecksClock {
+  now: () => Date
+  /** Days from a correct independent check to the follow-up check (B06, `RETENTION_CHECK_DAYS`). */
+  retentionDays: number
+}
+
+export function checksRouter(db: Db, clock: ChecksClock = { now: () => new Date(), retentionDays: 2 }): Router {
   const router = Router()
 
   router.get('/api/me/checks', requireRole('learner'), async (_req, res, next) => {
     try {
       const actor = requireActor(res)
-      const now = new Date()
-      const body: ChecksResponse = { today: dayOf(now), checks: await dueChecksFor(db, actor.userId, now) }
+      const now = clock.now()
+      const body: ChecksResponse = { today: dayOf(now), checks: await dueChecksFor(db, actor.userId, now, undefined, clock.retentionDays) }
       res.setHeader('Cache-Control', 'no-store')
       res.json(body)
     } catch (err) {
@@ -30,7 +36,7 @@ export function checksRouter(db: Db): Router {
   return router
 }
 
-export async function dueChecksFor(db: DbOrTx, learnerId: string, now: Date, events?: BrainEvent[]): Promise<CheckIn[]> {
+export async function dueChecksFor(db: DbOrTx, learnerId: string, now: Date, events?: BrainEvent[], retentionDays?: number): Promise<CheckIn[]> {
   const today = dayOf(now)
   const open = await db
     .select({ id: interventions.id, skillTag: interventions.skillTag, action: interventions.action, followUpOn: interventions.followUpOn })
@@ -50,7 +56,7 @@ export async function dueChecksFor(db: DbOrTx, learnerId: string, now: Date, eve
   }))
 
   const covered = new Set(checks.map((check) => check.skillTag))
-  for (const due of dueRetentionChecks(events ?? (await loadBrainEvents(db, learnerId)), now)) {
+  for (const due of dueRetentionChecks(events ?? (await loadBrainEvents(db, learnerId)), now, retentionDays === undefined ? {} : { days: retentionDays })) {
     if (covered.has(due.skillTag)) continue // the teacher's follow-up already covers this skill
     checks.push({
       kind: 'retention',

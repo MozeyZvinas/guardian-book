@@ -13,6 +13,7 @@
     "db:migrate": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts",
     "content:load": "tsx src/content/load.ts",
+    "resources:load": "tsx src/resources/load.ts",
     "eval:dev": "tsx src/evals/run.ts",
     "smoke:live": "tsx src/evals/smoke.ts"
   },

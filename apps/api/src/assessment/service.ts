@@ -36,6 +36,7 @@ import type { Logger } from '../logger.js'
 import { runModel } from '../modelRuns/index.js'
 import { extensionFor } from '../storage/images.js'
 import { clampBoxes } from '../verify/checks/work.js'
+import { afterProposed, fixTargetsFor, fixView } from './fix.js'
 
 /**
  * The homework check (spec 02 P0-04; spec 03 §2, §3, §6, §9.1; brief B04 §3).
@@ -333,8 +334,12 @@ export async function runAssessment(deps: PracticeDeps, attemptId: string): Prom
     await db.update(attempts).set({ assessingStartedAt: null }).where(eq(attempts.id, attemptId))
     return
   }
-  const steps = await db.select().from(guidelineSteps).where(eq(guidelineSteps.itemId, row.item.id)).orderBy(asc(guidelineSteps.stepNo))
+  const allSteps = await db.select().from(guidelineSteps).where(eq(guidelineSteps.itemId, row.item.id)).orderBy(asc(guidelineSteps.stepNo))
   const attempt = row.attempt
+  // A "fix it" retry (B06) is marked only on the steps the original lost.
+  const targets = attempt.parentAttemptId ? await fixTargetsFor(db, attempt.parentAttemptId) : null
+  const steps = targets ? allSteps.filter((step) => targets.stepNos.includes(step.stepNo)) : allSteps
+  const maxMarks = targets ? steps.reduce((acc, step) => acc + step.marks, 0) : row.item.maxMarks
 
   const uncertain = (reasons: string[], extra: Partial<WriteAssessmentInput> = {}): Promise<string> =>
     writeAssessment(db, {
@@ -358,6 +363,10 @@ export async function runAssessment(deps: PracticeDeps, attemptId: string): Prom
   } catch (err) {
     logger.warn('assessment refused: guideline not approved at run time', { attemptId })
     await uncertain([err instanceof HttpError ? err.code : 'not_approved'])
+    return
+  }
+  if (attempt.parentAttemptId && !targets) {
+    await uncertain(['parent_unassessed'])
     return
   }
 
@@ -385,7 +394,7 @@ export async function runAssessment(deps: PracticeDeps, attemptId: string): Prom
     expected: null,
   }))
   const promptInput: WorkCheckPromptInput = {
-    item: { slug: row.item.slug, prompt_md: row.item.promptMd, max_marks: row.item.maxMarks },
+    item: { slug: row.item.slug, prompt_md: row.item.promptMd, max_marks: maxMarks },
     guideline,
     answer,
     mode: attempt.mode,
@@ -456,6 +465,12 @@ export async function runAssessment(deps: PracticeDeps, attemptId: string): Prom
         transcriptionConfidence: result.output.transcription_confidence,
         ...common,
       })
+      // The loop's events and the same-day plan trigger (B06); never past the job registry.
+      try {
+        await afterProposed(deps, attempt, stored, stored.every((step) => step.confidence === 'high') ? 'model_high' : 'none')
+      } catch (err) {
+        logger.error('after assessment: loop events failed', { attemptId, err })
+      }
       return
     }
   }
@@ -571,6 +586,7 @@ export async function attemptResponse(deps: PracticeDeps, actor: Actor, attemptI
       answerText: row.attempt.answerText,
       hasImage: row.attempt.imageKey !== null,
       provenance: row.attempt.provenance,
+      parentAttemptId: row.attempt.parentAttemptId,
       createdAt: row.attempt.createdAt.toISOString(),
     },
     assessment: assessment
@@ -590,6 +606,7 @@ export async function attemptResponse(deps: PracticeDeps, actor: Actor, attemptI
       : null,
     guideline: steps,
     hintsVisible: visible,
+    fix: await fixView(db, row.attempt, assessment !== null),
   }
 }
 

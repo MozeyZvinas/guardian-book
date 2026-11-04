@@ -6,7 +6,8 @@ import type { Db } from '../../db/client.js'
 import { assessments, attempts, calendarEvents, classMembers, guardianLinks, helpPlans, inputs, learningEvents, profiles } from '../../db/schema.js'
 import { loadBrainEvents } from '../../evidence/projection.js'
 import { notFound } from '../../lib/http.js'
-import { dueChecksFor } from './checks.js'
+import { latestGapEvent } from '../../plans/service.js'
+import { dueChecksFor, type ChecksClock } from './checks.js'
 
 /**
  * `GET /api/me/today` (spec 05 §4.2 L1, §9): open → one next step. The exam chip (next
@@ -14,13 +15,13 @@ import { dueChecksFor } from './checks.js'
  * nothing yet), the check-ins due (they outrank tonight's step on the screen), the last
  * three inputs with their status, and whether a guardian is linked.
  */
-export function todayRouter(db: Db): Router {
+export function todayRouter(db: Db, clock: ChecksClock = { now: () => new Date(), retentionDays: 2 }): Router {
   const router = Router()
 
   router.get('/api/me/today', requireRole('learner'), async (_req, res, next) => {
     try {
       const actor = requireActor(res)
-      const now = new Date()
+      const now = clock.now()
       const today = dayOf(now)
 
       const [profile] = await db.select({ nickname: profiles.nickname, cards: profiles.cards }).from(profiles).where(eq(profiles.userId, actor.userId)).limit(1)
@@ -40,19 +41,21 @@ export function todayRouter(db: Db): Router {
         .limit(1)
 
       const [plan] = await db
-        .select({ id: helpPlans.id, learnerView: helpPlans.learnerView })
+        .select({ id: helpPlans.id, learnerView: helpPlans.learnerView, gapSkillTag: helpPlans.gapSkillTag })
         .from(helpPlans)
         .where(and(eq(helpPlans.learnerId, actor.userId), eq(helpPlans.status, 'issued')))
         .orderBy(desc(helpPlans.createdAt))
         .limit(1)
       const learnerView = plan ? planLearnerViewSchema.safeParse(plan.learnerView) : null
+      // "Start" opens fix-it on the attempt the gap came from (B06).
+      const gapAttempt = plan ? await latestGapEvent(db, actor.userId, plan.gapSkillTag) : null
       const tonight: TodayResponse['tonight'] =
         plan && learnerView?.success
-          ? { kind: 'plan', planId: plan.id, step: learnerView.data.tonight_step.text, hint: learnerView.data.hint, why: learnerView.data.why_it_matters.text }
+          ? { kind: 'plan', planId: plan.id, step: learnerView.data.tonight_step.text, hint: learnerView.data.hint, why: learnerView.data.why_it_matters.text, attemptId: gapAttempt?.attemptId ?? null }
           : { kind: 'none' }
 
       const events = await loadBrainEvents(db, actor.userId)
-      const checkIns = await dueChecksFor(db, actor.userId, now, events)
+      const checkIns = await dueChecksFor(db, actor.userId, now, events, clock.retentionDays)
 
       const [link] = await db
         .select({ learnerId: guardianLinks.learnerId })
