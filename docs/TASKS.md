@@ -426,30 +426,49 @@ its step marks add up to the paper's marks. A *draft* failed a check three times
 
 | Paper | Held out (D31) | Questions | Memo-aligned | Approved | Draft (reasons) | Calls | Cost |
 |---|---|---|---|---|---|---|---|
-| May/June 2026 P1 | yes | 42 | 42 | 42 | 0 (—) | 20 | $0.58 |
+| May/June 2026 P1 | yes | 51 | 50 | 50 | 1 (marks_mismatch 1) | 24 | $0.76 |
 | May/June 2026 P2 | yes | 50 | 49 | 49 | 1 (marks_mismatch 1) | 48 | $1.12 |
 | November 2025 P1 | yes | 49 | 46 | 46 | 3 (marks_mismatch 3) | 46 | $0.96 |
 | November 2025 P2 | yes | 54 | 53 | 53 | 1 (marks_mismatch 1) | 52 | $1.14 |
 | May/June 2025 P1 | no | 46 | 46 | 46 | 0 (—) | 28 | $0.61 |
+| May/June 2025 P2 | no | 52 | 52 | 52 | 0 (—) | 39 | $0.86 |
+| November 2024 P1 | no | 49 | 46 | 46 | 3 (marks_mismatch 3) | 43 | $0.99 |
+| November 2024 P2 | no | 50 | 47 | 47 | 3 (marks_mismatch 3) | 56 | $1.34 |
 | May/June 2024 P1 | no | 49 | 47 | 47 | 2 (memo_missing 2) | 33 | $0.68 |
-| May/June 2024 P2 | no | 51 | 46 | 46 | 5 (marks_mismatch 3, memo_missing 2) | 55 | $1.12 |
+| May/June 2024 P2 | no | 51 | 47 | 47 | 4 (marks_mismatch 4) | 60 | $1.28 |
 | November 2023 P1 | no | 51 | 51 | 51 | 0 (—) | 29 | $0.61 |
 | November 2023 P2 | no | 53 | 50 | 50 | 3 (marks_mismatch 3) | 53 | $1.10 |
 | May/June 2023 P1 | no | 52 | 52 | 52 | 0 (—) | 27 | $0.63 |
+| May/June 2023 P2 | no | 55 | 52 | 52 | 3 (memo_missing 3) | 44 | $0.91 |
+| November 2022 P1 | no | 48 | 43 | 43 | 5 (marks_mismatch 3, memo_missing 1, memo_steps_missing 1) | 46 | $0.97 |
+| November 2022 P2 | no | 54 | 51 | 51 | 3 (marks_mismatch 2, memo_steps_missing 1) | 50 | $1.18 |
+| **All 16 papers** | 4 | **814** | **782** | **782** | **32** | **678** | **$15.13** |
 
-Running extraction total (`model_runs`, purpose `extract`): **$9.96** over 462 recorded calls = $8.54 on the papers above + $1.31 on 2 paper(s) still being read + $0.12 for a 6-call dry run. Not in `model_runs`: 3 call(s), $0.10 (logged by the gateway but never recorded: a dropped database connection, or a call still in flight when this was counted). Each paper's cost is the sum of its own `model_runs` rows, matched by request ID to the run logs (runs before 5 Nov used one subject ID per process; later runs record one per paper).
+Running extraction total (`model_runs`, purpose `extract`): **$15.24** over 684 recorded calls = $15.13 on the papers above + $0.12 for a 6-call dry run. Not in `model_runs`: 2 call(s), $0.06 (logged by the gateway but never recorded: both in the first run that stopped when a database connection dropped; its other 19 calls are in `model_runs`). Each paper's cost is the sum of its own `model_runs` rows, matched by request ID to the run logs (runs before 5 Nov used one subject ID per process; later runs record one per paper).
+
+Loaded into the local database with `pnpm content:load ~/guardian-book-corpus/items`: 782 items
+(584 practice, 198 held out: 2026 May/June and 2025 November), every one `dbe_nsc` with its
+`source_ref`, its attribution line and `licensed_content`; 481 carry a `diagram_key`, served by
+124 crops (a sub-question shares its parent's figure) that wait in `~/guardian-book-corpus/diagrams/`.
+The 32 drafts are in `~/guardian-book-corpus/drafts/` with their reasons and are never loaded.
 
 **Phase C** (held-out session 2026 May/June, memos as truth; `pnpm eval:nsc`; cap $10). Results
 in `evals/results/latest.json` and on `/evidence`, each with its interval:
-- Guide (B15, two reads as the app runs them), 78 questions (57 with their figure attached; 13
+- Guide (B15, two reads as the app runs them), 86 questions (57 with their figure attached; 13
   that ask to prove a printed result left out): the fixed comparison finds the memo's final answer
-  in 46 of 78; 51 were shown with worked steps, and 14 of those 51 end on an answer the comparison
-  does not match (wrong, or right in another form). 148 of 148 calls passed every check first time.
-- Work check, 128 cases: on 56 accepted answers with the final step's value changed, it named
-  that step as the first lost in 52; on 55 accepted unchanged memo answers it gave full marks to
-  51; 16 of 128 went to the teacher as uncertain; 4 of 105 high-confidence totals were wrong.
+  in 53 of 86 (19 of 29 typed, 34 of 57 with a figure); 57 were shown with worked steps, and 15 of
+  those 57 end on an answer the comparison does not match (wrong, or right in another form). 163 of
+  163 calls passed every check first time; none failed.
+- Work check, 142 cases (every changed answer the held-out questions allow, each with its
+  unchanged control): on 62 accepted answers with the final step's value changed, it named that
+  step as the first lost in 58 and gave the exact total in 58; on 62 accepted unchanged memo
+  answers it gave full marks to 58; 16 of 142 went to the teacher as uncertain; 4 of 117
+  high-confidence totals were wrong; 2 calls failed.
+- Run in two parts: 78 guide questions and 128 work-check cases first; then the 8 questions on a
+  question page first cut off at the old token budget (re-read in the retry pass), measured alone
+  and merged (`pnpm eval:nsc --guide-from … --work-check-from …`). No earlier result was re-run.
 
-running total **$4.49** of $10.
+Phase C spend: running total **$4.89** of $10 (`<CORPUS_DIR>/evals/spend.json`; the guide re-score made no call).
 
 **Questions for the planning session (B17A)**
 - **Held-out set.** D31 names the held-out set as *2025 November and 2026 May/June*, frozen; the
@@ -466,16 +485,16 @@ running total **$4.49** of $10.
   `pnpm corpus:diagrams` with the production bucket's variables; until then a question's figure
   will not load.
 - **A repeatable equivalence check for answers?** The proof page publishes only the fixed
-  comparison: 46 of 78 held-out 2026 May/June questions reach the memo's final answer, and 14 of
-  the 51 shown with worked steps end on an answer it does not match. A hand reading of the 32
-  misses (not published) found 22 that give the memo's answer in another form (another coordinate
-  separator, words or units after the value, terms in another order, extra working after the
-  answer) and 10 that are different answers: P1 Q2.2.3, Q3.1, Q4.6, Q4.9, Q9.3, Q10.2.2; P2 Q1.2,
-  Q2.2, Q7.4, Q7.6. By that reading, 68 of 78 reach the memo's answer and 6 of the 51 shown with
-  worked steps are wrong. Rule whether to build a repeatable equivalence check (a second model
+  comparison: 53 of 86 held-out 2026 May/June questions reach the memo's final answer, and 15 of
+  the 57 shown with worked steps end on an answer it does not match. A hand reading of the 33
+  misses (not published) found 23 that give the memo's answer in another form (another coordinate
+  separator, surd or index form, words or units after the value, terms in another order, extra
+  working after the answer) and 10 that are different answers: P1 Q2.2.3, Q3.1, Q4.6, Q4.9, Q9.3,
+  Q10.2.2; P2 Q1.2, Q2.2, Q7.4, Q7.6. By that reading, 76 of 86 reach the memo's answer and 6 of
+  the 57 shown with worked steps are wrong. Rule whether to build a repeatable equivalence check (a second model
   call judged by the verifier, or a teacher's answer key per question) before any such figure
   goes public.
-- **Two reads agreeing on the same wrong answer pass B15's check.** Of the 51 held-out questions
+- **Two reads agreeing on the same wrong answer pass B15's check.** Of the 57 held-out questions
   shown with worked steps, 6 (by that reading) end on a wrong answer that both independent reads
   agreed on: P1 Q3.1, Q4.6, Q4.9, Q9.3; P2 Q7.4, Q7.6. Self-consistency alone does not catch them.
   Rule whether the guide should compare with the memo's final answer when the question matches a
