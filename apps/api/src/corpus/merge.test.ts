@@ -102,6 +102,21 @@ describe('merging page reads into questions', () => {
     const counts = countQuestions([...byNumber.values()])
     expect(counts).toEqual({ questions: 3, memoAligned: 1, approved: 0, draft: 3, byReason: { maths_unbalanced: 1, memo_missing: 1, no_marks: 1, memo_steps_missing: 1 } })
   })
+
+  it('keeps a failed page’s read as unverified: its questions are counted, never approved', () => {
+    const memo = memoReads().map((page) => (page.page === 5 ? { ...page, failed: true } : page))
+    const questions = buildQuestions(mergeEntries(paperReads()), mergeEntries(memo))
+    const byNumber = new Map(questions.map((q) => [q.number, q]))
+    expect(byNumber.get('1.1.1')?.reasons).toEqual([])
+    expect(byNumber.get('1.1.2')?.unverified).toEqual({ paper: false, memo: true })
+    expect(byNumber.get('1.1.2')?.reasons).toEqual(['read_failed'])
+    expect(byNumber.get('1.1.2')?.details[0]).toBe('the memo page holding 1.1.2 failed its checks three times')
+    const paper = paperReads().map((page) => (page.page === 2 ? { ...page, failed: true } : page))
+    const stemFailed = new Map(buildQuestions(mergeEntries(paper), mergeEntries(memoReads())).map((q) => [q.number, q]))
+    expect(stemFailed.get('1.1.1')?.unverified.paper).toBe(true)
+    expect(stemFailed.get('2.1')?.unverified.paper).toBe(false)
+    expect(countQuestions(questions).approved).toBe(1)
+  })
 })
 
 describe('loader items', () => {

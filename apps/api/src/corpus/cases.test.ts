@@ -23,6 +23,7 @@ const question = (over: Partial<BuiltQuestion> = {}): BuiltQuestion => ({
   details: [],
   memoPages: [4],
   paperPages: [2],
+  unverified: { paper: false, memo: false },
   ...over,
 })
 

@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { uuidv7, type ExtractOutput, type PaperRef } from '@guardian-book/shared'
+import { extractOutputSchema, uuidv7, type ExtractOutput, type PaperRef } from '@guardian-book/shared'
 import { createDb, type Db } from '../db/client.js'
 import { createGateway, type Gateway } from '../gateway/gateway.js'
 import type { ImageInput } from '../gateway/transport.js'
@@ -44,6 +44,8 @@ interface PageRecord {
   page: number
   status: 'accepted' | 'exhausted' | 'failed'
   output: ExtractOutput | null
+  /** Not accepted: the last read that still fits the schema (kept as unverified, never approved), else null. */
+  fallback: ExtractOutput | null
   onlyNumbers: string[]
   calls: number
   costUsd: number
@@ -129,6 +131,7 @@ async function readPage(
     page,
     status: result.status,
     output: result.output,
+    fallback: result.status === 'accepted' ? null : lastSchemaValid(result.runs),
     onlyNumbers: options.onlyNumbers ?? [],
     calls: result.runs.length,
     costUsd: result.totalCostUsd,
@@ -165,8 +168,25 @@ async function readDocument(ctx: Ctx, local: LocalPaper, document: 'paper' | 'me
   })
 }
 
-const accepted = (records: PageRecord[]): PageRead[] =>
-  records.filter((record): record is PageRecord & { output: ExtractOutput } => record.status === 'accepted' && record.output !== null).map((record) => ({ page: record.page, output: record.output }))
+/** The last call's output when it still parses: what a page that failed its checks said. */
+function lastSchemaValid(runs: VerifiedRun[]): ExtractOutput | null {
+  for (const run of [...runs].reverse()) {
+    const parsed = extractOutputSchema.safeParse(run.output)
+    if (parsed.success) return parsed.data
+  }
+  return null
+}
+
+/** Accepted pages, plus failed pages' last schema-valid read marked `failed` (their questions stay drafts). */
+const pageReads = (records: PageRecord[]): PageRead[] =>
+  records.flatMap((record): PageRead[] => {
+    if (record.status === 'accepted' && record.output) return [{ page: record.page, output: record.output }]
+    const fallback = record.fallback ?? null
+    return fallback ? [{ page: record.page, output: fallback, failed: true }] : []
+  })
+
+/** Only what passed: a targeted re-read replaces an entry only with an accepted read. */
+const accepted = (records: PageRecord[]): PageRead[] => pageReads(records).filter((read) => read.failed !== true)
 
 /** The memo pages worth re-reading for a question: its own, else the pages holding its parent or siblings. */
 function memoPagesFor(question: BuiltQuestion, memo: MergedEntry[]): number[] {
@@ -186,19 +206,21 @@ async function extractPaper(ctx: Ctx, bucket: NonNullable<ReturnType<typeof crea
   const paperRecords = await readDocument(ctx, local, 'paper', options.maxPages)
   const memoRecords = await readDocument(ctx, local, 'memo', options.maxPages)
 
-  let paperEntries = mergeEntries(accepted(paperRecords))
-  let memoEntries = mergeEntries(accepted(memoRecords))
+  let paperEntries = mergeEntries(pageReads(paperRecords))
+  let memoEntries = mergeEntries(pageReads(memoRecords))
   let questions = buildQuestions(paperEntries, memoEntries)
   const attempts = new Map<string, number>(questions.map((question) => [question.number, 1]))
 
   // Targeted re-reads: a question whose memo (or text) failed the cross-document checks is
   // read again, alone, with the failure in the prompt; three reads in all, then a draft.
   for (let round = 1; round < MAX_QUESTION_READS; round += 1) {
-    const failing = questions.filter((question) => question.reasons.some((reason) => MEMO_REASONS.has(reason) || PAPER_REASONS.has(reason) || reason === 'maths_unbalanced'))
+    const failing = questions.filter((question) => question.reasons.some((reason) => MEMO_REASONS.has(reason) || PAPER_REASONS.has(reason) || reason === 'maths_unbalanced' || reason === 'read_failed'))
     if (failing.length === 0) break
     console.log(`    re-read ${round}: ${failing.length} question(s)`)
     const rereads = await pool(failing, ctx.concurrency, async (question) => {
-      const memoSide = question.reasons.some((reason) => MEMO_REASONS.has(reason)) || (question.reasons.includes('maths_unbalanced') && question.steps.length > 0)
+      const memoSide =
+        !question.unverified.paper &&
+        (question.unverified.memo || question.reasons.some((reason) => MEMO_REASONS.has(reason)) || (question.reasons.includes('maths_unbalanced') && question.steps.length > 0))
       const document: 'paper' | 'memo' = memoSide ? 'memo' : 'paper'
       const pages = memoSide ? memoPagesFor(question, memoEntries) : question.paperPages
       attempts.set(question.number, (attempts.get(question.number) ?? 1) + 1)
@@ -321,7 +343,9 @@ async function main(): Promise<void> {
   const handle = createDb(config.db.url, 2)
   const ctx: Ctx = { db: handle.db, gateway, dirs, runId: uuidv7(), concurrency: args.concurrency, spent: { calls: 0, costUsd: 0 } }
   const ledger = path.join(dirs.root, 'spend.json')
-  const spend = existsSync(ledger) ? (JSON.parse(readFileSync(ledger, 'utf8')) as Array<{ at: string; paper: string; calls: number; costUsd: number }>) : []
+  type SpendRow = { at: string; paper: string; calls: number; costUsd: number }
+  // Re-read before every append: two extract processes may share the ledger.
+  const readLedger = (): SpendRow[] => (existsSync(ledger) ? (JSON.parse(readFileSync(ledger, 'utf8')) as SpendRow[]) : [])
   try {
     for (const paper of selected) {
       const before = { ...ctx.spent }
@@ -329,7 +353,7 @@ async function main(): Promise<void> {
       const records = await extractPaper(ctx, bucket, paper, { heldOut: isHeldOut(paper.ref, args.heldOut), maxPages: args.maxPages })
       const counts = countQuestions(records)
       const cost = round(ctx.spent.costUsd - before.costUsd)
-      spend.push({ at: new Date().toISOString(), paper: paper.id, calls: ctx.spent.calls - before.calls, costUsd: cost })
+      const spend = [...readLedger(), { at: new Date().toISOString(), paper: paper.id, calls: ctx.spent.calls - before.calls, costUsd: cost }]
       writeFileSync(ledger, `${JSON.stringify(spend, null, 2)}\n`)
       const total = round(spend.reduce((sum, row) => sum + row.costUsd, 0))
       const report = { paper: paper.id, ...counts, calls: ctx.spent.calls - before.calls, costUsd: cost, totalCostUsd: total, seconds: Math.round((Date.now() - started) / 1000), at: new Date().toISOString() }

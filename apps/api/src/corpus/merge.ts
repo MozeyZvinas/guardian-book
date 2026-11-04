@@ -28,6 +28,12 @@ export interface PageRead {
   /** 1-based page number in the document. */
   page: number
   output: ExtractOutput
+  /**
+   * True when the page failed its checks three times and this is its last schema-valid
+   * read: its entries are kept so the question is counted and re-read, but a question
+   * built from them is a `read_failed` draft until a targeted re-read passes.
+   */
+  failed?: boolean
 }
 
 export interface MergedEntry {
@@ -42,6 +48,8 @@ export interface MergedEntry {
   final_answer: string | null
   /** The pages the entry was read from, in order. */
   pages: number[]
+  /** True when any part of the entry came from a page that failed its checks. */
+  unverified: boolean
 }
 
 /** Entries across a document's pages, continuations joined onto the entry they continue. */
@@ -58,6 +66,7 @@ export function mergeEntries(reads: PageRead[]): MergedEntry[] {
         existing.steps.push(...entry.steps)
         existing.final_answer = entry.final_answer ?? existing.final_answer
         existing.pages.push(read.page)
+        existing.unverified = existing.unverified || read.failed === true
         continue
       }
       // A number read twice without a continuation (a memo's alternative method, a misread): the first read stands.
@@ -73,6 +82,7 @@ export function mergeEntries(reads: PageRead[]): MergedEntry[] {
         steps: [...entry.steps],
         final_answer: entry.final_answer,
         pages: [read.page],
+        unverified: read.failed === true,
       }
       merged.push(next)
       byNumber.set(entry.number, next)
@@ -113,6 +123,8 @@ export interface BuiltQuestion {
   /** The memo pages the entry was read from (for a targeted re-read). */
   memoPages: number[]
   paperPages: number[]
+  /** Which side was read from a page that failed its checks (`read_failed`). */
+  unverified: { paper: boolean; memo: boolean }
 }
 
 /** "2.2" and "2" for "2.2.1", nearest first. */
@@ -152,6 +164,7 @@ export function buildQuestions(paper: MergedEntry[], memo: MergedEntry[]): Built
       details: [],
       memoPages: memoEntry?.pages ?? [],
       paperPages: leaf.pages,
+      unverified: { paper: leaf.unverified || stems.some((stem) => stem.unverified), memo: memoEntry?.unverified ?? false },
     }
     verifyQuestion(question)
     return question
@@ -162,6 +175,10 @@ export function buildQuestions(paper: MergedEntry[], memo: MergedEntry[]): Built
 export function verifyQuestion(question: BuiltQuestion): void {
   const reasons: DraftReason[] = []
   const details: string[] = []
+  if (question.unverified.paper || question.unverified.memo) {
+    reasons.push('read_failed')
+    details.push(`the ${question.unverified.paper ? 'paper' : 'memo'} page holding ${question.number} failed its checks three times`)
+  }
   if (question.prompt_md.trim().length === 0) {
     reasons.push('question_text_missing')
     details.push('the question has no text')
