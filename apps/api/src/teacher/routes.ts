@@ -14,22 +14,24 @@ import {
   type ReviewResponse,
   type TeacherLearnerResponse,
 } from '@guardian-book/shared'
+import { can } from '../access/index.js'
 import { recordAudit } from '../audit/record.js'
 import { requireActor, requireRole } from '../auth/session.js'
-import { HttpError, parse, requestIdOf, uuidParam } from '../lib/http.js'
+import { HttpError, notFound, parse, requestIdOf, uuidParam } from '../lib/http.js'
 import type { TeacherDeps } from './deps.js'
 import { approveGuideline, listGuidelines } from './guidelines.js'
 import { teacherLearnerProfile } from './learner.js'
 import { classPicture } from './picture.js'
 import { listQueue } from './queue.js'
 import { addFeedback, attemptReviewForActor, confirmReview, releaseReview, reviewAttemptView } from './review.js'
+import { isMultipart, readScriptUpload, uploadScript, type ScriptDeps } from './scripts.js'
 
 /**
  * The teacher space (spec 03 §5, §8.3, §9.3; brief B07): guidelines, the class picture,
  * the queue, the review (confirm → release, feedback) and the learner profile. Every route:
  * session, role, then `access.can` on the object (a denial is a 404).
  */
-export function teacherRouter(deps: TeacherDeps): Router {
+export function teacherRouter(deps: TeacherDeps & ScriptDeps): Router {
   const router = Router()
   const { db } = deps
 
@@ -51,6 +53,24 @@ export function teacherRouter(deps: TeacherDeps): Router {
       const payload: ApproveGuidelineResponse = await approveGuideline(db, requireActor(res), uuidParam(req, 'id'), uuidParam(req, 'itemId'), body, requestIdOf(req))
       res.setHeader('Cache-Control', 'no-store')
       res.status(payload.replayed ? 200 : 201).json(payload)
+    } catch (err) {
+      next(err)
+    }
+  })
+
+  // ── B11 · a teacher uploads a learner's script (P1-g) ───────────────────────────────────
+
+  /** Multipart (`learnerId`, `itemId`, `idempotencyKey`, `image`): 202 + poll `GET /api/teacher/attempts/:id`; a replay answers 200. */
+  router.post('/api/teacher/classes/:id/scripts', requireRole('teacher'), async (req, res, next) => {
+    try {
+      const actor = requireActor(res)
+      const classId = uuidParam(req, 'id')
+      // The object check comes before the body is read: a stranger's upload is a 404, never buffered.
+      if (!(await can(db, actor, 'script.upload', { type: 'class', id: classId }))) throw notFound()
+      const body = isMultipart(req) ? await readScriptUpload(req) : { fields: req.body as unknown, file: null }
+      const payload = await uploadScript(deps, actor, classId, { fields: body.fields, file: body.file, requestId: requestIdOf(req) })
+      res.setHeader('Cache-Control', 'no-store')
+      res.status(payload.replayed ? 200 : 202).json(payload)
     } catch (err) {
       next(err)
     }

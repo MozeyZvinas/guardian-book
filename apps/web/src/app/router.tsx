@@ -139,5 +139,11 @@ export const router = createBrowserRouter([
     lazy: () => import('../routes/teacher/learner/LearnerProfile').then((m) => ({ Component: m.TeacherLearner })),
     errorElement: <RouteError />,
   },
+  // B11: a teacher uploads one learner's script for marking (P1-g).
+  {
+    path: '/teacher/classes/:id/script',
+    lazy: () => import('../routes/teacher/script/Script').then((m) => ({ Component: m.TeacherScript })),
+    errorElement: <RouteError />,
+  },
   { path: '*', element: <NotFound /> },
 ])
