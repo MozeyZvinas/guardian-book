@@ -8,7 +8,7 @@ take him through it step by step. Today the app only checks work on questions al
 bank; anything else says "Answers arrive with your plan (PLANNED)". This is the most natural
 first thing a learner (or a judge on `/try`) does, and it is the heart of "lifelong learning
 support in your pocket".
-**Runs in parallel with:** B16. **Own only:** `apps/api/src/guide/*`, the `guide` purpose and
+**Runs in parallel with:** B16. **Own only:** `apps/web/src/components/MathInput*`, `apps/api/src/guide/*`, the `guide` purpose and
 its migration, `packages/shared/src/contracts/model/guide.ts`, a new
 `apps/web/src/routes/learner/guide/*`, and the Bring screen's routing for the "Question" kind
 (`apps/web/src/routes/learner/bring/*`). **Do not touch** Brain, Today, setup, MathText,
@@ -58,6 +58,13 @@ photo is sent to Muse Spark).
 7. **Live check:** the founder's textbook photo case: "Find two rational numbers between 1/4
    and 7/8" typed as `\(\frac{1}{4}\)` and `\(\frac{7}{8}\)`, plus one Grade 12 quadratic; record
    both reads, agreement, latency and cost (under $0.10) in `docs/TASKS.md`.
+
+8. **A maths keyboard (`apps/web/src/components/MathInput*`, you own it):** a text field with a
+   calculator-style keypad above the phone keyboard: fraction, power, square and nth root, π,
+   ±, ×, ÷, ≤, ≥, ≠, brackets, |x|, sin/cos/tan, log, ln, e, θ, °, x², x³, subscript, and a
+   live preview through `MathText` as you type. It writes `$…$` text, so everything downstream
+   already understands it. Use it in Bring's **Type** and in the guide's "try it yourself" box.
+   Accessible (each key labelled), 44 px targets, works with the phone keyboard.
 
 ## Don't
 - Never show the final answer first. Never mark anything or move the Brain.

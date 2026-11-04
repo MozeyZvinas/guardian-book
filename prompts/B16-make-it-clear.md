@@ -41,8 +41,9 @@ guardian screens.
    failure message). Find why; when the model returns no events, say *"I couldn't find any
    dates on this. Is it a school notice?"*; keep the failure message for real failures; log the
    verifier codes. Test both.
-6. **Words everywhere in your folders:** say what each screen is for in one line under its title.
-7. **Tests and shots:** unit tests for the MathText normaliser and the Today status mapping;
+6. **Maths keyboard on Fix and Item:** after `git merge origin/main`, if B15's `MathInput` is on main, use it for the typed boxes on the Fix and Item screens (you may edit those two screens for this only).
+7. **Words everywhere in your folders:** say what each screen is for in one line under its title.
+8. **Tests and shots:** unit tests for the MathText normaliser and the Today status mapping;
    Playwright at 390 for setup (taps only), Today and Brain; refreshed screenshots.
 
 ## Don't
