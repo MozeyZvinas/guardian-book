@@ -40,7 +40,7 @@ test('a learner brings typed working and gets step-level feedback', async ({ pag
   await expect(page.getByRole('heading', { name: /Where it slipped: step 4/ })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Hint for step 4' })).toBeVisible()
   await expect(page.getByText('Confidence:')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Fix it' })).toBeDisabled()
+  await expect(page.getByRole('link', { name: 'Fix it' })).toBeVisible() // L4 (B06)
   // The item prompt and the criteria render as maths (KaTeX, D37), within the CSP.
   await expect(page.locator('.katex').first()).toBeVisible()
   expect(cspViolations).toEqual([])

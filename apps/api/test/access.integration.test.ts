@@ -63,6 +63,21 @@ const CASES: HarnessCase[] = [
   { name: 'Sentinel teacher → Riverside class 10C', as: 'msDlamini', method: 'get', path: `/api/teacher/classes/${C['10C'].id}`, expect: 404 },
   { name: 'Sentinel teacher creates a class in Riverside', as: 'msDlamini', method: 'post', path: '/api/teacher/classes', body: { name: '12B', schoolId: SEED_SCHOOLS.riverside.id }, expect: 404 },
 
+  // ── B06: the plan, "We did it", fix it (spec 03 §8.2 "change the ID" rows) ───────────
+  { name: 'anonymous reads their plan', as: null, method: 'get', path: '/api/me/plan', expect: 401 },
+  { name: 'guardian → GET /api/me/plan (learner route)', as: 'mmaLerato', method: 'get', path: '/api/me/plan', expect: 403 },
+  { name: 'learner → a guardian’s week', as: 'lerato', method: 'get', path: `/api/guardian/learners/${P.lerato.id}/plan`, expect: 403 },
+  { name: 'guardian → an unlinked learner’s plan', as: 'mmaLerato', method: 'get', path: `/api/guardian/learners/${P.thabo.id}/plan`, expect: 404 },
+  { name: 'guardian → We did it on an unlinked learner', as: 'mmaLerato', method: 'post', path: `/api/guardian/learners/${P.thabo.id}/plan/done`, expect: 404 },
+  { name: 'guardian → an unknown learner id', as: 'mmaLerato', method: 'get', path: '/api/guardian/learners/019a0b02-0000-7000-8000-00000000ffff/plan', expect: 404 },
+  { name: 'guardian → the linked learner’s week (no plan yet)', as: 'mmaLerato', method: 'get', path: `/api/guardian/learners/${P.lerato.id}/plan`, expect: 200 },
+  { name: 'guardian → We did it with no plan yet', as: 'mmaLerato', method: 'post', path: `/api/guardian/learners/${P.lerato.id}/plan/done`, expect: 409 },
+  { name: 'learner → fix an unknown attempt', as: 'lerato', method: 'post', path: '/api/attempts/019a0b02-0000-7000-8000-00000000ffff/fix', body: { answerText: 'x = 2' }, expect: 404 },
+  { name: 'guardian → fix an attempt (wrong role)', as: 'mmaLerato', method: 'post', path: '/api/attempts/019a0b02-0000-7000-8000-00000000ffff/fix', body: { answerText: 'x' }, expect: 403 },
+  { name: 'learner reads their plan (none yet)', as: 'lerato', method: 'get', path: '/api/me/plan', expect: 200 },
+  { name: 'learner asks for a check-alone item', as: 'lerato', method: 'get', path: '/api/me/check-alone?skill=factorise-trinomial&mode=independent', expect: 200 },
+  { name: 'learner asks for a check-alone item with a bad mode', as: 'lerato', method: 'get', path: '/api/me/check-alone?skill=factorise-trinomial&mode=assisted', expect: 400 },
+
   // ── the happy rows the denials are measured against ──────────────────────────────────
   { name: 'teacher 12A reads class 12A', as: 'msDlamini', method: 'get', path: `/api/teacher/classes/${C['12A'].id}`, expect: 200 },
   { name: 'teacher 11B reads class 11B', as: 'mrNaidoo', method: 'get', path: `/api/teacher/classes/${C['11B'].id}`, expect: 200 },

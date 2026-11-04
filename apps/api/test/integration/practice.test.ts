@@ -48,6 +48,7 @@ async function typedAttempt(cookie: string, text: string, key: string, extra: Re
   const started = await origin(request(app()).post(`/api/attempts/${attemptId}/assess`).set('Cookie', cookie))
   expect([200, 202]).toContain(started.status)
   await ctx.jobs.wait(`assess:${attemptId}`)
+  await ctx.jobs.waitAll() // the same-day Help Plan job (B06) runs after the check
   const view = await request(app()).get(`/api/attempts/${attemptId}`).set('Cookie', cookie)
   expect(view.status).toBe(200)
   return { attemptId, created, started, view }
@@ -90,7 +91,7 @@ describe('the homework check (P0-04)', () => {
     expect(events.rows[1]).toMatchObject({ basis: 'model_high', skill_tag: 'solve-quadratic-by-factors' })
 
     const usage = await ctx.db.execute<{ calls: number }>(`select calls from model_usage_daily where user_id = '${SEED_PEOPLE.lerato.id}'`)
-    expect(usage.rows[0]?.calls).toBe(1)
+    expect(usage.rows[0]?.calls).toBe(4) // one work check, then the three Help Plan agent steps the lost step triggered (B06)
 
     // The prompt carried the item, the guideline and the answer; nothing about the person.
     const prompt = JSON.stringify(model.requests[0]?.messages)

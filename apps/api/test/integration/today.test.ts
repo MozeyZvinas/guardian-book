@@ -106,7 +106,7 @@ describe('GET /api/me/today', () => {
     const res = await request(ctx.app).get('/api/me/today').set('Cookie', learner)
     const body = res.body as TodayResponse
     expect(body.exam).toEqual({ id: expect.any(String), title: 'Physical Sciences P2', subject: 'Physical Sciences', paper: 'P2', onDate: isoDate(in12), daysAway: 12 })
-    expect(body.tonight).toEqual({ kind: 'plan', planId: expect.any(String), step: 'Redo step 2 of the factorising question.', hint: 'Look at the signs.', why: 'Bridges need algebra.' })
+    expect(body.tonight).toEqual({ kind: 'plan', planId: expect.any(String), step: 'Redo step 2 of the factorising question.', hint: 'Look at the signs.', why: 'Bridges need algebra.', attemptId: null })
     expect(body.recent.map((r) => [r.kind, r.status])).toEqual([
       ['notice', 'reading'],
       ['question', 'asked'],

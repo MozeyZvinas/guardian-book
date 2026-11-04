@@ -1,4 +1,4 @@
-import type { InputClass, NoticeOutput, WorkCheckOutput } from '@guardian-book/shared'
+import type { InputClass, NoticeOutput, PlanAgentTurn, WorkCheckOutput } from '@guardian-book/shared'
 import { loadConfig } from '../../src/config.js'
 import { createGateway, type Gateway } from '../../src/gateway/gateway.js'
 import { immediateSleep, okResponse } from '../../src/gateway/testing.js'
@@ -89,12 +89,59 @@ export function noticeFromText(request: ChatRequest): NoticeOutput {
   return { events, not_a_notice: events.length === 0 }
 }
 
+/**
+ * The Help Plan agent, scripted (B06): reads the evidence, then the resources, then writes
+ * a plan that cites every evidence alias it was shown (E1, E2, ...) and the first vetted
+ * resource (R1), in plain words the verifier accepts.
+ */
+export function planAgentFromPrompt(request: ChatRequest): PlanAgentTurn {
+  const text = userText(request)
+  if (!/^## Step \d+ · getEvidence · done/m.test(text)) return { tool: 'getEvidence', reason: 'Read the evidence first.', plan: null }
+  if (!/^## Step \d+ · getResources · done/m.test(text)) return { tool: 'getResources', reason: 'Free help first.', plan: null }
+  const evidence = [...new Set([...text.matchAll(/^- (E\d+) · /gm)].map((m) => m[1] ?? ''))]
+  const resources = [...text.matchAll(/^- (R\d+) · /gm)].map((m) => m[1] ?? '').slice(0, 1)
+  const tag = /^Gap skill tag: (\S+)$/m.exec(text)?.[1] ?? 'unknown'
+  const learner = /^Skill in the learner's words: (.+)$/m.exec(text)?.[1] ?? tag
+  const guardian = /^Skill in the parent's words: (.+)$/m.exec(text)?.[1] ?? tag
+  const cite = (t: string, ids = evidence.slice(0, 1)) => ({ text: t, evidence_ids: ids })
+  return {
+    tool: 'writePlan',
+    reason: 'Enough evidence to write.',
+    plan: {
+      gap_skill_tag: tag,
+      learner_view: {
+        tonight_step: cite(`Redo the step you lost on ${learner.toLowerCase()}. One line at a time.`),
+        hint: 'Check the sign of each term before you move on.',
+        why_it_matters: cite(`${learner} is in every algebra paper.`),
+      },
+      guardian_view: {
+        gap: cite(`One step slipped this week: ${guardian.toLowerCase()}.`),
+        one_action: cite('Ask them to teach you step 2 tonight. Ten minutes is enough. You do not need to know the maths.'),
+        something_to_celebrate: cite('They brought their work and got it checked.'),
+      },
+      teacher_view: {
+        who_shares_this_gap: cite('This evidence covers one learner only.', evidence),
+        suggested_intervention: cite('A ten-minute starter on factorising, then a follow-up check in two days.'),
+      },
+      evidence_event_ids: evidence,
+      resource_ids: resources,
+    },
+  }
+}
+
 export function defaultAnswer(request: ChatRequest): TransportResult {
   switch (purposeOf(request)) {
     case 'classify':
       return okResponse(classification(/<<<NOTICE|notice|timetable/i.test(userText(request)) ? 'notice' : 'work'), { requestId: `req_classify_${Date.now()}` })
-    case 'assess':
-      return okResponse(goodWorkCheck(request, { loseLast: true }), { requestId: `req_assess_${Date.now()}` })
+    case 'assess': {
+      // The first seed item loses its last step (B04's tests rely on it); a fix (one target step)
+      // and the follow-up item (`alg-12-factorise-trinomial-2`, the check-alone match) pass in full.
+      const single = guidelineOf(request).length === 1
+      const followUpItem = /Question \(alg-12-factorise-trinomial-2;/.test(userText(request))
+      return okResponse(goodWorkCheck(request, { loseLast: !single && !followUpItem }), { requestId: `req_assess_${Date.now()}` })
+    }
+    case 'plan':
+      return okResponse(planAgentFromPrompt(request), { requestId: `req_plan_${Date.now()}` })
     case 'notice':
       return okResponse(noticeFromText(request), { requestId: `req_notice_${Date.now()}` })
     default:
