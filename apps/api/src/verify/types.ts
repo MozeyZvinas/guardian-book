@@ -32,6 +32,12 @@ export const CHECK_CODES = [
   'NUMBER_ADDED',
   'URL_ADDED',
   'NOT_TRANSLATED',
+  // B15: help me with a question (two reads compared)
+  'QUESTION_MISSING',
+  'STEPS_OUT_OF_RANGE',
+  'MATH_UNBALANCED',
+  'PERSONAL_DATA',
+  'ANSWERS_DISAGREE',
 ] as const
 export type CheckCode = (typeof CHECK_CODES)[number]
 
@@ -131,6 +137,14 @@ export interface HintContext {
 /** Speech to text has no rule set: nothing is proposed, the words go back to the person who said them. */
 export type TranscribeContext = Record<string, never>
 
+/**
+ * Help me with a question (B15): the second, independent read's final answer, once it is
+ * in. Null on the first pass (nothing to compare yet); ANSWERS_DISAGREE then passes.
+ */
+export interface GuideContext {
+  otherFinalAnswer: string | null
+}
+
 export interface CheckContexts {
   classify: ClassifyContext
   profile_cards: ProfileCardsContext
@@ -141,6 +155,7 @@ export interface CheckContexts {
   translate: TranslateContext
   transcribe: TranscribeContext
   step_hint: HintContext
+  guide: GuideContext
 }
 
 export type CheckContextFor<P extends ModelPurpose> = CheckContexts[P]

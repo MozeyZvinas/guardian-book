@@ -43,6 +43,13 @@
       "when": 1793795903199,
       "tag": "0005_b13_voice_hints",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793803166717,
+      "tag": "0006_b15_guide",
+      "breakpoints": true
     }
   ]
 }

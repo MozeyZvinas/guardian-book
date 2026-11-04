@@ -12,6 +12,7 @@ import type { Db } from './db/client.js'
 import type { DbStatus } from './db/health.js'
 import { createGateway, type Gateway } from './gateway/gateway.js'
 import { createTranscriber, type Transcriber } from './gateway/transcribe.js'
+import { guideRouter } from './guide/routes.js'
 import { hintsRouter } from './hints/routes.js'
 import type { PracticeDeps } from './inputs/deps.js'
 import { inputsRouter } from './inputs/routes.js'
@@ -75,6 +76,7 @@ const API_PREFIXES = [
   '/api/attempts',
   '/api/calendar',
   '/api/voice',
+  '/api/guide',
 ]
 
 /** Same relative position from `apps/api/src` (tsx, tests) and `apps/api/dist` (node, the image). */
@@ -165,6 +167,8 @@ export function createApp(options: AppOptions): Express {
     // B13: ask about a step (typed or by voice); the clip is transcribed and never stored.
     app.use(hintsRouter(practice))
     app.use(voiceRouter({ db, transcriber, logger, limits: practice.limits, now: practice.now }))
+    // B15: help me with a question (any question, read twice, taken step by step; never marked).
+    app.use(guideRouter(practice))
   } else {
     app.use('/api', express.json({ limit: '1mb' }))
     app.use(tryRouter({ db: null, tryClassCode: null }))

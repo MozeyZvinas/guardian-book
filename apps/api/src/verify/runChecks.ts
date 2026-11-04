@@ -1,5 +1,6 @@
 import { MODEL_OUTPUT_SCHEMAS, type ModelOutputOf, type ModelPurpose } from '@guardian-book/shared'
 import { WORK_CHECK_RULES } from './checks/work.js'
+import { GUIDE_RULES } from './checks/guide.js'
 import { STEP_HINT_RULES, TRANSCRIBE_RULES } from './checks/hint.js'
 import { NOTICE_RULES } from './checks/notice.js'
 import { CLASSIFY_RULES, NOTE_RULES, PLAN_RULES, PROFILE_CARDS_RULES } from './checks/plan.js'
@@ -34,6 +35,7 @@ export const RULE_SETS: RuleSets = {
   translate: TRANSLATE_RULES,
   transcribe: TRANSCRIBE_RULES,
   step_hint: STEP_HINT_RULES,
+  guide: GUIDE_RULES,
 }
 
 export function runChecks<P extends ModelPurpose>(purpose: P, output: unknown, context: CheckContexts[P]): RunChecksResult<ModelOutputOf<P>> {
