@@ -5,11 +5,12 @@ import { ApiRequestError } from '../../../api/client'
 import { checkAlone, fixAttempt, fixAttemptPhoto } from '../../../api/loop'
 import { getAttempt } from '../../../api/practice'
 import { RequireRole } from '../../../app/RequireRole'
-import { CaptureSheet, type Capture } from '../../../components/CaptureSheet'
+import type { Capture } from '../../../components/CaptureSheet'
 import { CrestFan as Crest } from '../../../components/Crest'
 import { Button, Card, FormError } from '../../../components/Form'
 import { HintCard } from '../../../components/HintCard'
 import { LearnerShell } from '../../../components/LearnerShell'
+import { MathCapture } from './MathCapture'
 import { MathText } from '../../../components/MathText'
 import { AskAboutStep } from './AskAboutStep'
 
@@ -190,7 +191,7 @@ function FixScreen() {
           <h2 id="redo-heading" className="text-lg font-semibold">
             Redo the step
           </h2>
-          <CaptureSheet onCapture={onCapture} disabled={busy} modes={['snap', 'type']} typeLabel="Your working for this step" />
+          <MathCapture onCapture={onCapture} disabled={busy} typeLabel="Your working for this step" />
         </section>
       ) : null}
 
