@@ -1,7 +1,8 @@
-import { mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { uuidv7 } from '@guardian-book/shared'
 import { loadConfig, type AppConfig } from '../config.js'
 
 /**
@@ -65,4 +66,30 @@ export function assertOutsideRepo(dir: string): void {
   if (resolved === repoRoot || resolved.startsWith(`${repoRoot}${path.sep}`)) {
     throw new Error(`the corpus directory must be outside the repo (D40): ${resolved}`)
   }
+}
+
+/**
+ * The paper's stable `model_runs.subject_id`: made once, kept in `<extracted>/<paper>/subject-id`,
+ * the same on every run, so `sum(cost_usd) … group by subject_id` is the cost per paper.
+ * (Runs before 5 Nov 2026 used one ID per process; their cost per paper comes from the logs.)
+ */
+export function paperSubjectId(dirs: CorpusDirs, paperId: string): string {
+  const file = path.join(dirs.extracted, paperId, 'subject-id')
+  if (existsSync(file)) return readFileSync(file, 'utf8').trim()
+  const id = uuidv7()
+  mkdirSync(path.dirname(file), { recursive: true })
+  writeFileSync(file, `${id}\n`)
+  return id
+}
+
+/** The underlying error behind a driver's "Failed query" wrapper, in one line. */
+export function causeOf(err: unknown): string {
+  const parts: string[] = []
+  let current: unknown = err
+  for (let depth = 0; current && depth < 4; depth += 1) {
+    const { message, code } = current as { message?: unknown; code?: unknown }
+    if (typeof message === 'string') parts.push(`${typeof code === 'string' ? `${code}: ` : ''}${message.split('\n')[0]?.slice(0, 200) ?? ''}`)
+    current = (current as { cause?: unknown }).cause
+  }
+  return parts.join(' <- ') || String(err)
 }

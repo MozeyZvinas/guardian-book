@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { extractOutputSchema, uuidv7, type ExtractOutput, type PaperRef } from '@guardian-book/shared'
+import { extractOutputSchema, type ExtractOutput, type PaperRef } from '@guardian-book/shared'
 import { createDb, type Db } from '../db/client.js'
 import { createGateway, type Gateway } from '../gateway/gateway.js'
 import type { ImageInput } from '../gateway/transport.js'
@@ -13,7 +13,7 @@ import { guideCase, modelAnswerCase, perturbedCase } from './cases.js'
 import { HELD_OUT_SESSIONS, isHeldOut, sessionKey, type CorpusPaper } from './catalogue.js'
 import { cropDiagram, uploadCrops } from './diagrams.js'
 import { fetchPaper, mathsCatalogue, type LocalPaper } from './download.js'
-import { assertOutsideRepo, corpusConfig, corpusDirs, type CorpusDirs } from './env.js'
+import { assertOutsideRepo, causeOf, corpusConfig, corpusDirs, paperSubjectId, type CorpusDirs } from './env.js'
 import { buildQuestions, countQuestions, diagramKeyFor, loaderProblem, mergeEntries, questionSlug, toItemFile, type BuiltQuestion, type MergedEntry, type PageRead } from './merge.js'
 import { pdftoppmAvailable } from './pages.js'
 import { EXTRACT_MAX_TOKENS, EXTRACT_PROMPT_VERSION, EXTRACT_TIMEOUT_MS, buildExtractSystem, buildExtractUser, extractContext } from './prompt.v2.js'
@@ -60,7 +60,6 @@ interface Ctx {
   db: Db
   gateway: Gateway
   dirs: CorpusDirs
-  runId: string
   concurrency: number
   spent: { calls: number; costUsd: number }
 }
@@ -116,7 +115,7 @@ async function readPage(
     timeoutMs: EXTRACT_TIMEOUT_MS,
     ...(options.maxCalls !== undefined ? { maxCalls: options.maxCalls } : {}),
   })
-  await recordWithRetry(ctx, result.runs)
+  await recordWithRetry(ctx, paperSubjectId(ctx.dirs, local.id), result.runs)
   ctx.spent.calls += result.runs.length
   ctx.spent.costUsd = round(ctx.spent.costUsd + result.totalCostUsd)
   const record: PageRecord = {
@@ -141,21 +140,9 @@ async function readPage(
   return record
 }
 
-/** The underlying error behind a driver's "Failed query" wrapper, in one line. */
-export function causeOf(err: unknown): string {
-  const parts: string[] = []
-  let current: unknown = err
-  for (let depth = 0; current && depth < 4; depth += 1) {
-    const { message, code } = current as { message?: unknown; code?: unknown }
-    if (typeof message === 'string') parts.push(`${typeof code === 'string' ? `${code}: ` : ''}${message.split('\n')[0]?.slice(0, 200) ?? ''}`)
-    current = (current as { cause?: unknown }).cause
-  }
-  return parts.join(' <- ') || String(err)
-}
-
 /** Every call is a `model_runs` row: one retry after a dropped connection, then the run stops. */
-async function recordWithRetry(ctx: Ctx, runs: VerifiedRun[]): Promise<void> {
-  const input = { purpose: 'extract' as const, subjectType: 'corpus_paper', subjectId: ctx.runId, promptVersion: EXTRACT_PROMPT_VERSION, fallbackModel: ctx.gateway.model, runs }
+async function recordWithRetry(ctx: Ctx, subjectId: string, runs: VerifiedRun[]): Promise<void> {
+  const input = { purpose: 'extract' as const, subjectType: 'corpus_paper', subjectId, promptVersion: EXTRACT_PROMPT_VERSION, fallbackModel: ctx.gateway.model, runs }
   try {
     await recordModelRuns(ctx.db, input)
   } catch (err) {
@@ -363,7 +350,7 @@ async function main(): Promise<void> {
   console.log(`corpus:extract: ${selected.length} paper(s) of ${catalogue.length}; held out: ${args.heldOut.join(', ') || 'none'}; model ${gateway.model}; concurrency ${args.concurrency}`)
 
   const handle = createDb(config.db.url, args.concurrency + 1)
-  const ctx: Ctx = { db: handle.db, gateway, dirs, runId: uuidv7(), concurrency: args.concurrency, spent: { calls: 0, costUsd: 0 } }
+  const ctx: Ctx = { db: handle.db, gateway, dirs, concurrency: args.concurrency, spent: { calls: 0, costUsd: 0 } }
   const ledger = path.join(dirs.root, 'spend.json')
   type SpendRow = { at: string; paper: string; calls: number; costUsd: number }
   // Re-read before every append: two extract processes may share the ledger.
