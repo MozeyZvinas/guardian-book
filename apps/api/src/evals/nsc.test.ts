@@ -87,7 +87,7 @@ describe('comparing a final answer with the memo', () => {
 })
 
 describe('choosing the held-out cases', () => {
-  it('keeps the session asked for, and leaves out figures and printed results with counts', () => {
+  it('keeps the session asked for, counts figures, and leaves out printed results', () => {
     const pattern = sessionCasePattern('2026-may_june')
     expect(pattern.test('nsc-maths-p2-2026-jun-q3-1')).toBe(true)
     expect(pattern.test('nsc-maths-p1-2025-nov-q3-1')).toBe(false)
@@ -100,7 +100,7 @@ describe('choosing the held-out cases', () => {
       ],
       pattern,
     )
-    expect(selection.cases.map((guide) => guide.id)).toEqual(['nsc-maths-p1-2026-jun-q1-1-guide'])
+    expect(selection.cases.map((guide) => guide.id)).toEqual(['nsc-maths-p1-2026-jun-q1-1-guide', 'b'])
     expect([selection.withFigure, selection.givenResult]).toEqual([1, 1])
   })
 
@@ -123,6 +123,24 @@ describe('running the guide on a held-out question', () => {
     expect(result).toMatchObject({ status: 'ready', agreement: 'agree', reached: true, calls: 2, final_answer: '$x = \\pm 7$' })
   })
 
+  it('attaches a figure to both reads when the question has one', async () => {
+    const requests: ChatRequest[] = []
+    const gateway = createGateway({
+      config: loadConfig({ META_API_KEY: 'mock-not-real' }).meta,
+      logger: capturingLogger().logger,
+      transport: async (request) => {
+        requests.push(request)
+        return okResponse(guideOutput('$x = \\pm 7$'))
+      },
+      sleep: async () => {},
+    })
+    const figure = { kind: 'base64' as const, mediaType: 'image/png' as const, data: 'AAAA' }
+    const result = await runGuideCase(guideCase({ diagram_path: 'x.png' }), gateway, figure)
+    expect(result.with_figure).toBe(true)
+    expect(requests).toHaveLength(2)
+    for (const request of requests) expect(JSON.stringify(request.messages[1].content)).toContain('The figure printed with the question is attached.')
+  })
+
   it('is unsure when the reads disagree, and records another answer as a miss', async () => {
     const result = await runGuideCase(guideCase(), gatewayAnswering(guideOutput('$x = 9$'), guideOutput('$x = 3$', 'medium')))
     expect(result.status).toBe('unsure')
@@ -132,8 +150,9 @@ describe('running the guide on a held-out question', () => {
 })
 
 describe('the held-out suites', () => {
-  const guideResult = (reached: boolean | null, status: 'ready' | 'unsure' | 'failed') => ({
+  const guideResult = (reached: boolean | null, status: 'ready' | 'unsure' | 'failed', with_figure = false) => ({
     id: 'g',
+    with_figure,
     status,
     agreement: null,
     reached,
@@ -147,12 +166,14 @@ describe('the held-out suites', () => {
   })
 
   it('counts the guide over the questions it read, with its own dataset label', () => {
-    const suite = nscGuideSuite([guideResult(true, 'ready'), guideResult(false, 'ready'), guideResult(false, 'unsure'), guideResult(null, 'failed')], 'pnpm eval:nsc')
+    const suite = nscGuideSuite([guideResult(true, 'ready'), guideResult(false, 'ready', true), guideResult(false, 'unsure'), guideResult(null, 'failed')], 'pnpm eval:nsc')
     expect(evidenceSuiteSchema.parse(suite)).toEqual(suite)
     expect(suite?.dataset).toEqual({ label: NSC_DATASET_LABEL, held_out: true })
     expect(suite?.metric.ratio).toMatchObject({ n: 1, d: 3 })
     const byKey = Object.fromEntries((suite?.metrics ?? []).map((m) => [m.key, m.ratio]))
     expect(byKey['ready']).toMatchObject({ n: 2, d: 4 })
+    expect(byKey['reached_typed']).toMatchObject({ n: 1, d: 2 })
+    expect(byKey['reached_with_figure']).toMatchObject({ n: 0, d: 1 })
     expect(byKey['ready_reached']).toMatchObject({ n: 1, d: 2 })
     expect(byKey['failed']).toMatchObject({ n: 1, d: 4 })
     expect(suite?.cost?.per_attempt_usd).toBe(0.03)

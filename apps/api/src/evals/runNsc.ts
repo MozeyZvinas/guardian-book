@@ -10,6 +10,7 @@ import { logger } from '../logger.js'
 import { loadCases, runCase, type EvalCaseResult } from './runner.js'
 import { writeEvidence } from './summary.js'
 import {
+  figureFor,
   loadGuideCases,
   nscGuideSuite,
   nscWorkCheckSuite,
@@ -100,11 +101,11 @@ async function main(): Promise<void> {
 
   if (args.only !== 'work_check') {
     const selection = selectGuideCases(await loadGuideCases(path.join(heldOutDir, 'guide')), pattern)
-    console.log(`  guide: ${selection.cases.length} question(s); left out ${selection.withFigure} with a figure, ${selection.givenResult} that print their result`)
+    console.log(`  guide: ${selection.cases.length} question(s), ${selection.withFigure} with a figure attached; left out ${selection.givenResult} that print their result`)
     const before = spent
     const results = await pool(selection.cases, args.concurrency, async (guide): Promise<NscGuideResult | null> => {
       if (left() <= 0.1) return null
-      const result = await runGuideCase(guide, gateway)
+      const result = await runGuideCase(guide, gateway, await figureFor(guide, heldOutDir))
       spent += result.cost_usd
       console.log(`    ${guide.id}: ${result.status} · ${result.reached === null ? 'no answer' : result.reached ? 'memo answer' : 'other answer'} · ${result.calls} call(s) · ${Math.round(result.latency_ms / 1000)} s · $${result.cost_usd.toFixed(4)}`)
       return result
@@ -115,7 +116,7 @@ async function main(): Promise<void> {
     const suite = nscGuideSuite(results, `pnpm eval:nsc · ${gateway.model} · ${GUIDE_PROMPT_VERSION} + ${GUIDE_CHECK_PROMPT_VERSION} · ${ranAt.toISOString()}`)
     if (suite) suites.push(suite)
     notYet.push(
-      `Held-out NSC guide: ${selection.withFigure} question(s) printed with a figure were left out (the guide takes typed text or a photo, not both), and ${selection.givenResult} that ask to prove or show a printed result.`,
+      `Held-out NSC guide: ${selection.withFigure} question(s) printed with a figure went in typed with the figure attached as a photo (the app takes typed text or a photo, not both); ${selection.givenResult} that ask to prove or show a printed result were left out.`,
     )
   }
 

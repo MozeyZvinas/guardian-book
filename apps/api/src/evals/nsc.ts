@@ -2,6 +2,7 @@ import { readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 import type { EvidenceFile, EvidenceMetric, EvidenceRatio, EvidenceSuite, GuideOutput } from '@guardian-book/shared'
 import type { Gateway } from '../gateway/gateway.js'
+import type { ImageInput } from '../gateway/transport.js'
 import { PromptSafetyError } from '../gateway/promptSafety.js'
 import { verifiedCall, type VerifiedRun } from '../gateway/verifiedCall.js'
 import { GUIDE_CHECK_PROMPT_VERSION, GUIDE_MAX_TOKENS, GUIDE_PROMPT_VERSION, GUIDE_TIMEOUT_MS, buildGuideSystem, buildGuideUser } from '../guide/prompt.v1.js'
@@ -19,7 +20,9 @@ import { percentile, ratio } from './stats.js'
  * each with its own dataset label:
  *
  * - `nsc_guide`: B15's guide (two independent reads, as the app runs it) on each question
- *   typed in; does the answer it shows match the memo's final answer?
+ *   typed in; does the answer it shows match the memo's final answer? A question printed
+ *   with a figure goes in typed with the figure's crop attached, the stand-in for a learner's
+ *   photo (the app itself takes typed text or a photo); the suite reports both kinds apart.
  * - `nsc_work_check`: the work check on the memo's own working with the final step's value
  *   changed; does it name that step as the first one lost? The unchanged memo working is
  *   the control (full marks expected).
@@ -109,18 +112,25 @@ export const GIVEN_RESULT = /\b(?:prove|show that|verify that|show, without|henc
 
 export interface GuideSelection {
   cases: GuideCase[]
-  /** Left out, with why, counted on the page. */
+  /** Of `cases`, how many carry a figure. */
   withFigure: number
+  /** Left out: they ask to prove or show a result the question prints. */
   givenResult: number
 }
 
 export function selectGuideCases(all: GuideCase[], pattern: RegExp): GuideSelection {
   const inSession = all.filter((guide) => pattern.test(guide.item.slug))
-  const withFigure = inSession.filter((guide) => guide.diagram_path !== null)
-  const typed = inSession.filter((guide) => guide.diagram_path === null)
-  const givenResult = typed.filter((guide) => GIVEN_RESULT.test(guide.item.prompt_md))
-  return { cases: typed.filter((guide) => !GIVEN_RESULT.test(guide.item.prompt_md)), withFigure: withFigure.length, givenResult: givenResult.length }
+  const cases = inSession.filter((guide) => !GIVEN_RESULT.test(guide.item.prompt_md))
+  return { cases, withFigure: cases.filter((guide) => guide.diagram_path !== null).length, givenResult: inSession.length - cases.length }
 }
+
+/** The figure's crop for a case, read relative to the eval directory; null without one. */
+export async function figureFor(guide: GuideCase, evalDir: string): Promise<ImageInput | null> {
+  if (guide.diagram_path === null) return null
+  return { kind: 'base64', mediaType: 'image/png', data: (await readFile(path.resolve(evalDir, guide.diagram_path))).toString('base64') }
+}
+
+export const FIGURE_LINE = 'The figure printed with the question is attached.'
 
 /** The perturbed sample, and the unperturbed memo working for the same questions as the control. */
 export function selectWorkCheckCases(all: EvalCase[], pattern: RegExp, sample: number): EvalCase[] {
@@ -155,6 +165,8 @@ export interface NscGuideResult {
   agreement: 'agree' | 'disagree' | 'skipped' | null
   /** The shown read's final answer matches the memo's; null when no read was accepted. */
   reached: boolean | null
+  /** The question went in with its figure attached. */
+  with_figure: boolean
   final_answer: string | null
   expected_final_answer: string
   calls: number
@@ -165,13 +177,15 @@ export interface NscGuideResult {
   error: string | null
 }
 
-export async function runGuideCase(guide: GuideCase, gateway: Gateway): Promise<NscGuideResult> {
-  const base = { id: guide.id, expected_final_answer: guide.expected_final_answer }
+export async function runGuideCase(guide: GuideCase, gateway: Gateway, figure: ImageInput | null = null): Promise<NscGuideResult> {
+  const base = { id: guide.id, expected_final_answer: guide.expected_final_answer, with_figure: figure !== null }
+  const withFigure = (user: ReturnType<typeof buildGuideUser>): ReturnType<typeof buildGuideUser> =>
+    figure ? { text: `${user.text}\n${FIGURE_LINE}`, images: [figure] } : user
   let users: Array<{ version: string; user: ReturnType<typeof buildGuideUser> }>
   try {
     users = [
-      { version: GUIDE_PROMPT_VERSION, user: buildGuideUser({ kind: 'text', text: guide.item.prompt_md }, 'first') },
-      { version: GUIDE_CHECK_PROMPT_VERSION, user: buildGuideUser({ kind: 'text', text: guide.item.prompt_md }, 'check') },
+      { version: GUIDE_PROMPT_VERSION, user: withFigure(buildGuideUser({ kind: 'text', text: guide.item.prompt_md }, 'first')) },
+      { version: GUIDE_CHECK_PROMPT_VERSION, user: withFigure(buildGuideUser({ kind: 'text', text: guide.item.prompt_md }, 'check')) },
     ]
   } catch (err) {
     if (!(err instanceof PromptSafetyError)) throw err
@@ -244,6 +258,7 @@ export function nscGuideSuite(results: NscGuideResult[], source: string): Eviden
   const calls = runs.filter((run) => run.status !== 'failed')
   const shown = results.filter((result) => result.reached !== null)
   const ready = results.filter((result) => result.status === 'ready')
+  const reachedOf = (list: NscGuideResult[]) => ratio(list.filter((result) => result.reached === true).length, list.length)
   return {
     key: 'nsc_guide',
     label: 'Help me with a question: the guide against the memo’s final answer',
@@ -254,9 +269,16 @@ export function nscGuideSuite(results: NscGuideResult[], source: string): Eviden
       'memo_answer_reached',
       'Reached the memo’s final answer',
       'questions where the answer the guide shows matches the memo’s (same values after normalising notation; another correct form counts as a miss) ÷ questions the guide read',
-      ratio(shown.filter((result) => result.reached === true).length, shown.length),
+      reachedOf(shown),
     ),
     metrics: [
+      metric('reached_typed', 'Typed questions', 'questions without a figure, typed in: the memo’s final answer reached ÷ such questions the guide read', reachedOf(shown.filter((result) => !result.with_figure))),
+      metric(
+        'reached_with_figure',
+        'Questions with a figure',
+        'questions printed with a figure, typed in with the figure’s crop attached as a photo: the memo’s final answer reached ÷ such questions the guide read',
+        reachedOf(shown.filter((result) => result.with_figure)),
+      ),
       metric('ready', 'Worked steps shown', 'questions where two independent reads agreed and were confident, so the app shows worked steps ÷ questions', ratio(ready.length, results.length)),
       metric(
         'ready_reached',
