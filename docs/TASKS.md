@@ -59,7 +59,7 @@ the same files.
 | B12 Parent's home language (af, zu, xh, tn, st) + Share to WhatsApp (D38, P1-e) | 4 Nov | P1 | B06, B07 | subscription | review (PR open 4 Nov; live check done, $0.05) |
 | B13 Ask about a step by voice or typing (Muse Voice Transcribe, P1-a) | 4 Nov | P1 | B04, B06 | subscription | PR #12 open (branch `b13-ask-by-voice`; CI green; live check run 4 Nov: transcription 4.2 s / $0.00005, hint accepted on the 2nd call 32.0 s / $0.0157, see the B13 note below) |
 | B14 Open-weight comparison row (Muse Spark Open, P1-d) | 4 Nov | P1 | B08; founder's partner-host key | subscription | todo |
-| B16 ∥ Make it clear: setup by taps, Today's one next action and plain statuses, Brain explainer and legend, pasted maths, the no-dates notice message (D39) | 4 Nov | D39 | B04, B05 | subscription | review (branch `b16-clarity`, PR open 4 Nov; questions below) |
+| B16 ∥ Make it clear: setup by taps, Today's one next action and plain statuses, Brain explainer and legend, pasted maths, the no-dates notice message (D39) | 4 Nov | D39 | B04, B05 | subscription | review (PR #13, branch `b16-clarity`, 4 Nov; questions below) |
 | V1 Record the demo + X cut | 4 Nov, morning | — | B10 | Founder + planning | todo |
 | B11 Freeze + submit by 20:00 SAST | 4 Nov | — | V1 | Founder | todo |
 
