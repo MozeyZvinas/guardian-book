@@ -41,6 +41,7 @@ import {
 import { appendEvent } from '../evidence/append.js'
 import type { PracticeDeps } from '../inputs/deps.js'
 import { HttpError, notFound } from '../lib/http.js'
+import { guardianPractice, pastPapersThisWeek } from '../library/service.js'
 import { runModel } from '../modelRuns/index.js'
 import { runPlanAgent, type AgentIO, type AgentStepResult, type TraceStep } from './agent.js'
 import { PLAN_AGENT_DEADLINE_MS, PLAN_AGENT_MAX_TOKENS, PLAN_AGENT_PROMPT_VERSION, PLAN_AGENT_STEP_TIMEOUT_MS, buildPlanAgentSystem, type PlanTask } from './prompt.v1.js'
@@ -341,7 +342,8 @@ export async function learnerPlan(db: DbOrTx, learnerId: string): Promise<Learne
 
 /**
  * Check it alone (P0-05): the approved item, in a class the learner belongs to, with the
- * most guideline steps tagged with the skill, excluding items already attempted.
+ * most guideline steps tagged with the skill, excluding items already attempted. B17 (D40):
+ * a real exam question on the skill comes first; a held-out one never (D31).
  */
 export async function matchItemForCheck(db: DbOrTx, learnerId: string, skillTag: string, mode: CheckMode, fromAttemptId: string | null): Promise<CheckAloneResponse> {
   const label = skillLabel(skillTag, 'learner')
@@ -351,12 +353,13 @@ export async function matchItemForCheck(db: DbOrTx, learnerId: string, skillTag:
     .innerJoin(guidelineApprovals, and(eq(guidelineApprovals.itemId, items.id), eq(guidelineApprovals.itemRevision, items.revision)))
     .innerJoin(classMembers, and(eq(classMembers.classId, guidelineApprovals.classId), eq(classMembers.learnerId, learnerId)))
     .leftJoin(guidelineSteps, and(eq(guidelineSteps.itemId, items.id), eq(guidelineSteps.skillTag, skillTag)))
-    .where(eq(items.status, 'approved'))
+    .where(and(eq(items.status, 'approved'), eq(items.heldOut, false)))
     .groupBy(items.id)
   const attempted = new Set((await db.select({ itemId: attempts.itemId }).from(attempts).where(eq(attempts.learnerId, learnerId))).map((r) => r.itemId))
+  const fromBank = (c: (typeof candidates)[number]) => Number(c.item.source === 'dbe_nsc')
   const best = candidates
     .filter((c) => Number(c.matching) > 0 && !attempted.has(c.item.id))
-    .sort((a, b) => Number(b.matching) - Number(a.matching) || (a.item.slug < b.item.slug ? -1 : 1))[0]
+    .sort((a, b) => fromBank(b) - fromBank(a) || Number(b.matching) - Number(a.matching) || (a.item.slug < b.item.slug ? -1 : 1))[0]
 
   let why = mode === 'retention' ? `Two days ago you did ${label} on your own. One question, no hints, to see if it stuck.` : `One more like it, on your own: ${label}. No hints until you submit.`
   if (fromAttemptId) {
@@ -367,7 +370,18 @@ export async function matchItemForCheck(db: DbOrTx, learnerId: string, skillTag:
 
   return {
     item: best
-      ? { id: best.item.id, slug: best.item.slug, topic: best.item.topic, promptMd: best.item.promptMd, maxMarks: best.item.maxMarks, revision: best.item.revision, skillTags: best.item.skillTags, matchingSteps: Number(best.matching) }
+      ? {
+          id: best.item.id,
+          slug: best.item.slug,
+          topic: best.item.topic,
+          promptMd: best.item.promptMd,
+          maxMarks: best.item.maxMarks,
+          revision: best.item.revision,
+          skillTags: best.item.skillTags,
+          matchingSteps: Number(best.matching),
+          source: best.item.source === 'dbe_nsc' ? 'dbe_nsc' : 'original',
+          attribution: best.item.attribution,
+        }
       : null,
     skillTag,
     skillLabel: label,
@@ -517,6 +531,9 @@ export async function guardianWeek(deps: PracticeDeps, actor: Actor, learnerId: 
     today,
     effort: { dots, days: dots.filter(Boolean).length, pieces, topics },
     coming: next ? { title: next.title, onDate: next.onDate, daysAway: daysBetween(today, next.onDate) } : null,
+    // B17: class practice by date, and past exam questions done this week, in plain words.
+    practice: await guardianPractice(db, learnerId, now),
+    pastPapers: await pastPapersThisWeek(db, { id: learner.id, nickname: learner.nickname }, weekStartAt, weekEndAt),
     celebrate,
     plan,
     resources: links.map((r) => ({ id: r.id, title: r.title, url: r.url, free: r.free, licence: r.licence, attribution: r.attribution })),

@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { useParams } from 'react-router'
+import { Link, useParams } from 'react-router'
 import { AI_DRAFTED_GUIDELINE_LABEL, skillLabel, type GuidelineItemView, type MeResponse } from '@guardian-book/shared'
 import { approveGuideline, guidelines as fetchGuidelines } from '../../../api/teacher'
 import { RequireRole } from '../../../app/RequireRole'
 import { Button, FormError } from '../../../components/Form'
 import { MathText } from '../../../components/MathText'
+import { Attribution } from '../../library/LibraryFrame'
 import { ClassEyebrow, NotMine, TeacherShell, formatWhen, useLoad } from '../shell/TeacherShell'
 
 /**
@@ -48,7 +49,9 @@ function GuidelinesScreen({ me }: { me: MeResponse }) {
 
   return (
     <TeacherShell me={me} classId={classId} title="Marking guidelines" eyebrow={<ClassEyebrow classId={classId} name={cls.name} />}>
-      <p className="m-0 text-fg-muted">Each question is marked only against a guideline you have approved for {cls.name}. Approval is per revision; nothing is assessed for your class before it.</p>
+      <p className="m-0 text-fg-muted">
+        Each question is marked only against a guideline you have approved for {cls.name}. Approval is per revision; nothing is assessed for your class before it. To approve a whole past paper in one go, use <Link to={`/teacher/classes/${classId}/library`}>Past papers</Link>.
+      </p>
       {error ? <FormError error={error} /> : null}
       {!data && !error ? <p className="text-fg-muted">Loading…</p> : null}
       {data?.items.length === 0 ? <p className="text-fg-muted">No approved questions are loaded yet.</p> : null}
@@ -85,6 +88,7 @@ function GuidelinesScreen({ me }: { me: MeResponse }) {
               </div>
             </div>
             <MathText as="p" text={item.promptMd} className="m-0 font-serif whitespace-pre-wrap" />
+            {item.attribution ? <Attribution text={item.attribution} /> : null}
             <table className="w-full border-collapse text-sm">
               <caption className="sr-only">Marking guideline for {item.slug}</caption>
               <thead>

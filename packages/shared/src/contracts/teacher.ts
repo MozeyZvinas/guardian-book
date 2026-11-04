@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { brainSkillSchema } from '../brain/contracts.js'
-import { guidelineStepSchema, guidelineStepTypeSchema } from './items.js'
+import { guidelineStepSchema, guidelineStepTypeSchema, itemSourceSchema, sourceRefSchema } from './items.js'
+import { whatComesUpMapSchema } from './library.js'
 import { languageSchema, translationViewSchema } from './language.js'
 import { confidenceSchema, isoDateSchema } from './model/common.js'
 import { attemptModeSchema, attemptStatusSchema } from './practice.js'
@@ -121,6 +122,10 @@ export const guidelineItemViewSchema = z.object({
   reviewer: z.string(),
   /** True for `model_generated` items: the screen shows AI_DRAFTED_GUIDELINE_LABEL. */
   aiDrafted: z.boolean(),
+  /** B17 (D40): a real NSC question says so, with its attribution line. */
+  source: itemSourceSchema.default('original'),
+  attribution: z.string().nullable().default(null),
+  sourceRef: sourceRefSchema.nullable().default(null),
   steps: z.array(guidelineStepSchema),
   /** The approval of the CURRENT revision for this class, or null (an older revision's approval does not count). */
   approval: guidelineApprovalViewSchema.nullable(),
@@ -245,6 +250,7 @@ export const reviewAttemptResponseSchema = z.object({
     itemSlug: z.string(),
     itemTopic: z.string(),
     itemPromptMd: z.string(),
+    itemAttribution: z.string().nullable().default(null),
     itemRevision: z.number().int(),
     maxMarks: z.number().int(),
     kind: z.enum(['typed', 'photo']),
@@ -355,6 +361,8 @@ export const pictureResponseSchema = z.object({
     draftNotes: z.number().int().nonnegative(),
     openInterventions: z.number().int().nonnegative(),
   }),
+  /** B17: how often each gap's skill comes up in the loaded past papers, by tag. */
+  whatComesUp: whatComesUpMapSchema.default({}),
 })
 export type PictureResponse = z.infer<typeof pictureResponseSchema>
 

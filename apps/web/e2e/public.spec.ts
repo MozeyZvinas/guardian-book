@@ -81,9 +81,11 @@ test('a judge signs up through /try, lands on Bring in the try-it class, and che
   const picker = page.getByRole('group', { name: 'Which question is this?' })
   await expect(picker).toBeVisible()
   await expect(picker).not.toContainText('alg-12')
-  await expect(picker.getByRole('radio')).toHaveCount(3)
+  // Three seed items approved for the try-it class, plus B17's four library questions listed but disabled.
+  await expect(picker.getByRole('radio')).toHaveCount(7)
   await expect(picker.getByRole('radio').first()).toBeChecked()
   await expect(picker.getByRole('radio').nth(1)).toBeEnabled()
+  await expect(picker.getByRole('radio').nth(3)).toBeDisabled()
   await expect(picker).toContainText('4 marks')
   await noOverflow(page)
   await page.screenshot({ path: 'docs/screenshots/b09-picker-390.png', fullPage: true, animations: 'disabled' })
@@ -96,7 +98,7 @@ test('robots, the manifest and the service worker are served; nothing from /api 
   const robots = await page.request.get('/robots.txt')
   expect(robots.status()).toBe(200)
   const robotsText = await robots.text()
-  for (const line of ['Allow: /try', 'Allow: /evidence', 'Disallow: /api/', 'Disallow: /today', 'Disallow: /guardian', 'Disallow: /teacher']) {
+  for (const line of ['Allow: /try', 'Allow: /evidence', 'Disallow: /api/', 'Disallow: /library', 'Disallow: /today', 'Disallow: /guardian', 'Disallow: /teacher']) {
     expect(robotsText).toContain(line)
   }
 

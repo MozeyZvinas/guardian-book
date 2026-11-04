@@ -10,8 +10,9 @@ import { guidelineSteps, items } from '../db/schema.js'
  * The content loader (spec 03 §4 "Load content: admin, CLI only"; brief B02 §6).
  *
  * Reads every `*.json` file in a directory, validates each against `itemFileSchema`
- * (marks sum, step types M/A/CA, provenance and reviewer present, `source: original`),
- * and only if EVERY file is valid loads them in one transaction as `approved` items.
+ * (marks sum, step types M/A/CA, provenance and reviewer present, `source: original` or,
+ * since B17 (D40), `dbe_nsc` with its `source_ref` and `attribution`), and only if EVERY
+ * file is valid loads them in one transaction as `approved` items.
  * A single invalid file means nothing is written. Re-running with unchanged files changes
  * nothing; a changed item bumps its revision and replaces its steps.
  */
@@ -83,6 +84,10 @@ function sameContent(existing: ExistingItem, steps: ExistingStep[], next: ItemFi
     reviewer: existing.reviewer,
     reviewedAt: existing.reviewedAt?.toISOString() ?? null,
     provenance: existing.provenance,
+    source: existing.source,
+    sourceRef: existing.sourceRef,
+    attribution: existing.attribution,
+    heldOut: existing.heldOut,
     steps: [...steps]
       .sort((a, b) => a.stepNo - b.stepNo)
       .map((s) => [s.stepNo, s.stepType, s.criterion, s.marks, s.skillTag, s.notes]),
@@ -97,6 +102,10 @@ function sameContent(existing: ExistingItem, steps: ExistingStep[], next: ItemFi
     reviewer: next.reviewer,
     reviewedAt: next.reviewed_at ? new Date(next.reviewed_at).toISOString() : null,
     provenance: next.provenance,
+    source: next.source,
+    sourceRef: next.source_ref,
+    attribution: next.attribution,
+    heldOut: next.held_out,
     steps: next.guideline_steps.map((s) => [s.step_no, s.step_type, s.criterion, s.marks, s.skill_tag, s.notes]),
   })
   return before === after
@@ -123,7 +132,10 @@ export async function loadContent(
         author: item.author,
         reviewer: item.reviewer,
         reviewedAt: item.reviewed_at ? new Date(item.reviewed_at) : null,
-        source: 'original' as const,
+        source: item.source,
+        sourceRef: item.source_ref,
+        attribution: item.attribution,
+        heldOut: item.held_out,
         provenance: item.provenance,
         provenanceDetail: null,
         trainingPermission: 'not_permitted' as const,

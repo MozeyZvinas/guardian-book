@@ -88,6 +88,12 @@ function BrainScreen() {
       <div className="flex flex-col gap-2">
         <h1 className="text-display font-semibold text-balance">Your Brain</h1>
         <p className="text-fg-muted">This is what you can do, and how sure we are.</p>
+        {Object.keys(brain.whatComesUp).length > 0 ? (
+          <p className="text-sm text-fg-muted">
+            <span aria-hidden="true">◷ </span>
+            What comes up: how often a skill appears in the <Link to="/library">past papers</Link>, and the marks it carries.
+          </p>
+        ) : null}
       </div>
 
       <section aria-labelledby="legend-heading" className="flex flex-col gap-2 rounded-card bg-surface p-4">
@@ -117,7 +123,7 @@ function BrainScreen() {
           <ul aria-label="Skills" className="m-0 grid list-none gap-2 p-0 sm:grid-cols-2">
             {skills.map((skill) => (
               <li key={skill.tag}>
-                <SkillChip skill={skill} selected={skill.tag === selectedTag} onSelect={() => setSelectedTag(skill.tag === selectedTag ? null : skill.tag)} />
+                <SkillChip skill={skill} selected={skill.tag === selectedTag} onSelect={() => setSelectedTag(skill.tag === selectedTag ? null : skill.tag)} comesUp={brain.whatComesUp[skill.tag]?.sentence ?? null} />
               </li>
             ))}
           </ul>

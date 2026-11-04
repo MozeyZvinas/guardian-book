@@ -3,6 +3,7 @@ import { dayOf, daysBetween, modeOf, outcomesOf, profileCardsSchema, skillLabel,
 import type { DbOrTx } from '../db/client.js'
 import { assessments, attempts, calendarEvents, classMembers, guidelineSteps, items, profiles, resources } from '../db/schema.js'
 import { projectBrain } from '../evidence/projection.js'
+import { bankItems } from '../library/service.js'
 import type { StoredStep } from '../assessment/service.js'
 import type { AgentIO, ToolResult } from './agent.js'
 
@@ -26,8 +27,25 @@ export interface PlanToolkit {
 
 const RECENT_EVENTS = 20
 const MAX_RESOURCES = 8
+/** B17: past exam questions on the gap skill the plan may point the learner at (in the Library). */
+const MAX_PAST_QUESTIONS = 2
 
 const asSteps = (value: unknown): StoredStep[] => (Array.isArray(value) ? (value as StoredStep[]) : [])
+
+/** Bank questions on the skill (never held out), newest paper first, with their attribution lines. */
+async function pastExamQuestions(db: DbOrTx, skillTag: string): Promise<Array<{ attribution: string; marks: number }>> {
+  const bank = await bankItems(db)
+  const tagged = bank.filter((item) => item.skillTags.includes(skillTag) && item.attribution)
+  if (tagged.length === 0) return []
+  const ids = tagged.map((item) => item.id)
+  const steps = await db.select({ itemId: guidelineSteps.itemId, marks: guidelineSteps.marks }).from(guidelineSteps).where(and(inArray(guidelineSteps.itemId, ids), eq(guidelineSteps.skillTag, skillTag)))
+  const marksOf = new Map<string, number>()
+  for (const step of steps) marksOf.set(step.itemId, (marksOf.get(step.itemId) ?? 0) + step.marks)
+  return tagged
+    .sort((a, b) => b.ref.year - a.ref.year || a.ref.question.localeCompare(b.ref.question))
+    .slice(0, MAX_PAST_QUESTIONS)
+    .map((item) => ({ attribution: item.attribution ?? '', marks: marksOf.get(item.id) ?? item.maxMarks }))
+}
 
 export function buildPlanToolkit(db: DbOrTx, learnerId: string, gapSkillTag: string, now: Date): PlanToolkit {
   const evidenceByAlias = new Map<string, string>()
@@ -143,9 +161,17 @@ export function buildPlanToolkit(db: DbOrTx, learnerId: string, gapSkillTag: str
       resourceByAlias.set(alias, row.id)
       return `- ${alias} · ${row.title} · ${row.free ? 'free' : 'paid'} · ${row.licence} · ${row.skillTags.join(', ')}`
     })
+    // B17 (D40): a real exam question on this skill, with its source; not a citable resource
+    // ID (the learner finds it in the Library), so the vetted list stays exactly R1..Rn.
+    const past = await pastExamQuestions(db, gapSkillTag)
+    const pastLines = past.map((question) => `- Past exam question on this skill, in the Library (not a resource ID): ${question.attribution} · ${question.marks} marks`)
     return {
-      text: ['Vetted resources (cite by ID; free first):', ...(lines.length > 0 ? lines : ['- (none on the list yet; cite no resources)'])].join('\n'),
-      summary: `${rows.length} resources`,
+      text: [
+        'Vetted resources (cite by ID; free first):',
+        ...(lines.length > 0 ? lines : ['- (none on the list yet; cite no resources)']),
+        ...(pastLines.length > 0 ? ['', 'Past exam questions on this skill (the learner can open them in the Library; cite none of these):', ...pastLines] : []),
+      ].join('\n'),
+      summary: `${rows.length} resources, ${past.length} past exam questions`,
     }
   }
 

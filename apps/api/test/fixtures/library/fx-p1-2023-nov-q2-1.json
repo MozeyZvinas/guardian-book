@@ -1,0 +1,20 @@
+{
+  "slug": "fx-nsc-maths-p1-2023-nov-q2-1",
+  "topic": "Patterns: arithmetic sequences",
+  "skill_tags": ["seq.arithmetic_general_term"],
+  "prompt_md": "The pattern of dots in the diagram continues. The first three figures use 4, 7 and 10 dots.\n\nWrite down the number of dots in the $n$-th figure, $T_n$, in terms of $n$.",
+  "diagram_key": "library-fixture/p1-2023-nov-q2-1.png",
+  "max_marks": 2,
+  "author": "Guardian Book test fixture (fictional question written for this build)",
+  "reviewer": "pending",
+  "reviewed_at": null,
+  "source": "dbe_nsc",
+  "source_ref": { "subject": "Mathematics", "grade": 12, "year": 2023, "session": "november", "paper": 1, "question": "2.1" },
+  "attribution": "NSC Mathematics P1, November 2023, Q2.1 · Department of Basic Education · fictional stand-in for tests, not a DBE question",
+  "held_out": false,
+  "provenance": "licensed_content",
+  "guideline_steps": [
+    { "step_no": 1, "step_type": "A", "criterion": "Common difference $d = 3$.", "marks": 1, "skill_tag": "seq.arithmetic_general_term", "notes": null },
+    { "step_no": 2, "step_type": "A", "criterion": "$T_n = 3n + 1$.", "marks": 1, "skill_tag": "seq.arithmetic_general_term", "notes": null }
+  ]
+}

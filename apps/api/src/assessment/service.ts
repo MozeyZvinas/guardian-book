@@ -578,6 +578,7 @@ export async function attemptResponse(deps: PracticeDeps, actor: Actor, attemptI
       itemSlug: row.item.slug,
       itemTopic: row.item.topic,
       itemPromptMd: row.item.promptMd,
+      itemAttribution: row.item.attribution,
       itemRevision: row.attempt.itemRevision,
       maxMarks: row.item.maxMarks,
       kind: row.attempt.kind,

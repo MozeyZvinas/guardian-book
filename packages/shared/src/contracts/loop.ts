@@ -1,6 +1,7 @@
 import { z } from 'zod'
-import { skillTagSchema } from './items.js'
+import { itemSourceSchema, skillTagSchema } from './items.js'
 import { languageSchema, translationViewSchema } from './language.js'
+import { guardianPracticeSchema, pastPapersWeekSchema } from './library.js'
 import { MAX_INPUT_TEXT } from './practice.js'
 
 /**
@@ -52,6 +53,9 @@ export const checkAloneItemSchema = z.object({
   skillTags: z.array(z.string()),
   /** Guideline steps on this item tagged with the skill being checked. */
   matchingSteps: z.number().int(),
+  /** B17: a real exam question comes with its source line; the screen shows it (D40). */
+  source: itemSourceSchema.default('original'),
+  attribution: z.string().nullable().default(null),
 })
 
 /** `GET /api/me/check-alone?skill=&mode=&from=`: the matched item, or null when nothing unattempted matches. */
@@ -143,6 +147,10 @@ export const guardianWeekResponseSchema = z.object({
     topics: z.array(z.string()),
   }),
   coming: z.object({ title: z.string(), onDate: z.string(), daysAway: z.number().int() }).nullable(),
+  /** B17: class practice the teacher set, by date (a title and a date, never a question). */
+  practice: z.array(guardianPracticeSchema).default([]),
+  /** B17: past exam questions done this week, in plain words; null when none. */
+  pastPapers: pastPapersWeekSchema.nullable().default(null),
   /** Something to celebrate, from the plan when there is one, else from this week's effort. */
   celebrate: z.string().nullable(),
   plan: guardianPlanViewSchema.nullable(),

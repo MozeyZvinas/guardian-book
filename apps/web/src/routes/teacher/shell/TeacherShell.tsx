@@ -17,6 +17,8 @@ export function TeacherShell({ me, classId, eyebrow, title, children, wide = fal
     { to: current ? `/teacher/classes/${current}/queue` : '/teacher', label: 'Queue', end: false },
     { to: current ? `/teacher/classes/${current}/notes` : '/teacher', label: 'Notes', end: false },
     { to: current ? `/teacher/classes/${current}/guidelines` : '/teacher', label: 'Guidelines', end: false },
+    // B17: approve a past paper for the class and set practice from the library.
+    { to: current ? `/teacher/classes/${current}/library` : '/library', label: 'Past papers', end: false },
   ]
   return (
     <div className="flex min-h-dvh flex-col bg-ground text-fg">

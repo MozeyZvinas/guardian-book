@@ -7,6 +7,7 @@ import { addFeedback, confirmReview, releaseAttempt, reviewAttempt } from '../..
 import { RequireRole } from '../../../app/RequireRole'
 import { Button, Card, FormError } from '../../../components/Form'
 import { MathText } from '../../../components/MathText'
+import { Attribution } from '../../library/LibraryFrame'
 import { RedInk } from '../../../components/RedInk'
 import { planInk } from '../../../components/RedInkPlan'
 import { CONFIDENCE_LABEL } from '../../../components/StepMap'
@@ -120,6 +121,7 @@ function Loaded({ me, data, reload }: { me: MeResponse; data: ReviewAttemptRespo
             {attempt.itemTopic} · {attempt.itemSlug} · {attempt.kind === 'photo' ? 'photo' : 'typed'} · {attempt.mode} · {formatWhen(attempt.createdAt)}
           </p>
           <MathText as="p" text={attempt.itemPromptMd} className="m-0 font-serif whitespace-pre-wrap" />
+          {attempt.itemAttribution ? <Attribution text={attempt.itemAttribution} /> : null}
           {inkPlan ? (
             <RedInk imageUrl={attempt.hasImage ? attemptImageUrl(attempt.id) : null} text={attempt.answerText} alt={`${attempt.learner.nickname}’s working`} plan={inkPlan} label={released ? 'reviewed' : 'checked'} />
           ) : (

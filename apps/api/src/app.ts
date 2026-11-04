@@ -18,6 +18,7 @@ import type { PracticeDeps } from './inputs/deps.js'
 import { inputsRouter } from './inputs/routes.js'
 import { interventionsRouter } from './interventions/routes.js'
 import { HttpError, notConfigured } from './lib/http.js'
+import { libraryRouter } from './library/routes.js'
 import { notesRouter } from './notes/routes.js'
 import type { Logger } from './logger.js'
 import { requestLog } from './middleware/requestLog.js'
@@ -76,6 +77,7 @@ const API_PREFIXES = [
   '/api/attempts',
   '/api/calendar',
   '/api/voice',
+  '/api/library',
   '/api/guide',
 ]
 
@@ -167,6 +169,8 @@ export function createApp(options: AppOptions): Express {
     // B13: ask about a step (typed or by voice); the clip is transcribed and never stored.
     app.use(hintsRouter(practice))
     app.use(voiceRouter({ db, transcriber, logger, limits: practice.limits, now: practice.now }))
+    // B17 (D40): the past-paper library, approve-a-paper and class practice; noindex on every route.
+    app.use(libraryRouter(practice))
     // B15: help me with a question (any question, read twice, taken step by step; never marked).
     app.use(guideRouter(practice))
   } else {

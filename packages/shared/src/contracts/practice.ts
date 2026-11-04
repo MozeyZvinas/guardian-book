@@ -125,6 +125,8 @@ export const attemptViewSchema = z.object({
   itemSlug: z.string(),
   itemTopic: z.string(),
   itemPromptMd: z.string(),
+  /** B17 (D40): the question's source line, shown wherever the question is; null for an original item. */
+  itemAttribution: z.string().nullable().default(null),
   itemRevision: z.number().int(),
   maxMarks: z.number().int(),
   kind: z.enum(['typed', 'photo']),

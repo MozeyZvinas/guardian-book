@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { eventBasisSchema, learningEventKindSchema } from '../contracts/events.js'
+import { learnerPracticeSchema, whatComesUpMapSchema } from '../contracts/library.js'
 import { profileCardsSchema } from '../contracts/model/profileCards.js'
 import { SKILL_STATES } from './reduce.js'
 
@@ -108,6 +109,8 @@ export const brainResponseSchema = z.object({
   skills: z.array(brainSkillSchema),
   /** Newest first. */
   timeline: z.array(timelineEventSchema),
+  /** B17: how often a skill comes up in the loaded past papers, by tag; empty until papers are loaded. */
+  whatComesUp: whatComesUpMapSchema.default({}),
 })
 export type BrainResponse = z.infer<typeof brainResponseSchema>
 
@@ -172,6 +175,8 @@ export const todayResponseSchema = z.object({
     z.object({ kind: z.literal('none') }),
   ]),
   checkIns: z.array(checkInSchema),
+  /** B17: class practice the teacher set from the library, soonest due first. */
+  practice: z.array(learnerPracticeSchema).default([]),
   recent: z.array(recentInputSchema),
   guardianLinked: z.boolean(),
   hasCards: z.boolean(),

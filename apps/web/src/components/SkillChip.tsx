@@ -51,7 +51,8 @@ export function Mark({ label, mark }: { label: string; mark: SkillMark }) {
   )
 }
 
-export function SkillChip({ skill, selected, onSelect }: { skill: BrainSkill; selected: boolean; onSelect: () => void }) {
+/** `comesUp` (B17): how often the skill appears in the loaded past papers, in one line; absent until papers are loaded. */
+export function SkillChip({ skill, selected, onSelect, comesUp = null }: { skill: BrainSkill; selected: boolean; onSelect: () => void; comesUp?: string | null }) {
   return (
     <button
       type="button"
@@ -71,6 +72,12 @@ export function SkillChip({ skill, selected, onSelect }: { skill: BrainSkill; se
         <Mark label={MARK_LABELS.independent} mark={skill.independent} />
         <Mark label={MARK_LABELS.retained} mark={skill.retained} />
       </span>
+      {comesUp ? (
+        <span className="text-xs text-fg-muted" data-comes-up>
+          <span aria-hidden="true">◷ </span>
+          What comes up: {comesUp}
+        </span>
+      ) : null}
     </button>
   )
 }

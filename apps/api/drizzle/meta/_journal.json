@@ -50,6 +50,13 @@
       "when": 1793803166717,
       "tag": "0006_b15_guide",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793806488360,
+      "tag": "0007_b17b_library",
+      "breakpoints": true
     }
   ]
 }

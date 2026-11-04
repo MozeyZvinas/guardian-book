@@ -1,0 +1,22 @@
+{
+  "slug": "fx-nsc-maths-p1-2023-nov-q1-2",
+  "topic": "Algebra: quadratic equations",
+  "skill_tags": ["algebra.quadratic_formula"],
+  "prompt_md": "Solve for $x$, correct to TWO decimal places:\n\n$$2x^2 + 3x - 4 = 0$$",
+  "diagram_key": null,
+  "max_marks": 4,
+  "author": "Guardian Book test fixture (fictional question written for this build)",
+  "reviewer": "pending",
+  "reviewed_at": null,
+  "source": "dbe_nsc",
+  "source_ref": { "subject": "Mathematics", "grade": 12, "year": 2023, "session": "november", "paper": 1, "question": "1.2" },
+  "attribution": "NSC Mathematics P1, November 2023, Q1.2 · Department of Basic Education · fictional stand-in for tests, not a DBE question",
+  "held_out": false,
+  "provenance": "licensed_content",
+  "guideline_steps": [
+    { "step_no": 1, "step_type": "M", "criterion": "Substitutes into the quadratic formula with $a = 2$, $b = 3$ and $c = -4$.", "marks": 1, "skill_tag": "algebra.quadratic_formula", "notes": null },
+    { "step_no": 2, "step_type": "A", "criterion": "Correct discriminant: $9 + 32 = 41$.", "marks": 1, "skill_tag": "algebra.quadratic_formula", "notes": null },
+    { "step_no": 3, "step_type": "CA", "criterion": "First root: $x = 0.85$.", "marks": 1, "skill_tag": "algebra.quadratic_formula", "notes": null },
+    { "step_no": 4, "step_type": "CA", "criterion": "Second root: $x = -2.35$.", "marks": 1, "skill_tag": "algebra.quadratic_formula", "notes": null }
+  ]
+}

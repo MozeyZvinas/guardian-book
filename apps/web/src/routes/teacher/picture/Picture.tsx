@@ -49,6 +49,7 @@ function PictureScreen({ me }: { me: MeResponse }) {
               Notes home · {data.counts.draftNotes} {data.counts.draftNotes === 1 ? 'draft' : 'drafts'}
             </Link>
             <Link to={`/teacher/classes/${classId}/guidelines`}>Guidelines</Link>
+            <Link to={`/teacher/classes/${classId}/library`}>Past papers</Link>
             <Link to={`/teacher/classes/${classId}/notice`}>Upload a notice</Link>
             <Link to={`/teacher/classes/${classId}/script`}>Mark a script</Link>
           </nav>
@@ -140,6 +141,12 @@ function GapRow({ gap, picture, classId, onChanged }: { gap: GapView; picture: P
           </p>
           {gap.example ? <p className="m-0 font-serif text-sm text-fg-muted">{gap.example.criterion}</p> : null}
           <p className="m-0 text-sm text-fg-muted">{picture.members.filter((m) => gap.learnerIds.includes(m.id)).map((m) => m.nickname).join(', ')}</p>
+          {picture.whatComesUp[gap.skillTag] ? (
+            <p className="m-0 text-sm text-fg-muted" data-comes-up>
+              <span aria-hidden="true">◷ </span>
+              What comes up: {picture.whatComesUp[gap.skillTag]?.sentence}
+            </p>
+          ) : null}
         </div>
         <Button type="button" variant={open ? 'quiet' : 'primary'} onClick={() => setOpen((v) => !v)}>
           {open ? 'Cancel' : 'Assign'}

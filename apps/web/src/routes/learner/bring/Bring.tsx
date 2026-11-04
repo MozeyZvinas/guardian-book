@@ -8,6 +8,7 @@ import { Button, Card, FormError } from '../../../components/Form'
 import { KindChips } from '../../../components/KindChip'
 import { LearnerShell } from '../../../components/LearnerShell'
 import { MathText } from '../../../components/MathText'
+import { Attribution } from '../../library/LibraryFrame'
 import { createGuide } from '../guide/api'
 import { BringCapture, type BringCaptureResult, type BringChoice } from './BringCapture'
 
@@ -319,6 +320,7 @@ function BringScreen() {
                           {item.topic} · {item.maxMarks} marks
                           {unapproved ? ' · not approved for your class yet' : ''}
                         </span>
+                        {item.attribution ? <Attribution text={item.attribution} /> : null}
                       </span>
                     </label>
                   )

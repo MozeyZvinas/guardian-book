@@ -1,0 +1,21 @@
+{
+  "slug": "fx-nsc-maths-p1-2022-nov-q1-1",
+  "topic": "Algebra: quadratic equations",
+  "skill_tags": ["algebra.factorising", "algebra.zero_product"],
+  "prompt_md": "Solve for $x$:\n\n$$x^2 + 2x - 15 = 0$$",
+  "diagram_key": null,
+  "max_marks": 3,
+  "author": "Guardian Book test fixture (fictional question written for this build)",
+  "reviewer": "pending",
+  "reviewed_at": null,
+  "source": "dbe_nsc",
+  "source_ref": { "subject": "Mathematics", "grade": 12, "year": 2022, "session": "november", "paper": 1, "question": "1.1" },
+  "attribution": "NSC Mathematics P1, November 2022, Q1.1 · Department of Basic Education · fictional stand-in for tests, not a DBE question",
+  "held_out": false,
+  "provenance": "licensed_content",
+  "guideline_steps": [
+    { "step_no": 1, "step_type": "A", "criterion": "Correct factors: $(x + 5)(x - 3) = 0$.", "marks": 1, "skill_tag": "algebra.factorising", "notes": null },
+    { "step_no": 2, "step_type": "CA", "criterion": "Sets each factor equal to zero.", "marks": 1, "skill_tag": "algebra.zero_product", "notes": null },
+    { "step_no": 3, "step_type": "A", "criterion": "Both solutions stated: $x = -5$ or $x = 3$.", "marks": 1, "skill_tag": "algebra.zero_product", "notes": null }
+  ]
+}
