@@ -59,6 +59,7 @@ the same files.
 | B12 Parent's home language (af, zu, xh, tn, st) + Share to WhatsApp (D38, P1-e) | 4 Nov | P1 | B06, B07 | subscription | review (PR open 4 Nov; live check done, $0.05) |
 | B13 Ask about a step by voice or typing (Muse Voice Transcribe, P1-a) | 4 Nov | P1 | B04, B06 | subscription | PR #12 open (branch `b13-ask-by-voice`; CI green; live check run 4 Nov: transcription 4.2 s / $0.00005, hint accepted on the 2nd call 32.0 s / $0.0157, see the B13 note below) |
 | B14 Open-weight comparison row (Muse Spark Open, P1-d) | 4 Nov | P1 | B08; founder's partner-host key | subscription | todo |
+| B16 ∥ Make it clear: setup by taps, Today's one next action and plain statuses, Brain explainer and legend, pasted maths, the no-dates notice message (D39) | 4 Nov | D39 | B04, B05 | subscription | review (branch `b16-clarity`, PR open 4 Nov; questions below) |
 | V1 Record the demo + X cut | 4 Nov, morning | — | B10 | Founder + planning | todo |
 | B11 Freeze + submit by 20:00 SAST | 4 Nov | — | V1 | Founder | todo |
 
@@ -324,3 +325,48 @@ Add any question here, linked to a task ID.
   e2e server, so `loop.spec` (B06) read a mock-translated week; the spec now switches the
   parent back to English at its end (test only, no product change). Typecheck, lint, unit,
   integration (throwaway Postgres on 5438), build and all 9 e2e green after the merge.
+- **B16 · the "no dates" notice, found and fixed (§5).** A live probe of the notice prompt on
+  the fixture's dateless handwritten page (`muse-spark-1.3`, one call, 5.8 s, $0.004) came
+  back `{events: [], not_a_notice: true}`, accepted first time, so the model path already
+  said "not a notice". Three things could still show the wrong words: (1) an accepted read
+  with `events: []` and `not_a_notice: false` read as `extracted` ("Dates found") while
+  Today's row stayed "Reading"; now any accepted read with no dated events is
+  `not_a_notice` and the Calendar says *I couldn't find any dates on this. Is it a school
+  notice?* (the same words for both; no new `NoticeState`). (2) The Calendar's 2-second
+  poll turned any dropped request (a phone losing signal, a 5xx) into the failure message
+  and stopped; it now retries up to five polls before giving up. (3) The only server path
+  to `failed` is a gateway error, and the notice read had the tightest budget in the app
+  (4,000 output tokens, 45 s) for a page the model must read line by line; it now matches
+  the work check (6,000 tokens, 90 s per call, D37) inside the same 120 s whole-run
+  deadline. Every non-accepted run now logs `notice: not accepted` with its status, the
+  gateway error code and the failed verifier codes per call. **Founder:** the Railway log
+  line for the input you tried (`model call: timeout`, `truncated by max_tokens` or
+  `notice: not accepted`) would say which of the three it was; the fix covers all three.
+- **B16 · the grade has no card (§1).** `profile_cards` holds dream, subjects, hardest and
+  how-I-learn, and `profiles` has no grade column, so the grade the learner taps rides as
+  the first sentence of the "how I learn" answer (*I am in Grade 12.*), the one card a
+  parent never sees; the prompt (`profile-cards-v1`, immutable) and the contract are
+  untouched. B17 (past papers by grade) will want a real `grade` field: please rule where
+  it lives (a `profiles` column plus a field on `POST /api/me/profile` is the natural home).
+- **B16 · "One day I want to ___" (§1):** the gap follows *One day I want to…* rather than
+  *be a…* so the third example chip (*start a business*) reads correctly; the chips are
+  *be an engineer*, *be a nurse*, *start a business*. The composed answer is always
+  *One day I want to <gap>.* (a learner who types the whole sentence is not doubled).
+- **B16 · evidence in plain words (§3):** `timelineEventSchema` carries what happened and
+  when, not the mark per event or the step, so a chip's evidence reads *Tuesday: your work
+  was checked · Yesterday: fixed it yourself · Today: checked it alone, no hints*, not
+  *lost the mark at step 2*. Saying the step needs the event payload (or an `outcome`
+  field) on the wire, which is B05's brain route, not B16's folders. Rule if that is wanted.
+- **B16 · Today's "Reading" for a notice (§2):** `GET /api/me/today` marks a notice `read`
+  only when it produced calendar events, so a dateless notice stays "Being read…" until the
+  day-old rule hides it (`routes/me/today.ts`, not B16's). A `read` status from the model
+  run's state would fix it in that route; noted, not changed.
+- **B16 · outside the owned folders, both test-only:** `test/integration/practiceGateway.ts`
+  gained a `profile_cards` case (cards read off the four answer blocks) so the taps-only
+  Playwright walk reaches real cards instead of "We could not make cards from that"; the
+  notice tests live in a new `test/integration/notice-clarity.test.ts`. `MathTextKatex.tsx`
+  now imports its `Segment` type from the new pure module `MathText.logic.ts`.
+- **B16 · step 6 (maths keyboard on Fix and Item):** B15's `MathInput` was not on
+  `origin/main` at merge time, so the Fix and Item screens are untouched; wire it in when
+  B15 lands (two typed boxes).
+
