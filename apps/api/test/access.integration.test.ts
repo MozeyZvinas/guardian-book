@@ -116,6 +116,17 @@ const CASES: HarnessCase[] = [
   { name: 'teacher → a script for an unknown class', as: 'msDlamini', method: 'post', path: '/api/teacher/classes/019a0b02-0000-7000-8000-00000000c999/scripts', body: {}, expect: 404 },
   { name: 'teacher 12A → a script for 12A with no photo (past the object check)', as: 'msDlamini', method: 'post', path: `/api/teacher/classes/${C['12A'].id}/scripts`, body: {}, expect: 400 },
 
+  // ── B15: help me with a question (the learner's own; never a guardian or teacher) ──────
+  { name: 'anonymous → POST /api/guide', as: null, method: 'post', path: '/api/guide', body: { text: 'x', idempotencyKey: 'h' }, expect: 401 },
+  { name: 'anonymous → GET /api/guide/:id', as: null, method: 'get', path: '/api/guide/019a0b02-0000-7000-8000-00000000f999', expect: 401 },
+  { name: 'guardian → POST /api/guide', as: 'mmaLerato', method: 'post', path: '/api/guide', body: { text: 'x', idempotencyKey: 'h' }, expect: 403 },
+  { name: 'teacher → POST /api/guide', as: 'msDlamini', method: 'post', path: '/api/guide', body: { text: 'x', idempotencyKey: 'h' }, expect: 403 },
+  { name: 'guardian → GET /api/guide/:id', as: 'mmaLerato', method: 'get', path: '/api/guide/019a0b02-0000-7000-8000-00000000f999', expect: 403 },
+  { name: 'learner → an unknown guide', as: 'lerato', method: 'get', path: '/api/guide/019a0b02-0000-7000-8000-00000000f999', expect: 404 },
+  { name: 'learner → a guide with a non-UUID id', as: 'lerato', method: 'get', path: '/api/guide/not-a-uuid', expect: 404 },
+  { name: 'learner → edit an unknown guide', as: 'lerato', method: 'post', path: '/api/guide', body: { text: 'x', editOf: '019a0b02-0000-7000-8000-00000000f999', idempotencyKey: 'h-edit' }, expect: 404 },
+  { name: 'learner → a guide from another learner’s input', as: 'thabo', method: 'post', path: '/api/guide', body: { inputId: '019a0b02-0000-7000-8000-00000000f999', idempotencyKey: 'h-input' }, expect: 404 },
+
   // ── the happy rows the denials are measured against ──────────────────────────────────
   { name: 'teacher 12A reads class 12A', as: 'msDlamini', method: 'get', path: `/api/teacher/classes/${C['12A'].id}`, expect: 200 },
   { name: 'teacher 11B reads class 11B', as: 'mrNaidoo', method: 'get', path: `/api/teacher/classes/${C['11B'].id}`, expect: 200 },
