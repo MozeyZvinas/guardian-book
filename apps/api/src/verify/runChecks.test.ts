@@ -65,7 +65,8 @@ describe('runChecks', () => {
 
   it('every rule code in every set is a known code, and no set is empty', () => {
     for (const [purpose, rules] of Object.entries(RULE_SETS)) {
-      expect(rules.length, purpose).toBeGreaterThan(0)
+      // Speech to text (B13) proposes nothing: the words go back to the person who said them.
+      if (purpose !== 'transcribe') expect(rules.length, purpose).toBeGreaterThan(0)
       for (const rule of rules) expect(CHECK_CODES).toContain(rule.code)
     }
   })

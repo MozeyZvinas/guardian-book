@@ -65,6 +65,9 @@ export const modelRunPurposeEnum = pgEnum('model_run_purpose', [
   'notice',
   'plan',
   'note',
+  // B13 (migration 0004): voice transcription and ask-about-a-step hints.
+  'transcribe',
+  'step_hint',
 ])
 export const modelRunStatusEnum = pgEnum('model_run_status', ['accepted', 'retried', 'exhausted', 'failed'])
 export const calendarScopeEnum = pgEnum('calendar_scope', ['class', 'learner'])
