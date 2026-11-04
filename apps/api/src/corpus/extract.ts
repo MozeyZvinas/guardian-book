@@ -243,8 +243,13 @@ async function extractPaper(ctx: Ctx, bucket: NonNullable<ReturnType<typeof crea
       attempts.set(question.number, (attempts.get(question.number) ?? 1) + 1)
       const records: PageRecord[] = []
       for (const page of pages) {
-        const record = await readPage(ctx, local, document, page, { onlyNumbers: [question.number], failures: question.details, maxCalls: 1 })
+        // A re-read is one of the question's three reads whatever it returned: a re-run replays it, never repeats it.
         const file = path.join(ctx.dirs.extracted, local.id, 'rereads', `${document}-${question.number}-${round}-p${page}.json`)
+        if (existsSync(file)) {
+          records.push(JSON.parse(readFileSync(file, 'utf8')) as PageRecord)
+          continue
+        }
+        const record = await readPage(ctx, local, document, page, { onlyNumbers: [question.number], failures: question.details, maxCalls: 1 })
         mkdirSync(path.dirname(file), { recursive: true })
         writeFileSync(file, `${JSON.stringify(record, null, 2)}\n`)
         records.push(record)
