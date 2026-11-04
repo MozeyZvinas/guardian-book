@@ -8,11 +8,14 @@ import { CaptureSheet, type Capture } from '../../../components/CaptureSheet'
 import { Card, FormError } from '../../../components/Form'
 import { LearnerShell } from '../../../components/LearnerShell'
 import { MathText } from '../../../components/MathText'
+import { AskAboutStep } from '../fix/AskAboutStep'
 
 /**
  * L5 · Follow-up question (spec 05 §4.2, §9): the item rendered (KaTeX), "Why this",
  * Type or Snap, Check → L3 for the new attempt. In independent or retention mode the
- * *Independent* chip says so: no hints until you submit (the server withholds them).
+ * *Independent* chip says so: no hints until you submit (the server withholds them), and
+ * Ask about a step (B13) is paused; in assisted mode it asks about the step that slipped
+ * on the attempt this question follows from.
  */
 export function Item() {
   return <RequireRole roles={['learner']}>{() => <ItemScreen />}</RequireRole>
@@ -100,6 +103,7 @@ function ItemScreen() {
       )}
 
       {item ? <CaptureSheet onCapture={onCapture} disabled={busy} modes={['snap', 'type']} /> : null}
+      {item && from ? <AskAboutStep attemptId={from} locked={mode !== 'assisted'} /> : null}
       {busy ? (
         <p role="status" aria-live="polite" className="m-0 text-fg-muted">
           Starting the check…

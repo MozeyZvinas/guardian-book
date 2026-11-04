@@ -11,12 +11,14 @@ import { Button, Card, FormError } from '../../../components/Form'
 import { HintCard } from '../../../components/HintCard'
 import { LearnerShell } from '../../../components/LearnerShell'
 import { MathText } from '../../../components/MathText'
+import { AskAboutStep } from './AskAboutStep'
 
 /**
  * L4 · Fix it (spec 05 §4.2, §9): the broken step restated, Type or Snap, Check. A pass
  * shows ✓ "Fixed on your own" with the crest fanning, and the primary button becomes
  * **Check it alone** (a matched question, no hints until you submit). Not yet: the next
- * hint and Try again (counted as "fixed on your own" only on the first try).
+ * hint and Try again (counted as "fixed on your own" only on the first try). Ask about
+ * this step (B13): a question in the learner's words, typed or by voice, gets one hint.
  */
 export function Fix() {
   return <RequireRole roles={['learner']}>{() => <FixScreen />}</RequireRole>
@@ -140,6 +142,8 @@ function FixScreen() {
           {lostSteps.length > 1 ? <p className="m-0 text-sm text-fg-muted">And {lostSteps.length - 1} more step{lostSteps.length > 2 ? 's' : ''} to redo on this one.</p> : null}
         </Card>
       )}
+
+      {first && firstName && !fixed ? <AskAboutStep attemptId={id} stepNo={firstName.stepNo} /> : null}
 
       {retry && !fixed && !assessing && retryProposed ? (
         <Card>
