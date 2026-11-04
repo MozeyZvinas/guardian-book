@@ -20,8 +20,10 @@ import {
   EVENT_BASES,
   GUARDIAN_LANGUAGES,
   GUIDELINE_STEP_TYPES,
+  ITEM_SOURCES,
   ITEM_STATUSES,
   LEARNING_EVENT_KINDS,
+  PRACTICE_KINDS,
   PROVENANCES,
   ROLES,
   TRAINING_PERMISSIONS,
@@ -91,6 +93,8 @@ export const reviewFeedbackKindEnum = pgEnum('review_feedback_kind', ['agree', '
 /** B12: the parent's home language (brief B12; D38). */
 export const languageCodeEnum = pgEnum('language_code', GUARDIAN_LANGUAGES)
 export const translationStatusEnum = pgEnum('translation_status', ['ready', 'unavailable'])
+/** B17: class practice from the library is a whole paper or every question on a skill. */
+export const practiceKindEnum = pgEnum('practice_kind', PRACTICE_KINDS)
 
 /** The three provenance columns every artifact table carries (spec 03 §9.1). */
 const provenanceColumns = () => ({
@@ -270,11 +274,22 @@ export const items = pgTable(
     author: text('author').notNull(),
     reviewer: text('reviewer').notNull(),
     reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    /** `original`, or `dbe_nsc` (B17, D40): a real NSC question, which must carry its paper reference and attribution. */
     source: text('source').notNull().default('original'),
+    /** B17: `{subject, grade, year, session, paper, question}` for a `dbe_nsc` item (`sourceRefSchema`); null otherwise. */
+    sourceRef: jsonb('source_ref'),
+    /** B17 (D40): the attribution line, shown wherever the question is shown and never stripped. */
+    attribution: text('attribution'),
+    /** B17 (D31): the newest session is held out: never practice, never in the library; the evaluation reads it. */
+    heldOut: boolean('held_out').notNull().default(false),
     ...provenanceColumns(),
     createdAt: createdAt(),
   },
-  (t) => [check('items_source_original', sql`${t.source} = 'original'`), check('items_max_marks_pos', sql`${t.maxMarks} > 0`)],
+  (t) => [
+    check('items_source_known', sql`${t.source} in (${sql.raw(ITEM_SOURCES.map((source) => `'${source}'`).join(', '))})`),
+    check('items_dbe_nsc_ref', sql`${t.source} <> 'dbe_nsc' or (${t.sourceRef} is not null and ${t.attribution} is not null)`),
+    check('items_max_marks_pos', sql`${t.maxMarks} > 0`),
+  ],
 )
 
 export const guidelineSteps = pgTable(
@@ -705,6 +720,40 @@ export const translations = pgTable(
   ],
 )
 
+/**
+ * B17: class practice set by the teacher from the library (brief B17 phase B §2): a whole
+ * paper or every library question on one skill, by a date. `item_ids` is the set as it
+ * stood when assigned, so a later load never changes what a class was asked to do. It
+ * lands on learners' Today and parents' "What's coming".
+ */
+export const classPractice = pgTable(
+  'class_practice',
+  {
+    id: id(),
+    classId: uuid('class_id')
+      .notNull()
+      .references(() => classes.id),
+    kind: practiceKindEnum('kind').notNull(),
+    /** "NSC Mathematics P1, November 2023", or the skill in teacher words. */
+    title: text('title').notNull(),
+    skillTag: text('skill_tag'),
+    /** `paperRefSchema` for a paper set; null for a topic set. */
+    paperRef: jsonb('paper_ref'),
+    itemIds: uuid('item_ids').array().notNull().default(sql`'{}'::uuid[]`),
+    dueOn: date('due_on').notNull(),
+    assignedBy: uuid('assigned_by')
+      .notNull()
+      .references(() => user.id),
+    ...provenanceColumns(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('class_practice_class_due_idx').on(t.classId, t.dueOn),
+    check('class_practice_title_len', sql`char_length(${t.title}) between 1 and 160`),
+    check('class_practice_kind_ref', sql`(${t.kind} = 'paper' and ${t.paperRef} is not null) or (${t.kind} = 'topic' and ${t.skillTag} is not null)`),
+  ],
+)
+
 // ── audit and usage ───────────────────────────────────────────────────────────────────────
 
 export const auditEvents = pgTable(
@@ -748,6 +797,7 @@ export const PROVENANCE_TABLES = [
   'calendar_events',
   'resources',
   'translations',
+  'class_practice',
 ] as const
 
 /** Tables the database refuses to UPDATE or DELETE (migration 0002). */

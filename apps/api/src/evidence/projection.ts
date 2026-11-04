@@ -105,11 +105,12 @@ export function timelineView(projection: BrainProjection, audience: SkillAudienc
   }))
 }
 
-/** The Brain as one role reads it: chips with three marks and the growth timeline, newest first. */
+/** The Brain as one role reads it: chips with three marks and the growth timeline, newest first. The route adds "what comes up" (B17). */
 export function brainView(projection: BrainProjection, learner: { id: string; nickname: string }, audience: SkillAudience): BrainResponse {
   return {
     learner,
     skills: projection.skills.map((skill) => brainSkillView(skill, audience)),
     timeline: timelineView(projection, audience),
+    whatComesUp: {},
   }
 }

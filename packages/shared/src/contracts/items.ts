@@ -28,6 +28,48 @@ const slugSchema = z
 /** The reviewer value of an item nobody has reviewed yet. */
 export const PENDING_REVIEWER = 'pending'
 
+/**
+ * Where an item came from (B17; D40). `original`: written for this build. `dbe_nsc`: a real
+ * NSC question extracted from a DBE paper, which must carry its `source_ref` (paper and
+ * question number) and an `attribution` line that is shown wherever the question is shown
+ * and never stripped. Nothing else is allowed in.
+ */
+export const ITEM_SOURCES = ['original', 'dbe_nsc'] as const
+export const itemSourceSchema = z.enum(ITEM_SOURCES)
+export type ItemSource = z.infer<typeof itemSourceSchema>
+
+/** The three NSC sittings in a year, in calendar order. */
+export const PAPER_SESSIONS = ['feb_march', 'may_june', 'november'] as const
+export const paperSessionSchema = z.enum(PAPER_SESSIONS)
+export type PaperSession = z.infer<typeof paperSessionSchema>
+
+/** One paper: the library's Subject → Grade → Year → Session → Paper key. */
+export const paperRefSchema = z
+  .object({
+    subject: z.string().trim().min(1).max(60),
+    grade: z.number().int().min(10).max(12),
+    year: z.number().int().min(2008).max(2100),
+    session: paperSessionSchema,
+    paper: z.number().int().min(1).max(3),
+  })
+  .strict()
+export type PaperRef = z.infer<typeof paperRefSchema>
+
+/** A `dbe_nsc` item's place in its paper: the paper plus the question number ("3.2"). */
+export const sourceRefSchema = paperRefSchema
+  .extend({
+    question: z
+      .string()
+      .trim()
+      .min(1)
+      .max(20)
+      .regex(/^[0-9]+(?:\.[0-9]+)*$/, 'question numbers look like "3" or "3.2.1"'),
+  })
+  .strict()
+export type SourceRef = z.infer<typeof sourceRefSchema>
+
+export const MAX_ATTRIBUTION_CHARS = 300
+
 /** One guideline step as written in a content file. */
 export const guidelineStepFileSchema = z
   .object({
@@ -43,8 +85,11 @@ export type GuidelineStepFile = z.infer<typeof guidelineStepFileSchema>
 
 /**
  * A content file: one item with its guideline. Loaded by `pnpm content:load <dir>` from a
- * directory outside the repo; the two dev samples under `apps/api/seed/items/` use the
- * same shape. `source` is always `original` (D20: nothing from DBE papers enters).
+ * directory outside the repo; the dev samples under `apps/api/seed/items/` use the same
+ * shape. `source` is `original` (D20) or, since B17 (D40), `dbe_nsc`: a real NSC question
+ * with its memo, which must say which paper and question it is (`source_ref`), carry its
+ * attribution line, and be `licensed_content`. `held_out` marks the newest session (D31):
+ * loaded, but never offered as practice and never in the library; the evaluation reads it.
  */
 export const itemFileSchema = z
   .object({
@@ -58,12 +103,24 @@ export const itemFileSchema = z
     /** `pending` until a teacher has reviewed the guideline. */
     reviewer: z.string().trim().min(1).max(100),
     reviewed_at: z.string().datetime().nullable().default(null),
-    source: z.literal('original'),
+    source: itemSourceSchema.default('original'),
+    source_ref: sourceRefSchema.nullable().default(null),
+    attribution: z.string().trim().min(1).max(MAX_ATTRIBUTION_CHARS).nullable().default(null),
+    held_out: z.boolean().default(false),
     provenance: provenanceSchema,
     guideline_steps: z.array(guidelineStepFileSchema).min(1).max(50),
   })
   .strict()
   .superRefine((item, ctx) => {
+    if (item.source === 'dbe_nsc') {
+      if (!item.source_ref) ctx.addIssue({ code: 'custom', path: ['source_ref'], message: 'a dbe_nsc item must say which paper and question it is' })
+      if (!item.attribution) ctx.addIssue({ code: 'custom', path: ['attribution'], message: 'a dbe_nsc item must carry its attribution line (D40)' })
+      if (item.provenance !== 'licensed_content') {
+        ctx.addIssue({ code: 'custom', path: ['provenance'], message: 'a dbe_nsc item is licensed_content' })
+      }
+    } else if (item.source_ref) {
+      ctx.addIssue({ code: 'custom', path: ['source_ref'], message: 'only a dbe_nsc item has a source_ref' })
+    }
     const sum = item.guideline_steps.reduce((total, step) => total + step.marks, 0)
     if (sum !== item.max_marks) {
       ctx.addIssue({
@@ -118,6 +175,10 @@ export const itemSummarySchema = z.object({
   promptMd: z.string(),
   /** B09, learners only: true when a class the learner is in has this revision's guideline approved. */
   approvedForYou: z.boolean().optional(),
+  /** B17 (D40): where the question came from; the attribution line is shown wherever the question is. */
+  source: itemSourceSchema.default('original'),
+  attribution: z.string().nullable().default(null),
+  sourceRef: sourceRefSchema.nullable().default(null),
 })
 export type ItemSummary = z.infer<typeof itemSummarySchema>
 

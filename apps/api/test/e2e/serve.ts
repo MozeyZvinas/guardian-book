@@ -1,8 +1,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import express from 'express'
+import sharp from 'sharp'
 import { createApp } from '../../src/app.js'
 import { loadConfig } from '../../src/config.js'
+import { loadContent } from '../../src/content/loader.js'
 import { createDb } from '../../src/db/client.js'
 import { runMigrations } from '../../src/db/migrate.js'
 import { seed } from '../../src/db/seed.js'
@@ -43,6 +45,10 @@ const handle = createDb(databaseUrl, 4)
 await runMigrations(databaseUrl)
 const seeded = await seed(handle.db, { password: TEST_PASSWORD })
 logger.info('e2e: seeded', { items: seeded.items })
+// B17: the five fictional library questions (never DBE text), approved for no class yet:
+// the teacher approves the paper in the e2e flow, as in production.
+const library = await loadContent(handle.db, path.resolve(here, '../fixtures/library'))
+logger.info('e2e: library fixture loaded', { inserted: library.inserted.length })
 
 const config = loadConfig({
   ...(live ? process.env : {}),
@@ -56,6 +62,14 @@ const gateway = live ? createGateway({ config: config.meta, logger }) : scripted
 // B13: voice. Live swaps in Muse Voice Transcribe from `.env`; otherwise every clip says the same thing.
 const transcriber = live ? createTranscriber({ config: config.meta, logger }) : scriptedTranscriber().transcriber
 const storage = memoryStorage(`http://127.0.0.1:${port}/e2e-bucket`)
+// The fixture's one diagram: a plain synthetic PNG under the item's diagram key, served only through the API proxy.
+await storage.putObject(
+  'library-fixture/p1-2023-nov-q2-1.png',
+  await sharp({ create: { width: 360, height: 120, channels: 3, background: { r: 246, g: 247, b: 247 } } })
+    .png()
+    .toBuffer(),
+  'image/png',
+)
 const jobs = new JobRegistry(logger)
 
 const app = createApp({

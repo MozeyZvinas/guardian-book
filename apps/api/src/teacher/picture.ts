@@ -5,6 +5,7 @@ import type { Actor } from '../auth/session.js'
 import type { Db } from '../db/client.js'
 import { assessments, attempts, classMembers, classes, interventions, notes, profiles, reviews } from '../db/schema.js'
 import { notFound } from '../lib/http.js'
+import { whatComesUpMap } from '../library/service.js'
 import { repeatedSkills, sharedGaps, trustedOutcomes } from './outcomes.js'
 
 /**
@@ -24,7 +25,8 @@ export async function classPicture(db: Db, actor: Actor, classId: string): Promi
     .where(eq(classMembers.classId, classId))
     .orderBy(profiles.nickname)
   const memberIds = members.map((m) => m.id)
-  const base = { class: { ...cls, learnerCount: members.length }, members }
+  // B17: the past-paper weight of each skill, so a shared gap says what it is worth in the exam.
+  const base = { class: { ...cls, learnerCount: members.length }, members, whatComesUp: await whatComesUpMap(db) }
   if (memberIds.length === 0) return { ...base, gaps: [], needsYou: [], counts: { queue: 0, draftNotes: 0, openInterventions: 0 } }
 
   const outcomes = await trustedOutcomes(db, memberIds)

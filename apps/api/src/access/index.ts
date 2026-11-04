@@ -52,6 +52,12 @@ export type Action =
   | 'note.update'
   // B11: a teacher uploads one learner's script for marking (P1-g)
   | 'script.upload'
+  // B17 (D40): the past-paper library (learners and teachers, behind sign-in; guardians never),
+  // a teacher approves a whole paper for a class, and sets or reads class practice.
+  | 'library.read'
+  | 'paper.approve'
+  | 'practice.assign'
+  | 'practice.read'
 
 export type Resource =
   | { type: 'class'; id: string }
@@ -64,6 +70,8 @@ export type Resource =
   | { type: 'calendar_event'; id: string }
   | { type: 'intervention'; id: string }
   | { type: 'note'; id: string }
+  /** B17: the past-paper library as a whole (not school-scoped). */
+  | { type: 'library' }
 
 export interface Subject {
   userId: string
@@ -179,6 +187,7 @@ export async function sameSchool(db: DbOrTx, subject: Subject, resource: Resourc
     }
     case 'guardian_link':
     case 'item':
+    case 'library':
       return true // not school-scoped
     default:
       return false
@@ -489,6 +498,21 @@ export async function can(db: DbOrTx, subject: Subject, action: Action, resource
 
     case 'script.upload':
       // The class teacher, in her school; the learner's membership is checked by the service.
+      return resource.type === 'class' && teacherOwnsClass(db, subject, resource.id)
+
+    // ── B17: the library and class practice ─────────────────────────────────────────────────
+
+    case 'library.read':
+      // Questions are not school-scoped; a guardian's space has no library (spec 03 §8.2 keeps
+      // guardians to the plan, notes and dates). The route never serves a PDF or a bucket URL.
+      return resource.type === 'library' && (subject.role === 'learner' || subject.role === 'teacher')
+
+    case 'paper.approve':
+    case 'practice.assign':
+      return resource.type === 'class' && teacherOwnsClass(db, subject, resource.id)
+
+    case 'practice.read':
+      // The class teacher; a learner reads their own sets through Today, never by class ID.
       return resource.type === 'class' && teacherOwnsClass(db, subject, resource.id)
 
     default:

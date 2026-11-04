@@ -7,6 +7,7 @@ import type { Db } from '../db/client.js'
 import { classes, guidelineApprovals, guidelineSteps, items, profiles } from '../db/schema.js'
 import { appendEvent } from '../evidence/append.js'
 import { HttpError, notFound } from '../lib/http.js'
+import { sourceFields } from '../routes/items.js'
 
 /**
  * T7 · Guidelines (spec 03 §9.1 `guideline_approvals`, §9.3; spec 05 §9 T7; brief B07 §1).
@@ -27,7 +28,8 @@ async function classRef(db: Db, classId: string): Promise<{ id: string; name: st
 export async function listGuidelines(db: Db, actor: Actor, classId: string): Promise<GuidelinesResponse> {
   if (!(await can(db, actor, 'guideline.read', { type: 'class', id: classId }))) throw notFound()
   const cls = await classRef(db, classId)
-  const rows = await db.select().from(items).where(eq(items.status, 'approved')).orderBy(asc(items.slug))
+  // B17 (D31): a held-out question is never approved for a class, so it is never practice.
+  const rows = await db.select().from(items).where(and(eq(items.status, 'approved'), eq(items.heldOut, false))).orderBy(asc(items.slug))
   if (rows.length === 0) return { class: cls, items: [] }
   const itemIds = rows.map((row) => row.id)
   const steps = await db
@@ -69,6 +71,7 @@ export async function listGuidelines(db: Db, actor: Actor, classId: string): Pro
       provenance: row.provenance,
       reviewer: row.reviewer,
       aiDrafted: row.provenance === 'model_generated',
+      ...sourceFields(row),
       steps: steps.filter((step) => step.itemId === row.id).map(({ itemId: _itemId, ...step }) => step),
       approval: approval
         ? { itemRevision: approval.itemRevision, approvedAt: approval.approvedAt.toISOString(), approvedBy: { id: approval.approvedById, nickname: approval.approvedByNickname } }
@@ -83,7 +86,7 @@ export async function approveGuideline(db: Db, actor: Actor, classId: string, it
   const [item] = await db
     .select({ id: items.id, revision: items.revision })
     .from(items)
-    .where(and(eq(items.id, itemId), eq(items.status, 'approved')))
+    .where(and(eq(items.id, itemId), eq(items.status, 'approved'), eq(items.heldOut, false)))
     .limit(1)
   if (!item) throw notFound()
   if (item.revision !== body.itemRevision) throw revisionMismatch()

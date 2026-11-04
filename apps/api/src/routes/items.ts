@@ -1,6 +1,6 @@
 import { and, asc, eq } from 'drizzle-orm'
 import { Router } from 'express'
-import type { GuidelineStep, ItemDetail, ItemSummary } from '@guardian-book/shared'
+import { sourceRefSchema, type GuidelineStep, type ItemDetail, type ItemSource, type ItemSummary } from '@guardian-book/shared'
 import { can } from '../access/index.js'
 import { recordAudit } from '../audit/record.js'
 import { requireActor } from '../auth/session.js'
@@ -30,18 +30,22 @@ export function itemsRouter(db: Db): Router {
           maxMarks: items.maxMarks,
           revision: items.revision,
           promptMd: items.promptMd,
+          source: items.source,
+          attribution: items.attribution,
+          sourceRef: items.sourceRef,
         })
         .from(items)
-        .where(eq(items.status, 'approved'))
+        // B17 (D31): a held-out question is never offered.
+        .where(and(eq(items.status, 'approved'), eq(items.heldOut, false)))
         .orderBy(asc(items.slug))
-      let list: ItemSummary[] = rows
+      let list: ItemSummary[] = rows.map((row) => ({ ...row, ...sourceFields(row) }))
       if (actor.role === 'learner') {
         const approvals = await db
           .select({ itemId: guidelineApprovals.itemId, itemRevision: guidelineApprovals.itemRevision })
           .from(guidelineApprovals)
           .innerJoin(classMembers, and(eq(classMembers.classId, guidelineApprovals.classId), eq(classMembers.learnerId, actor.userId)))
         const approved = new Set(approvals.map((a) => `${a.itemId}@${a.itemRevision}`))
-        list = rows
+        list = list
           .map((row) => ({ ...row, approvedForYou: approved.has(`${row.id}@${row.revision}`) }))
           .sort((a, b) => Number(b.approvedForYou) - Number(a.approvedForYou) || a.slug.localeCompare(b.slug))
       }
@@ -59,7 +63,7 @@ export function itemsRouter(db: Db): Router {
       const [row] = await db
         .select()
         .from(items)
-        .where(and(eq(items.id, itemId), eq(items.status, 'approved')))
+        .where(and(eq(items.id, itemId), eq(items.status, 'approved'), eq(items.heldOut, false)))
         .limit(1)
       if (!row || !(await can(db, actor, 'item.read', { type: 'item', id: itemId }))) throw notFound()
 
@@ -72,6 +76,7 @@ export function itemsRouter(db: Db): Router {
         revision: row.revision,
         promptMd: row.promptMd,
         diagramKey: row.diagramKey,
+        ...sourceFields(row),
       }
       // Teachers see where an item came from, so an AI-drafted guideline is labelled
       // "check before approving" (B07) and never mistaken for a reviewed one.
@@ -116,4 +121,10 @@ export function itemsRouter(db: Db): Router {
   })
 
   return router
+}
+
+/** B17 (D40): where an item came from and its attribution line, as every item response carries them. */
+export function sourceFields(row: { source: string; attribution: string | null; sourceRef: unknown }): Pick<ItemSummary, 'source' | 'attribution' | 'sourceRef'> {
+  const ref = sourceRefSchema.safeParse(row.sourceRef)
+  return { source: row.source as ItemSource, attribution: row.attribution, sourceRef: ref.success ? ref.data : null }
 }

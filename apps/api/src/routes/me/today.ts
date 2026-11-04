@@ -6,6 +6,7 @@ import type { Db } from '../../db/client.js'
 import { assessments, attempts, calendarEvents, classMembers, guardianLinks, helpPlans, inputs, learningEvents, profiles } from '../../db/schema.js'
 import { loadBrainEvents } from '../../evidence/projection.js'
 import { notFound } from '../../lib/http.js'
+import { learnerPractice } from '../../library/service.js'
 import { latestGapEvent } from '../../plans/service.js'
 import { dueChecksFor, type ChecksClock } from './checks.js'
 
@@ -69,6 +70,8 @@ export function todayRouter(db: Db, clock: ChecksClock = { now: () => new Date()
         exam: nextEvent ? { ...nextEvent, daysAway: daysBetween(today, nextEvent.onDate) } : null,
         tonight,
         checkIns,
+        // B17: class practice from the library, soonest due first.
+        practice: await learnerPractice(db, actor.userId, now),
         recent: await recentInputs(db, actor.userId),
         guardianLinked: Boolean(link),
         hasCards: profile.cards !== null,

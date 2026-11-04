@@ -24,6 +24,9 @@ export type AuditAction =
   | 'attempt.assessed'
   | 'attempt.assess_refused'
   | 'calendar.decided'
+  // B17
+  | 'library.set_approved'
+  | 'practice.assigned'
   // B06
   | 'attempt.fix_created'
   | 'plan.issued'

@@ -5,6 +5,7 @@ Allow: /
 Allow: /try
 Allow: /evidence
 Disallow: /api/
+Disallow: /library
 Disallow: /today
 Disallow: /brain
 Disallow: /me

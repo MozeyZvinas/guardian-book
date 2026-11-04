@@ -8,6 +8,7 @@ import type { Db } from '../../db/client.js'
 import { profiles } from '../../db/schema.js'
 import { brainView, projectBrain } from '../../evidence/projection.js'
 import { notFound, requestIdOf, uuidParam } from '../../lib/http.js'
+import { whatComesUpMap } from '../../library/service.js'
 
 /**
  * The Brain (P0-07; spec 05 §4.2 L6, §9): what Guardian Book believes about a learner and
@@ -55,5 +56,6 @@ async function brainFor(db: Db, _actor: Actor, learnerId: string, audience: Skil
   const [learner] = await db.select({ id: profiles.userId, nickname: profiles.nickname, role: profiles.role }).from(profiles).where(eq(profiles.userId, learnerId)).limit(1)
   if (!learner || learner.role !== 'learner') throw notFound()
   const projection = await projectBrain(db, learnerId)
-  return brainView(projection, { id: learner.id, nickname: learner.nickname }, audience)
+  // B17: how often each skill comes up in the loaded past papers (aggregate structure only).
+  return { ...brainView(projection, { id: learner.id, nickname: learner.nickname }, audience), whatComesUp: await whatComesUpMap(db) }
 }
