@@ -40,8 +40,9 @@ test('a learner’s photo gets red ink; after the teacher corrects and releases 
   await page.goto('/bring')
   await expect(page.getByRole('heading', { name: 'Bring anything' })).toBeVisible()
   await page.locator('input[type="file"]').setInputFiles(FIXTURE)
-  await expect(page.getByLabel('Which question is this?')).toBeVisible({ timeout: 20_000 })
-  await page.getByLabel('Which question is this?').selectOption({ index: 1 })
+  const picker = page.getByRole('group', { name: 'Which question is this?' })
+  await expect(picker).toBeVisible({ timeout: 20_000 })
+  await picker.getByRole('radio').first().check()
   await page.getByRole('button', { name: 'Check my work' }).click()
   await expect(page).toHaveURL(/\/attempts\/[0-9a-f-]{36}$/)
   const attemptId = /\/attempts\/([0-9a-f-]{36})$/.exec(page.url())?.[1] ?? ''

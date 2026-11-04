@@ -36,7 +36,7 @@ test('Lerato asks about the step that slipped: by voice, then by typing; the hin
   await page.getByRole('button', { name: /Type/ }).click()
   await page.getByLabel('Your working, line by line').fill('x² − 5x + 6 = 0\n(x − 2)(x − 3) = 0')
   await page.getByRole('button', { name: 'Use this' }).click()
-  await page.getByLabel('Which question is this?').selectOption({ index: 1 })
+  await page.getByRole('group', { name: 'Which question is this?' }).getByRole('radio').first().check()
   await page.getByRole('button', { name: 'Check my work' }).click()
   await expect(page.getByRole('heading', { name: /Where it slipped: step 4/ })).toBeVisible({ timeout: 20_000 })
 
@@ -84,7 +84,7 @@ test('check it alone: asking is paused until the learner submits', async ({ page
   await page.getByRole('button', { name: /Type/ }).click()
   await page.getByLabel('Your working, line by line').fill('x² − 5x + 6 = 0\n(x − 2)(x − 3) = 0')
   await page.getByRole('button', { name: 'Use this' }).click()
-  await page.getByLabel('Which question is this?').selectOption({ index: 1 })
+  await page.getByRole('group', { name: 'Which question is this?' }).getByRole('radio').first().check()
   await page.getByRole('button', { name: 'Check my work' }).click()
   await expect(page.getByRole('heading', { name: /Where it slipped: step 4/ })).toBeVisible({ timeout: 20_000 })
   await page.getByRole('link', { name: 'Fix it' }).click()
