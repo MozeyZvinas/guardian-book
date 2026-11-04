@@ -16,9 +16,13 @@ import type { ExtractContext } from '../verify/types.js'
  */
 
 export const EXTRACT_PROMPT_VERSION = 'extract-v2' as const
-/** A dense memo page is thirty steps of working after the model's own reasoning. */
-export const EXTRACT_MAX_TOKENS = 10_000
-export const EXTRACT_TIMEOUT_MS = 150_000
+/**
+ * A dense memo page is thirty steps of working after the model's own reasoning; 10,000
+ * tokens cut off the densest memo pages (4 Nov run), so the budget is 16,000. The budget
+ * and the timeout are not part of the prompt's wording, so they never change its version.
+ */
+export const EXTRACT_MAX_TOKENS = 16_000
+export const EXTRACT_TIMEOUT_MS = 240_000
 
 const TAG_LINES = KNOWN_SKILL_TAGS.map((tag) => `${tag} (${skillLabel(tag, 'teacher')})`).join('\n')
 
