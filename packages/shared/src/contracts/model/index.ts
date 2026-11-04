@@ -1,5 +1,6 @@
 import type { z } from 'zod'
 import { guideOutputSchema } from './guide.js'
+import { extractOutputSchema } from './extract.js'
 import { stepHintSchema } from './hint.js'
 import { inputClassSchema } from './inputClass.js'
 import { toStrictJsonSchema, type StrictJsonSchema } from './jsonSchema.js'
@@ -14,6 +15,7 @@ import { workCheckOutputSchema } from './workCheck.js'
 
 export * from './common.js'
 export * from './guide.js'
+export * from './extract.js'
 export * from './hint.js'
 export * from './inputClass.js'
 export * from './jsonSchema.js'
@@ -43,6 +45,8 @@ export const MODEL_OUTPUT_SCHEMAS = {
   step_hint: stepHintSchema,
   // B15: any question read back and taken step by step; two reads must agree before a worked step is shown.
   guide: guideOutputSchema,
+  // B17: one page of an NSC paper or memo, read into numbered entries with marks and steps.
+  extract: extractOutputSchema,
 } as const satisfies Record<ModelPurpose, z.ZodType>
 
 export type ModelOutputSchemas = typeof MODEL_OUTPUT_SCHEMAS

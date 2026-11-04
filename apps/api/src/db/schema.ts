@@ -75,6 +75,8 @@ export const modelRunPurposeEnum = pgEnum('model_run_purpose', [
   'step_hint',
   // B15 (migration 0006): help me with a question, read twice and compared.
   'guide',
+  // B17 (migration 0008): one page of an NSC paper or memo read into questions and steps.
+  'extract',
 ])
 export const modelRunStatusEnum = pgEnum('model_run_status', ['accepted', 'retried', 'exhausted', 'failed'])
 export const calendarScopeEnum = pgEnum('calendar_scope', ['class', 'learner'])
