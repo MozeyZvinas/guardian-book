@@ -42,6 +42,14 @@ describe('loadConfig', () => {
     expect(config.notes).toEqual([])
   })
 
+  it('reads the try-it group (B09) and defaults the cap to 6', () => {
+    expect(loadConfig({}).tryIt).toEqual({ configured: false, classCode: null, userDailyCalls: 6 })
+    const config = loadConfig({ PUBLIC_TRY_CLASS_CODE: 'ABCDEFGH', TRY_USER_DAILY_CALLS: '3' })
+    expect(config.tryIt).toEqual({ configured: true, classCode: 'ABCDEFGH', userDailyCalls: 3 })
+    expect(loadConfig({ TRY_USER_DAILY_CALLS: '0' }).tryIt.userDailyCalls).toBe(6)
+    expect(loadConfig({ TRY_USER_DAILY_CALLS: '0' }).notes).toEqual(['TRY_USER_DAILY_CALLS: invalid value ignored'])
+  })
+
   it('treats blank strings as unset', () => {
     const config = loadConfig({ DATABASE_URL: '   ', META_API_KEY: '', SENTRY_DSN: '' })
     expect(configuredFlags(config)).toEqual({

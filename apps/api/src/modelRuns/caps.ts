@@ -1,6 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm'
 import type { DbOrTx } from '../db/client.js'
-import { modelUsageDaily } from '../db/schema.js'
+import { classMembers, classes, modelUsageDaily } from '../db/schema.js'
+import { hashCode } from '../lib/codes.js'
 import { HttpError } from '../lib/http.js'
 
 /**
@@ -17,13 +18,40 @@ const SAST_OFFSET_MS = 2 * 60 * 60 * 1000
 export interface CapLimits {
   userDailyCalls: number
   dailyBudgetUsd: number
+  /**
+   * B09: a learner in the public "Try it" class (matched by the class code's hash) gets
+   * this tighter daily call cap (`TRY_USER_DAILY_CALLS`, default 6) instead of the user cap.
+   */
+  tryIt?: { classCodeHash: string; userDailyCalls: number }
 }
 
-export function capLimits(config: { userDailyCalls: number | null; dailyBudgetUsd: number | null }): CapLimits {
-  return {
+export function capLimits(
+  config: { userDailyCalls: number | null; dailyBudgetUsd: number | null },
+  tryIt?: { classCode: string | null; userDailyCalls: number },
+): CapLimits {
+  const limits: CapLimits = {
     userDailyCalls: config.userDailyCalls ?? DEFAULT_USER_DAILY_CALLS,
     dailyBudgetUsd: config.dailyBudgetUsd ?? DEFAULT_DAILY_BUDGET_USD,
   }
+  if (tryIt?.classCode) limits.tryIt = { classCodeHash: hashCode(tryIt.classCode), userDailyCalls: tryIt.userDailyCalls }
+  return limits
+}
+
+/** Pure: the limits that apply to one user, given whether they are in the try-it class. */
+export function effectiveLimits(limits: CapLimits, inTryClass: boolean): CapLimits {
+  if (!limits.tryIt || !inTryClass) return limits
+  return { ...limits, userDailyCalls: Math.min(limits.userDailyCalls, limits.tryIt.userDailyCalls) }
+}
+
+/** True when the user is a member of the class whose code hashes to `classCodeHash`. */
+export async function isInClassByCodeHash(db: DbOrTx, userId: string, classCodeHash: string): Promise<boolean> {
+  const [row] = await db
+    .select({ classId: classMembers.classId })
+    .from(classMembers)
+    .innerJoin(classes, eq(classes.id, classMembers.classId))
+    .where(and(eq(classMembers.learnerId, userId), eq(classes.codeHash, classCodeHash)))
+    .limit(1)
+  return Boolean(row)
 }
 
 /** YYYY-MM-DD in Africa/Johannesburg. */
@@ -65,7 +93,8 @@ export function decideCaps(usage: { userCalls: number; globalCostUsd: number }, 
 }
 
 export async function checkCaps(db: DbOrTx, userId: string, limits: CapLimits, now: Date): Promise<CapCheck> {
-  return decideCaps(await usageToday(db, userId, now), limits)
+  const inTryClass = limits.tryIt ? await isInClassByCodeHash(db, userId, limits.tryIt.classCodeHash) : false
+  return decideCaps(await usageToday(db, userId, now), effectiveLimits(limits, inTryClass))
 }
 
 /** Adds the calls and cost of a finished verified call to today's row (upsert). */

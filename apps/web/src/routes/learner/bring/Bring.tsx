@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import type { InputKind, InputView, ItemSummary } from '@guardian-book/shared'
 import { ApiRequestError } from '../../../api/client'
 import { assess, createInput, items as fetchItems, setInputKind } from '../../../api/practice'
@@ -8,6 +8,7 @@ import { CaptureSheet, type Capture } from '../../../components/CaptureSheet'
 import { Button, Card, FormError } from '../../../components/Form'
 import { KindChips } from '../../../components/KindChip'
 import { LearnerShell } from '../../../components/LearnerShell'
+import { MathText } from '../../../components/MathText'
 import { StatusChip } from '../../../components/StatusChip'
 
 /**
@@ -25,8 +26,21 @@ type Stage =
   | { step: 'routing'; input: InputView; kind: InputKind | null; pickItem: boolean }
   | { step: 'saved'; input: InputView }
 
+/**
+ * B09: a judge who arrived through /try gets one approved question suggested, with
+ * working they can type that stops one step short, so the first check shows the loop.
+ * Keyed by slug; an item without a line here is suggested without working.
+ */
+const SUGGESTED_WORKING: Record<string, string> = {
+  'alg-12-factorise-trinomial': 'x² − 5x + 6 = 0\n(x − 2)(x − 3) = 0',
+  'alg-12-factorise-trinomial-2': 'x² + x − 12 = 0\n(x + 4)(x − 3) = 0',
+  'alg-12-nature-of-roots': 'Equal roots when Δ = b² − 4ac = 0\n36 − 4k = 0',
+}
+
 function BringScreen() {
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const tryIt = params.get('try') === '1'
   const [stage, setStage] = useState<Stage>({ step: 'capture' })
   const [capture, setCapture] = useState<Capture | null>(null)
   const [itemList, setItemList] = useState<ItemSummary[] | null>(null)
@@ -38,9 +52,16 @@ function BringScreen() {
 
   useEffect(() => {
     fetchItems()
-      .then((result) => setItemList(result.items))
+      .then((result) => {
+        setItemList(result.items)
+        // The suggested question is preselected in the picker for a try-it visitor.
+        const first = result.items.find((item) => item.approvedForYou !== false)
+        if (tryIt && first) setItemId(first.id)
+      })
       .catch((err: unknown) => setError(err))
-  }, [])
+  }, [tryIt])
+
+  const suggested = tryIt ? (itemList?.find((item) => item.approvedForYou !== false) ?? null) : null
 
   async function startCheck(attemptId: string) {
     try {
@@ -126,6 +147,24 @@ function BringScreen() {
       <h1 className="text-display font-semibold text-balance">Bring anything</h1>
       <p className="text-fg-muted">Homework, a school notice, or a question about a step. One photo, or type it.</p>
 
+      {suggested && stage.step === 'capture' ? (
+        <Card title="Try this question">
+          <MathText as="p" text={suggested.promptMd} className="m-0 font-serif whitespace-pre-wrap" />
+          <p className="m-0 text-sm text-fg-muted tnum">
+            {suggested.topic} · {suggested.maxMarks} marks · approved for your class
+          </p>
+          {SUGGESTED_WORKING[suggested.slug] ? (
+            <>
+              <p className="m-0 text-sm">
+                Tap <strong>Type</strong>, enter this working and stop one step short, to see where it slipped and the hint:
+              </p>
+              <pre className="m-0 rounded-card bg-ground p-3 font-sans text-base whitespace-pre-wrap">{SUGGESTED_WORKING[suggested.slug]}</pre>
+            </>
+          ) : null}
+          <p className="m-0 text-sm text-fg-muted">Or snap a photo of your own working on this question. The check reads it against the teacher’s marking guideline.</p>
+        </Card>
+      ) : null}
+
       {stage.step === 'capture' ? <CaptureSheet onCapture={onCapture} disabled={busy} /> : null}
 
       {stage.step === 'uploading' ? (
@@ -153,25 +192,44 @@ function BringScreen() {
                 if (itemId) void route('work', itemId)
               }}
             >
-              <label htmlFor="item" className="text-sm font-medium">
-                Which question is this?
-              </label>
-              <select
-                id="item"
-                value={itemId}
-                onChange={(event) => setItemId(event.target.value)}
-                required
-                className="min-h-11 w-full rounded-card border border-fg-muted/50 bg-ground px-3 text-base text-fg"
-              >
-                <option value="" disabled>
-                  {itemList ? 'Choose a question' : 'Loading questions…'}
-                </option>
-                {(itemList ?? []).map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.topic} · {item.slug} · {item.maxMarks} marks
-                  </option>
-                ))}
-              </select>
+              {/* B09: the picker shows the question itself (MathText) and the marks, never the slug;
+                  the learner's approved questions come first (the server orders them). */}
+              <fieldset className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
+                <legend className="mb-1 text-sm font-medium">Which question is this?</legend>
+                {!itemList ? <p className="m-0 text-sm text-fg-muted">Loading questions…</p> : null}
+                {itemList?.length === 0 ? <p className="m-0 text-sm text-fg-muted">No approved questions yet. Ask your teacher.</p> : null}
+                {(itemList ?? []).map((item) => {
+                  const selected = item.id === itemId
+                  const unapproved = item.approvedForYou === false
+                  return (
+                    <label
+                      key={item.id}
+                      className={[
+                        'flex min-h-11 min-w-0 items-start gap-3 rounded-card border px-3 py-2',
+                        unapproved ? 'cursor-not-allowed border-fg-muted/30 text-fg-muted' : 'cursor-pointer',
+                        selected ? 'border-fg bg-ground' : unapproved ? '' : 'border-fg-muted/50',
+                      ].join(' ')}
+                    >
+                      <input
+                        type="radio"
+                        name="item"
+                        value={item.id}
+                        checked={selected}
+                        disabled={unapproved || busy}
+                        onChange={() => setItemId(item.id)}
+                        className="mt-1.5 size-5 shrink-0 accent-[var(--gb-action)]"
+                      />
+                      <span className="flex min-w-0 flex-col gap-0.5">
+                        <MathText as="span" text={item.promptMd} className="font-serif whitespace-pre-wrap" />
+                        <span className="text-sm tnum">
+                          {item.topic} · {item.maxMarks} marks
+                          {unapproved ? ' · not approved for your class yet' : ''}
+                        </span>
+                      </span>
+                    </label>
+                  )
+                })}
+              </fieldset>
               <div className="flex flex-wrap gap-2">
                 <Button type="submit" disabled={busy || !itemId}>
                   {busy ? 'Starting the check…' : 'Check my work'}

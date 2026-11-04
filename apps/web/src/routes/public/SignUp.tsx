@@ -17,12 +17,17 @@ function roleFromQuery(value: string | null): SignUpRole {
   return (SIGN_UP_ROLES as readonly string[]).includes(value ?? '') ? (value as SignUpRole) : 'learner'
 }
 
-/** P2 · Sign up (spec 05 §4.1): role chooser, nickname, email, password, the 18+ box. */
+/**
+ * P2 · Sign up (spec 05 §4.1): role chooser, nickname, email, password, the 18+ box.
+ * With `?try=1` (B09, from /try) the role is learner, the server joins the public try-it
+ * class, and the learner lands on Bring with a suggested question. The 18+ box stays.
+ */
 export function SignUp() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const { refresh } = useMe()
-  const [role, setRole] = useState<SignUpRole>(roleFromQuery(params.get('role')))
+  const tryIt = params.get('try') === '1'
+  const [role, setRole] = useState<SignUpRole>(tryIt ? 'learner' : roleFromQuery(params.get('role')))
   const [error, setError] = useState<unknown>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
@@ -37,6 +42,7 @@ export function SignUp() {
       password: String(form.get('password') ?? ''),
       role,
       ageAttested: form.get('ageAttested') === 'on' ? true : false,
+      ...(tryIt ? { tryClass: true as const } : {}),
     }
     const parsed = signUpBodySchema.safeParse(candidate)
     if (!parsed.success) {
@@ -48,7 +54,7 @@ export function SignUp() {
     try {
       const result = await signUp(parsed.data)
       await refresh()
-      void navigate(homeFor(result.profile.role), { replace: true })
+      void navigate(result.joinedClass ? '/bring?try=1' : homeFor(result.profile.role), { replace: true })
     } catch (err) {
       setFieldErrors(issuesByPath(err))
       setError(err instanceof ApiRequestError && err.code === 'validation' ? null : err)
@@ -65,10 +71,17 @@ export function SignUp() {
         </p>
       }
     >
-      <h1 className="text-display font-semibold text-balance">Create your account</h1>
+      <h1 className="text-display font-semibold text-balance">{tryIt ? 'Try it as a learner' : 'Create your account'}</h1>
+
+      {tryIt ? (
+        <p className="rounded-card bg-surface p-4 text-sm">
+          You’ll join <strong>Try it (fictional)</strong>, a class at a fictional school. Its marking guidelines are already approved, so you can check work
+          straight away. Up to six checks a day.
+        </p>
+      ) : null}
 
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
-        <fieldset className="flex flex-col gap-2">
+        <fieldset className={tryIt ? 'hidden' : 'flex flex-col gap-2'}>
           <legend className="mb-1 text-sm font-medium">I am a</legend>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             {SIGN_UP_ROLES.map((option) => {

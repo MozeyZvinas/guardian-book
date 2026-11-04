@@ -1,5 +1,6 @@
 # CI (spec 04 §3). Six jobs; their `name:` values are the status checks the `main` ruleset
-# requires: gitleaks, typecheck, lint, unit, integration, build-image.
+# requires: gitleaks, typecheck, lint, unit, integration, build-image. A seventh, e2e
+# (Playwright against the built app on a Postgres service), must pass but is not required yet (B09).
 # Hardening: read-only token, every third-party action pinned to a full commit SHA,
 # pnpm 12.15 + Node 24 from the repo's own pins, frozen lockfile, no secrets in PR jobs.
 name: ci
@@ -113,6 +114,48 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:integration
+
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: guardian
+          POSTGRES_PASSWORD: guardian_dev_only
+          POSTGRES_DB: guardian
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U guardian -d guardian"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgres://guardian:guardian_dev_only@127.0.0.1:5432/guardian
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0 (reads packageManager)
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: install Chromium for Playwright
+        run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm build
+      - name: e2e (Playwright, phone and laptop viewports, mocked model)
+        run: pnpm test:e2e
+      - name: keep traces and screenshots of failures
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-results
+          path: apps/web/e2e/.results
+          if-no-files-found: ignore
+          retention-days: 7
 
   build-image:
     name: build-image

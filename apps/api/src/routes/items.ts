@@ -5,7 +5,7 @@ import { can } from '../access/index.js'
 import { recordAudit } from '../audit/record.js'
 import { requireActor } from '../auth/session.js'
 import type { Db } from '../db/client.js'
-import { guidelineSteps, items } from '../db/schema.js'
+import { classMembers, guidelineApprovals, guidelineSteps, items } from '../db/schema.js'
 import { notFound, requestIdOf, uuidParam } from '../lib/http.js'
 
 /**
@@ -16,9 +16,11 @@ import { notFound, requestIdOf, uuidParam } from '../lib/http.js'
 export function itemsRouter(db: Db): Router {
   const router = Router()
 
+  // B09: the list carries the question text, and for a learner says which items a class
+  // of theirs has approved (those first; the rest stay listed, so the picker never shows a slug).
   router.get('/api/items', async (_req, res, next) => {
     try {
-      requireActor(res)
+      const actor = requireActor(res)
       const rows = await db
         .select({
           id: items.id,
@@ -27,11 +29,23 @@ export function itemsRouter(db: Db): Router {
           skillTags: items.skillTags,
           maxMarks: items.maxMarks,
           revision: items.revision,
+          promptMd: items.promptMd,
         })
         .from(items)
         .where(eq(items.status, 'approved'))
         .orderBy(asc(items.slug))
-      const list: ItemSummary[] = rows
+      let list: ItemSummary[] = rows
+      if (actor.role === 'learner') {
+        const approvals = await db
+          .select({ itemId: guidelineApprovals.itemId, itemRevision: guidelineApprovals.itemRevision })
+          .from(guidelineApprovals)
+          .innerJoin(classMembers, and(eq(classMembers.classId, guidelineApprovals.classId), eq(classMembers.learnerId, actor.userId)))
+        const approved = new Set(approvals.map((a) => `${a.itemId}@${a.itemRevision}`))
+        list = rows
+          .map((row) => ({ ...row, approvedForYou: approved.has(`${row.id}@${row.revision}`) }))
+          .sort((a, b) => Number(b.approvedForYou) - Number(a.approvedForYou) || a.slug.localeCompare(b.slug))
+      }
+      res.setHeader('Cache-Control', 'no-store')
       res.json({ items: list })
     } catch (err) {
       next(err)

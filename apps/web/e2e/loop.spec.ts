@@ -30,7 +30,7 @@ test('feedback → fix it → check it alone → the guardian taps We did it', a
   await page.getByRole('button', { name: /Type/ }).click()
   await page.getByLabel('Your working, line by line').fill('x² − 5x + 6 = 0\n(x − 2)(x − 3) = 0')
   await page.getByRole('button', { name: 'Use this' }).click()
-  await page.getByLabel('Which question is this?').selectOption({ index: 1 })
+  await page.getByRole('group', { name: 'Which question is this?' }).getByRole('radio').first().check()
   await page.getByRole('button', { name: 'Check my work' }).click()
   await expect(page).toHaveURL(/\/attempts\/[0-9a-f-]{36}$/)
   await expect(page.getByRole('heading', { name: /Where it slipped: step 4/ })).toBeVisible({ timeout: 20_000 })

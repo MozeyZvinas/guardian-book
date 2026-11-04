@@ -27,6 +27,15 @@ export default defineConfig({
         },
       },
       {
+        // B09: pure client logic (the service worker's fetch policy); no DOM needed.
+        extends: true,
+        test: {
+          name: 'web',
+          root: './apps/web',
+          include: ['src/**/*.test.ts'],
+        },
+      },
+      {
         // Needs a loopback Postgres: `docker compose up -d` locally, a service container in CI.
         extends: true,
         test: {

@@ -50,6 +50,10 @@ const envSchema = z.object({
   RETENTION_CHECK_DAYS: optionalPositiveInt,
   MODEL_DAILY_BUDGET_USD: optionalNumber,
   MODEL_USER_DAILY_CALLS: optionalPositiveInt,
+  /** B09: the class code of the public "Try it (fictional)" class; sign-ups through /try join it server-side. */
+  PUBLIC_TRY_CLASS_CODE: optionalString,
+  /** B09: model calls per day for each try-it learner (default 6). */
+  TRY_USER_DAILY_CALLS: optionalPositiveInt,
   BUCKET_ENDPOINT: optionalString,
   BUCKET_NAME: optionalString,
   BUCKET_ACCESS_KEY_ID: optionalString,
@@ -106,6 +110,17 @@ export interface SentryConfig {
   dsn: string | null
 }
 
+/** B09: the public "Try it" path. Unconfigured = /try says so and sign-ups join nothing. */
+export interface TryItConfig {
+  configured: boolean
+  /** The try-it class code (the seed prints it); compared by hash, never stored. */
+  classCode: string | null
+  /** Daily model calls for a learner in the try-it class (default 6). */
+  userDailyCalls: number
+}
+
+export const DEFAULT_TRY_USER_DAILY_CALLS = 6
+
 export interface AppConfig {
   port: number
   db: DbConfig
@@ -114,6 +129,7 @@ export interface AppConfig {
   bucket: BucketConfig
   sentry: SentryConfig
   loop: LoopConfig
+  tryIt: TryItConfig
   /** Problems found while reading env, in plain words. Never contain values. */
   notes: string[]
 }
@@ -196,6 +212,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     },
     loop: {
       retentionCheckDays: values.RETENTION_CHECK_DAYS ?? 2,
+    },
+    tryIt: {
+      configured: Boolean(values.PUBLIC_TRY_CLASS_CODE),
+      classCode: values.PUBLIC_TRY_CLASS_CODE ?? null,
+      userDailyCalls: values.TRY_USER_DAILY_CALLS ?? DEFAULT_TRY_USER_DAILY_CALLS,
     },
     notes,
   }

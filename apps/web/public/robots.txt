@@ -1,0 +1,16 @@
+# Guardian Book (D36): the public front door, the try-it page and the proof page may be
+# indexed; every signed-in space and the API may not.
+User-agent: *
+Allow: /
+Allow: /try
+Allow: /evidence
+Disallow: /api/
+Disallow: /today
+Disallow: /brain
+Disallow: /me
+Disallow: /bring
+Disallow: /attempts/
+Disallow: /items/
+Disallow: /calendar
+Disallow: /guardian
+Disallow: /teacher

@@ -114,6 +114,10 @@ export const itemSummarySchema = z.object({
   skillTags: z.array(z.string()),
   maxMarks: z.number().int(),
   revision: z.number().int(),
+  /** B09: the question itself (Markdown with TeX maths), so a picker never shows the slug. */
+  promptMd: z.string(),
+  /** B09, learners only: true when a class the learner is in has this revision's guideline approved. */
+  approvedForYou: z.boolean().optional(),
 })
 export type ItemSummary = z.infer<typeof itemSummarySchema>
 

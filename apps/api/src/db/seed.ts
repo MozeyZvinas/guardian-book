@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { hashPassword } from 'better-auth/crypto'
@@ -13,8 +14,11 @@ import {
   SEED_GUARDIAN_LINKS,
   SEED_GUIDELINE_APPROVALS,
   SEED_PEOPLE,
+  SEED_PEOPLE_WITHOUT_LOGIN,
   SEED_SCHOOLS,
   type SeedClassKey,
+  type SeedPerson,
+  type SeedPersonKey,
 } from './seed-data.js'
 
 /** `apps/api/seed/items`, from both `src/db` (tsx) and `dist/db` (node). */
@@ -56,8 +60,11 @@ export async function seed(db: Db, options: SeedOptions): Promise<SeedResult> {
         .onConflictDoUpdate({ target: schools.id, set: { name: school.name, kind: 'fictional' } })
     }
 
-    for (const p of Object.values(SEED_PEOPLE)) {
+    for (const [personKey, p] of Object.entries(SEED_PEOPLE) as [SeedPersonKey, SeedPerson][]) {
       const schoolId = p.school ? SEED_SCHOOLS[p.school].id : null
+      // B09: the try-it class's teacher gets a fresh random password on every run, never
+      // printed, so the account exists (classes need a teacher) but nobody can sign in as it.
+      const hash = SEED_PEOPLE_WITHOUT_LOGIN.includes(personKey) ? await hashPassword(randomBytes(32).toString('hex')) : passwordHash
       await tx
         .insert(user)
         .values({ id: p.id, name: p.nickname, email: p.email })
@@ -68,14 +75,14 @@ export async function seed(db: Db, options: SeedOptions): Promise<SeedResult> {
         .where(eq(account.userId, p.id))
         .limit(1)
       if (existingAccount) {
-        await tx.update(account).set({ password: passwordHash, updatedAt: new Date() }).where(eq(account.id, existingAccount.id))
+        await tx.update(account).set({ password: hash, updatedAt: new Date() }).where(eq(account.id, existingAccount.id))
       } else {
         await tx.insert(account).values({
           id: uuidv7(),
           accountId: p.id,
           providerId: 'credential',
           userId: p.id,
-          password: passwordHash,
+          password: hash,
         })
       }
       await tx
@@ -166,6 +173,7 @@ if (isMain) {
     .then((result) => {
       console.log(`db:seed: ok. Items: ${JSON.stringify(result.items)}. Demo logins: <key>@demo.guardianbook.test`)
       for (const [key, code] of Object.entries(result.classCodes)) console.log(`  class ${key} code: ${code}`)
+      console.log(`  /try (B09): set PUBLIC_TRY_CLASS_CODE=${result.classCodes.try} so sign-ups through /try join "${SEED_CLASSES.try.name}"`)
       return handle.close()
     })
     .catch(async (err: unknown) => {

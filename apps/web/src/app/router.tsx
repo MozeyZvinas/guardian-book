@@ -20,6 +20,12 @@ export const router = createBrowserRouter([
     lazy: () => import('../routes/public/SignIn').then((m) => ({ Component: m.SignIn })),
     errorElement: <RouteError />,
   },
+  // B09: a judge runs the loop alone, in the seeded "Try it (fictional)" class.
+  {
+    path: '/try',
+    lazy: () => import('../routes/public/Try').then((m) => ({ Component: m.Try })),
+    errorElement: <RouteError />,
+  },
   // Learner space (spec 05 §4.2): L1 Today, L0 setup, L6 Brain, L8 Me.
   {
     path: '/today',
