@@ -4,9 +4,10 @@ import { itemResponseSchema, type AttemptMode, type ItemDetail } from '@guardian
 import { api, ApiRequestError } from '../../../api/client'
 import { assess, createAttempt, createInput } from '../../../api/practice'
 import { RequireRole } from '../../../app/RequireRole'
-import { CaptureSheet, type Capture } from '../../../components/CaptureSheet'
+import type { Capture } from '../../../components/CaptureSheet'
 import { Card, FormError } from '../../../components/Form'
 import { LearnerShell } from '../../../components/LearnerShell'
+import { MathCapture } from '../fix/MathCapture'
 import { MathText } from '../../../components/MathText'
 import { AskAboutStep } from '../fix/AskAboutStep'
 
@@ -102,7 +103,7 @@ function ItemScreen() {
         </p>
       )}
 
-      {item ? <CaptureSheet onCapture={onCapture} disabled={busy} modes={['snap', 'type']} /> : null}
+      {item ? <MathCapture onCapture={onCapture} disabled={busy} /> : null}
       {item && from ? <AskAboutStep attemptId={from} locked={mode !== 'assisted'} /> : null}
       {busy ? (
         <p role="status" aria-live="polite" className="m-0 text-fg-muted">
