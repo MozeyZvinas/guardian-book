@@ -167,7 +167,7 @@ describe('fix it → check it alone → the plan → the guardian', () => {
       { ...base, draftText: 'A draft for the guardian.', status: 'draft', origin: 'ai_suggested', audience: 'guardian' },
     ])
     const withNotes = await request(app()).get(`/api/guardian/learners/${lerato}/plan`).set('Cookie', guardian)
-    expect(withNotes.body.teacherMessages).toEqual([{ id: expect.any(String), kind: 'note', label: 'Teacher-reviewed', text: 'One step slipped this week. Ten minutes at home will help.', at: expect.any(String) }])
+    expect(withNotes.body.teacherMessages).toEqual([{ id: expect.any(String), kind: 'note', label: 'Teacher-reviewed', text: 'One step slipped this week. Ten minutes at home will help.', at: expect.any(String), translation: null }])
     expect(JSON.stringify(withNotes.body)).not.toContain('Learner-audience')
     expect(JSON.stringify(withNotes.body)).not.toContain('Teacher-only')
     expect(JSON.stringify(withNotes.body)).not.toContain('A draft')

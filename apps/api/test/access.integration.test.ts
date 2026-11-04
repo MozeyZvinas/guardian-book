@@ -36,6 +36,8 @@ const CASES: HarnessCase[] = [
   { name: 'anonymous joins a class', as: null, method: 'post', path: '/api/learner/join', body: { code: 'ABCDEFGH' }, expect: 401 },
   { name: 'anonymous links a guardian', as: null, method: 'post', path: '/api/guardian/link', body: { code: 'ABCDEFGH' }, expect: 401 },
   { name: 'anonymous lists schools', as: null, method: 'get', path: '/api/schools', expect: 401 },
+  { name: 'anonymous reads the guardian language (B12)', as: null, method: 'get', path: '/api/guardian/language', expect: 401 },
+  { name: 'anonymous sets the guardian language (B12)', as: null, method: 'patch', path: '/api/guardian/language', body: { language: 'zu' }, expect: 401 },
 
   // ── wrong role → 403 ─────────────────────────────────────────────────────────────────
   { name: 'learner → POST /api/teacher/classes', as: 'lerato', method: 'post', path: '/api/teacher/classes', body: { name: 'X' }, expect: 403 },
@@ -46,6 +48,8 @@ const CASES: HarnessCase[] = [
   { name: 'teacher → POST /api/learner/join', as: 'msDlamini', method: 'post', path: '/api/learner/join', body: { code: 'ABCDEFGH' }, expect: 403 },
   { name: 'teacher → POST /api/guardian/link', as: 'msDlamini', method: 'post', path: '/api/guardian/link', body: { code: 'ABCDEFGH' }, expect: 403 },
   { name: 'learner → POST /api/guardian/link', as: 'lerato', method: 'post', path: '/api/guardian/link', body: { code: 'ABCDEFGH' }, expect: 403 },
+  { name: 'learner → PATCH /api/guardian/language (B12)', as: 'lerato', method: 'patch', path: '/api/guardian/language', body: { language: 'zu' }, expect: 403 },
+  { name: 'teacher → GET /api/guardian/language (B12)', as: 'msDlamini', method: 'get', path: '/api/guardian/language', expect: 403 },
 
   // ── wrong object → 404 ───────────────────────────────────────────────────────────────
   { name: 'learner A revokes learner B’s guardian', as: 'thabo', method: 'delete', path: `/api/me/guardians/${P.mmaLerato.id}`, expect: 404 },

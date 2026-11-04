@@ -1,4 +1,4 @@
-import type { InputClass, NoteDraft, NoticeOutput, PlanAgentTurn, WorkCheckOutput } from '@guardian-book/shared'
+import type { InputClass, NoteDraft, NoticeOutput, PlanAgentTurn, TranslationOutput, WorkCheckOutput } from '@guardian-book/shared'
 import { loadConfig } from '../../src/config.js'
 import { createGateway, type Gateway } from '../../src/gateway/gateway.js'
 import { immediateSleep, okResponse } from '../../src/gateway/testing.js'
@@ -147,8 +147,24 @@ export function noteFromPrompt(request: ChatRequest): NoteDraft {
   }
 }
 
+/**
+ * A pseudo-translation (B12): the letters of every word outside a placeholder reversed,
+ * so the verifier's rules hold (placeholders kept once, same length, no digit or link
+ * added, hardly any English word left) without a real language model.
+ */
+export function pseudoTranslation(request: ChatRequest): TranslationOutput {
+  const source = /<<<TEXT\n([\s\S]*?)\nTEXT>>>/.exec(userText(request))?.[1] ?? ''
+  const text = source
+    .split(/(\{\{[A-Z]+\d*\}\})/)
+    .map((part, index) => (index % 2 === 1 ? part : part.replace(/[\p{L}']+/gu, (word) => [...word].reverse().join(''))))
+    .join('')
+  return { text }
+}
+
 export function defaultAnswer(request: ChatRequest): TransportResult {
   switch (purposeOf(request)) {
+    case 'translate':
+      return okResponse(pseudoTranslation(request), { requestId: `req_translate_${Date.now()}` })
     case 'note':
       return okResponse(noteFromPrompt(request), { requestId: `req_note_${Date.now()}` })
     case 'classify':

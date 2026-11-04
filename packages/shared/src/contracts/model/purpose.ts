@@ -4,7 +4,7 @@ import { z } from 'zod'
  * Why a model call is made (spec 03 §8.1, `model_runs.purpose`). One purpose, one output
  * contract, one rule set in the verifier. Stable strings: they are stored on every run.
  */
-export const MODEL_PURPOSES = ['classify', 'profile_cards', 'assess', 'notice', 'plan', 'note'] as const
+export const MODEL_PURPOSES = ['classify', 'profile_cards', 'assess', 'notice', 'plan', 'note', 'translate'] as const
 export const modelPurposeSchema = z.enum(MODEL_PURPOSES)
 export type ModelPurpose = z.infer<typeof modelPurposeSchema>
 

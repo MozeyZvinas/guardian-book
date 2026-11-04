@@ -2,14 +2,16 @@ import { Router } from 'express'
 import { approveNoteBodySchema, createNoteBodySchema, type DraftNotesResponse, type GuardianNotesResponse, type NoteResponse, type NotesResponse } from '@guardian-book/shared'
 import { requireActor, requireRole } from '../auth/session.js'
 import { HttpError, parse, requestIdOf, uuidParam } from '../lib/http.js'
+import type { PracticeDeps } from '../inputs/deps.js'
 import type { TeacherDeps } from '../teacher/deps.js'
+import { preferredLanguage } from '../translate/service.js'
 import { approveNote, createNote, draftNotes, guardianNote, guardianNotes, listNotes, sendNote } from './service.js'
 
 /**
  * Notes home (spec 03 §8.3): the teacher lists, drafts, writes, approves and sends;
  * `GET /api/guardian/notes` serves the guardian only what has been sent to them.
  */
-export function notesRouter(deps: TeacherDeps): Router {
+export function notesRouter(deps: TeacherDeps & Pick<PracticeDeps, 'jobs'>): Router {
   const router = Router()
   const { db } = deps
 
@@ -75,7 +77,9 @@ export function notesRouter(deps: TeacherDeps): Router {
   router.get('/api/guardian/notes', requireRole('guardian'), async (_req, res, next) => {
     try {
       const actor = requireActor(res)
-      const payload: GuardianNotesResponse = { notes: await guardianNotes(db, actor) }
+      // B12: each note travels with its translation state in the guardian's language.
+      const language = await preferredLanguage(db, actor.userId)
+      const payload: GuardianNotesResponse = { language, notes: await guardianNotes(deps, actor, language) }
       res.setHeader('Cache-Control', 'no-store')
       res.json(payload)
     } catch (err) {
@@ -87,7 +91,7 @@ export function notesRouter(deps: TeacherDeps): Router {
     try {
       const actor = requireActor(res)
       res.setHeader('Cache-Control', 'no-store')
-      res.json({ note: await guardianNote(db, actor, uuidParam(req, 'id')) })
+      res.json({ note: await guardianNote(deps, actor, uuidParam(req, 'id')) })
     } catch (err) {
       next(err)
     }

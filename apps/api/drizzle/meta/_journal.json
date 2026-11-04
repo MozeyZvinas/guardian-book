@@ -29,6 +29,13 @@
       "when": 1793735035987,
       "tag": "0003_b04_inputs_attempts",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793788768070,
+      "tag": "0004_b12_translations",
+      "breakpoints": true
     }
   ]
 }
