@@ -57,7 +57,7 @@ the same files.
 | B10 Release hardening, restore drill, history scan, README | 3 Nov | P0-13 | B09 | B / $8 | todo |
 | B11 Red ink on the learner's photo; teacher uploads a learner's script (P1-c, P1-g) | 4 Nov | P1 | B04, B07 | subscription | todo |
 | B12 Parent's home language (af, zu, xh, tn, st) + Share to WhatsApp (D38, P1-e) | 4 Nov | P1 | B06, B07 | subscription | todo |
-| B13 Ask about a step by voice or typing (Muse Voice Transcribe, P1-a) | 4 Nov | P1 | B04, B06 | subscription | PR open (branch `b13-ask-by-voice`; mocked tests, verifier rules, screens and e2e done; live check not run: no `.env` in the worktree) |
+| B13 Ask about a step by voice or typing (Muse Voice Transcribe, P1-a) | 4 Nov | P1 | B04, B06 | subscription | PR #12 open (branch `b13-ask-by-voice`; CI green; live check run 4 Nov: transcription 4.2 s / $0.00005, hint accepted on the 2nd call 32.0 s / $0.0157, see the B13 note below) |
 | B14 Open-weight comparison row (Muse Spark Open, P1-d) | 4 Nov | P1 | B08; founder's partner-host key | subscription | todo |
 | V1 Record the demo + X cut | 4 Nov, morning | — | B10 | Founder + planning | todo |
 | B11 Freeze + submit by 20:00 SAST | 4 Nov | — | V1 | Founder | todo |
@@ -76,13 +76,21 @@ Add any question here, linked to a task ID.
   WAV itself (16 kHz mono 16-bit; 60 s is about 1.9 MB, under the 5 MB cap) and the server
   refuses anything else before a byte leaves it. Everything else in the brief stands (hold to
   talk, 60 s, 5 MB, audio never stored, `model_runs` row). Confirm, or rule otherwise.
-- **B13 · live check not run.** The worktree had no `.env` when the PR was opened (the
-  coordinator's copy was denied by the permission system), so the one real transcription and
-  the one real hint are still to do, and the model ID `muse-voice-transcribe-1.0` is still to
-  be confirmed on the account's model list. The script is ready:
-  `say -o /tmp/q.aiff "I don't get why it's minus six" && afconvert -f WAVE -d LEI16@16000 -c 1 /tmp/q.aiff /tmp/q.wav && pnpm --filter @guardian-book/api exec tsx src/voice/live-smoke.ts /tmp/q.wav`
-  (prints latency and cost for both calls; record them under B13 here). Expected cost:
-  under $0.001 for a 5 s clip ($0.18 per hour of audio) plus one Muse Spark hint call.
+- **B13 · live check (4 Nov 2026, 12:15 UTC; `apps/api/src/voice/live-smoke.ts`).**
+  `muse-voice-transcribe-1.0` is on the account's model list (`GET /v1/models`: 9 models,
+  incl. `muse-voice-transcribe-1.0`, `muse-spark-1.3`, `muse-wonder-1.0`). Clip: macOS `say`,
+  1.78 s, 16 kHz mono 16-bit WAV, 61 KB. **Transcription:** `muse-voice-transcribe-1.0`,
+  1 call, 4,223 ms, 1,840 ms of audio billed, **$0.00005**, session ID `af84b636-…`,
+  transcript "I don't get why it's minus six.." (exact words; a trailing double full stop).
+  **Hint** (eval fixture `alg-quad-01`, step 2, the wrong-sign working): `muse-spark-1.3`,
+  **2 calls**: the first hint failed `HINT_LEAKS_ANSWER` (it stated a memo value) and was
+  re-asked; the second was **accepted**: "Expand your brackets and compare each term's sign
+  with the original equation. Ask what pair of signs in the brackets would make both the
+  middle and last terms match." Latency 14.4 s + 17.5 s = **31,978 ms**; tokens
+  544 in / 1,700 out then 598 in (497 cached) / 1,789 out; **$0.01571**. Total **$0.01576**.
+  Note for the cap: a hint costs about what a work check does (Muse Spark reasons for
+  ~1.7k output tokens before a 40-token JSON), and one in two first answers leaked here, so
+  budget two calls per ask.
 - **B13 · `.env.example`** could not be edited (writes to `.env*` are denied): please add
   `META_MODEL_TRANSCRIBE=` (default `muse-voice-transcribe-1.0`; Standard tier only).
 
