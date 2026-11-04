@@ -160,7 +160,15 @@ export const todayResponseSchema = z.object({
     })
     .nullable(),
   tonight: z.discriminatedUnion('kind', [
-    z.object({ kind: z.literal('plan'), planId: z.string().uuid(), step: z.string(), hint: z.string(), why: z.string() }),
+    z.object({
+      kind: z.literal('plan'),
+      planId: z.string().uuid(),
+      step: z.string(),
+      hint: z.string(),
+      why: z.string(),
+      /** The attempt with the lost step this plan starts from ("Start" → fix it, B06). */
+      attemptId: z.string().uuid().nullable().default(null),
+    }),
     z.object({ kind: z.literal('none') }),
   ]),
   checkIns: z.array(checkInSchema),

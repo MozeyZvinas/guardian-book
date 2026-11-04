@@ -25,6 +25,7 @@ export const CHECK_CODES = [
   'INFERENCE_FORBIDDEN',
   'TOOL_UNKNOWN',
   'STEPS_EXCEEDED',
+  'PLAN_MISSING',
 ] as const
 export type CheckCode = (typeof CHECK_CODES)[number]
 
@@ -91,7 +92,10 @@ export interface PlanContext {
   vettedResourceIds: string[]
   allowedTools: string[]
   maxSteps: number
+  /** The agent steps taken so far (the turn being checked is not in it). */
   trace: AgentTraceStep[]
+  /** Memo values of the gap item (accuracy criteria): the learner view must not state them (B06). */
+  memoValues?: string[]
 }
 
 export interface NoteContext {

@@ -3,7 +3,7 @@ import { inputClassSchema } from './inputClass.js'
 import { toStrictJsonSchema, type StrictJsonSchema } from './jsonSchema.js'
 import { noteDraftSchema } from './note.js'
 import { noticeOutputSchema } from './notice.js'
-import { planOutputSchema } from './plan.js'
+import { planAgentTurnSchema } from './plan.js'
 import { profileCardsSchema } from './profileCards.js'
 import type { ModelPurpose } from './purpose.js'
 import { workCheckOutputSchema } from './workCheck.js'
@@ -24,7 +24,8 @@ export const MODEL_OUTPUT_SCHEMAS = {
   profile_cards: profileCardsSchema,
   assess: workCheckOutputSchema,
   notice: noticeOutputSchema,
-  plan: planOutputSchema,
+  // One agent turn per call (B06): a tool to call, or `writePlan` carrying the plan.
+  plan: planAgentTurnSchema,
   note: noteDraftSchema,
 } as const satisfies Record<ModelPurpose, z.ZodType>
 

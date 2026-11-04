@@ -1,7 +1,7 @@
 import type { PlanOutput } from '@guardian-book/shared'
 import { describe, expect, it } from 'vitest'
 import type { PlanContext } from '../types.js'
-import { CLASSIFY_RULES, NOTE_RULES, PROFILE_CARDS_RULES, planEvidenceRefs, planInferenceForbidden, planPlainLanguage, resourceUnvetted, stepsExceeded, toolUnknown } from './plan.js'
+import { CLASSIFY_RULES, NOTE_RULES, PLAN_RULES, PROFILE_CARDS_RULES, planAnswerLeak, planEvidenceRefs, planInferenceForbidden, planMissing, planPlainLanguage, resourceUnvetted, stepsExceeded, toolUnknown } from './plan.js'
 
 const cited = (text: string, evidence_ids: string[] = ['ev-1']) => ({ text, evidence_ids })
 
@@ -117,6 +117,33 @@ describe('STEPS_EXCEEDED', () => {
   it('passes at the limit', () => {
     const trace = Array.from({ length: 8 }, () => ({ tool: 'read_evidence' }))
     expect(stepsExceeded(plan(), { ...context, trace }).passed).toBe(true)
+  })
+})
+
+describe('the agent turn (B06)', () => {
+  const run = (turn: { tool: string; reason: string; plan: PlanOutput | null }, ctx: PlanContext = context) => PLAN_RULES.map((rule) => ({ code: rule.code, ...rule.run(turn, ctx) }))
+
+  it('a tool call passes every content rule; an unknown tool fails TOOL_UNKNOWN without a re-ask', () => {
+    expect(run({ tool: 'read_evidence', reason: 'first', plan: null }).every((r) => r.passed)).toBe(true)
+    const unknown = run({ tool: 'web_search', reason: 'why not', plan: null })
+    expect(unknown.find((r) => r.code === 'TOOL_UNKNOWN')).toMatchObject({ passed: false })
+    expect(PLAN_RULES.find((r) => r.code === 'TOOL_UNKNOWN')?.retryable).toBe(false)
+  })
+  it('the turn that would be the 9th step fails STEPS_EXCEEDED', () => {
+    const trace = Array.from({ length: 8 }, () => ({ tool: 'read_evidence' }))
+    expect(run({ tool: 'list_resources', reason: 'more', plan: null }, { ...context, trace }).find((r) => r.code === 'STEPS_EXCEEDED')?.passed).toBe(false)
+  })
+  it('writePlan needs the plan, and a tool call must not carry one (PLAN_MISSING)', () => {
+    expect(planMissing({ tool: 'writePlan', reason: '', plan: null }).passed).toBe(false)
+    expect(planMissing({ tool: 'read_evidence', reason: '', plan: plan() }).passed).toBe(false)
+    expect(planMissing({ tool: 'writePlan', reason: '', plan: plan() }).passed).toBe(true)
+  })
+  it('the learner view may not state a memo value (HINT_LEAKS_ANSWER)', () => {
+    const ctx = { ...context, memoValues: ['$(x - 2)(x - 3) = 0$', 'x = 2 and x = 3'] }
+    expect(planAnswerLeak(plan(), ctx).passed).toBe(true)
+    const leak = plan({ learner_view: { ...plan().learner_view, hint: 'Remember the factors are (x - 2)(x - 3).' } })
+    expect(planAnswerLeak(leak, ctx).passed).toBe(false)
+    expect(planAnswerLeak(plan({ learner_view: { ...plan().learner_view, hint: 'Go back to step 2 and check each sign.' } }), ctx).passed).toBe(true)
   })
 })
 

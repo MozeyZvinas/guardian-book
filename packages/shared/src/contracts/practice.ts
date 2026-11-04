@@ -133,6 +133,8 @@ export const attemptViewSchema = z.object({
   answerText: z.string().nullable(),
   hasImage: z.boolean(),
   provenance: provenanceSchema,
+  /** Set on a "fix it" retry: the attempt it redoes a step of (B06). */
+  parentAttemptId: z.string().uuid().nullable(),
   createdAt: z.string(),
 })
 export type AttemptView = z.infer<typeof attemptViewSchema>
@@ -144,6 +146,16 @@ export const attemptResponseSchema = z.object({
   guideline: z.array(guidelineStepNameSchema),
   /** Hints are present only when this is true (spec 03 §9.1 `attempts.mode`). */
   hintsVisible: z.boolean(),
+  /** On a retry attempt (B06): what it set out to fix and whether it did. */
+  fix: z
+    .object({
+      parentAttemptId: z.string().uuid(),
+      retryNo: z.number().int().min(1),
+      targetStepNos: z.array(z.number().int()),
+      fixedIndependently: z.boolean().nullable(),
+    })
+    .nullable()
+    .default(null),
 })
 export type AttemptResponse = z.infer<typeof attemptResponseSchema>
 
