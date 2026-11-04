@@ -59,6 +59,7 @@ the same files.
 | B12 Parent's home language (af, zu, xh, tn, st) + Share to WhatsApp (D38, P1-e) | 4 Nov | P1 | B06, B07 | subscription | review (PR open 4 Nov; live check done, $0.05) |
 | B13 Ask about a step by voice or typing (Muse Voice Transcribe, P1-a) | 4 Nov | P1 | B04, B06 | subscription | PR #12 open (branch `b13-ask-by-voice`; CI green; live check run 4 Nov: transcription 4.2 s / $0.00005, hint accepted on the 2nd call 32.0 s / $0.0157, see the B13 note below) |
 | B14 Open-weight comparison row (Muse Spark Open, P1-d) | 4 Nov | P1 | B08; founder's partner-host key | subscription | todo |
+| B15 Help me with a question: any question read back and taken step by step, two reads must agree, maths keyboard (D39) | 4 Nov | P1 | B03, B04, B13 | subscription | PR open (branch `b15-guide`; live check 4 Nov: quadratic ready after two agreeing reads 28.3 s / $0.0286, the founder's rationals case unsure (two valid but different pairs) 30.4 s / $0.0286; see the B15 notes below) |
 | B16 ∥ Make it clear: setup by taps, Today's one next action and plain statuses, Brain explainer and legend, pasted maths, the no-dates notice message (D39) | 4 Nov | D39 | B04, B05 | subscription | review (PR #13, branch `b16-clarity`, 4 Nov; questions below) |
 | V1 Record the demo + X cut | 4 Nov, morning | — | B10 | Founder + planning | todo |
 | B11 Freeze + submit by 20:00 SAST | 4 Nov | — | V1 | Founder | todo |
@@ -94,6 +95,44 @@ Add any question here, linked to a task ID.
   budget two calls per ask.
 - **B13 · `.env.example`** could not be edited (writes to `.env*` are denied): please add
   `META_MODEL_TRANSCRIBE=` (default `muse-voice-transcribe-1.0`; Standard tier only).
+- **B15 · live check (4 Nov 2026, 14:53 UTC; `apps/api/src/guide/live-smoke.ts`; `muse-spark-1.3`,
+  two independent reads in parallel, exactly as `POST /api/guide` runs them).**
+  **Case 1, the founder's textbook question** typed as `\(\frac{1}{4}\)` and `\(\frac{7}{8}\)`
+  ("Find two rational numbers between…"): both reads read it back as
+  `Find two rational numbers between $\frac{1}{4}$ and $\frac{7}{8}$.` (the `\( … \)` normalised to
+  `$…$` before the prompt), both accepted first time, both `high` confidence; read 1
+  (`guide-v1`, req `1e5e157b-…`): 2 steps, final answer `$\frac{3}{8}$ and $\frac{1}{2}$`, 30,392 ms,
+  691 in / 3,145 out, $0.01423; read 2 (`guide-check-v1`, req `aa45d1f0-…`): 4 steps, final answer
+  `$\frac{1}{2}$ and $\frac{3}{4}$`, 28,991 ms, 704 in / 3,164 out, $0.01433. **Agreement: disagree**
+  (both pairs are correct; the answers differ), so the app shows the read-back and the first hint
+  only, labelled *"I'm not sure about this one…"*. Wall 30.4 s, **$0.0286**.
+  **Case 2, a Grade 12 quadratic** (`Solve for $x$: $$2x^2 - 7x + 3 = 0$$`, original): read 1
+  (req `d80592e9-…`) `$x=1/2$ or $x=3$`, 4 steps, 28,259 ms, 692 in / 3,143 out, $0.01422; read 2
+  (req `4dddfbc9-…`) `$x=3 \text{ or } x=\frac{1}{2}$`, 4 steps, 24,602 ms, 705 in / 3,173 out,
+  $0.01437. **Agreement: agree** (the normaliser equates the two forms), status `ready`, wall 28.3 s,
+  **$0.0286**. Total $0.0572 over the two cases; every call well under the $0.10 cap.
+  Note for the cap: Muse Spark reasons for ~3.1k output tokens per read, so a guide costs about two
+  work checks; a try-it learner's six daily calls cover three guides.
+- **B15 · question for the planning session: open questions "disagree" by design.** Self-consistency
+  on the final answer (brief §3) is right for a question with one answer, but a question with many
+  correct answers (case 1 above, "find two rational numbers between…") will usually reach two
+  different, both-correct answers and so stop at the first hint. Options: (a) keep it (fail closed;
+  the learner still gets the read-back, the first step and its hint, and is told to ask their
+  teacher); (b) make the second read a *checker* that is shown the first read's answer and asked
+  whether it is correct (one answer, one yes/no, cheaper), at the cost of true independence;
+  (c) ask each read whether the question has one answer and, when both say it has many, require
+  only that each read's answer satisfies the other read's check. B15 ships (a). Please rule.
+- **B15 · files touched outside the owned list, each the smallest change the brief needs:**
+  `apps/api/src/access/index.ts` (`guide.create`, `guide.read`, resource `guide`: rule 3 puts every
+  permission in `access`), `apps/api/src/audit/record.ts` (three actions), `apps/api/src/app.ts`
+  (mount the router, `/api/guide` in the 503 list), `apps/api/src/db/schema.ts` (the purpose value,
+  the `guides` table, `PROVENANCE_TABLES`), `apps/api/src/verify/{types,runChecks,index}.ts` (the
+  five codes, `GuideContext`, `GUIDE_RULES`), `apps/web/src/app/router.tsx` (`/guide/:id`),
+  `apps/api/test/integration/practiceGateway.ts` (the scripted model answers `guide`),
+  `apps/api/test/access.integration.test.ts` (nine "change the ID" rows), and the e2e specs that
+  drive Bring (`ask-by-voice`, `bring-feedback`, `guardian-language`, `loop`, `red-ink`, `screens`:
+  one added tap, "Check my work", now that Bring opens on three plain choices). `MathText` and
+  `CaptureSheet` are untouched (B16 owns the first; Bring has its own capture with `MathInput`).
 
 - **B02 · `.env.example` could not be edited** (the session's permission settings deny
   writes to `.env*`). Please append these lines (also in the PR body):

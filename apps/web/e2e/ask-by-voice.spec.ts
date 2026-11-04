@@ -33,6 +33,7 @@ test('Lerato asks about the step that slipped: by voice, then by typing; the hin
 
   // Bring typed work (B04) and lose the last step.
   await page.goto('/bring')
+  await page.getByRole('button', { name: /Check my work/ }).click() // B15: the three plain choices
   await page.getByRole('button', { name: /Type/ }).click()
   await page.getByLabel('Your working, line by line').fill('x² − 5x + 6 = 0\n(x − 2)(x − 3) = 0')
   await page.getByRole('button', { name: 'Use this' }).click()
@@ -81,6 +82,7 @@ test('check it alone: asking is paused until the learner submits', async ({ page
   await expect(page).toHaveURL(/\/today$/)
   // Reach L5 in independent mode: bring work, lose a step, fix it, then Check it alone.
   await page.goto('/bring')
+  await page.getByRole('button', { name: /Check my work/ }).click() // B15: the three plain choices
   await page.getByRole('button', { name: /Type/ }).click()
   await page.getByLabel('Your working, line by line').fill('x² − 5x + 6 = 0\n(x − 2)(x − 3) = 0')
   await page.getByRole('button', { name: 'Use this' }).click()

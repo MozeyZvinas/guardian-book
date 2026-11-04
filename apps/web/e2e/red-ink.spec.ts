@@ -39,6 +39,7 @@ test('a learner’s photo gets red ink; after the teacher corrects and releases 
   // L2: snap the photo (the hidden file input behind "Snap"), pick the question, check.
   await page.goto('/bring')
   await expect(page.getByRole('heading', { name: 'Bring anything' })).toBeVisible()
+  await page.getByRole('button', { name: /Check my work/ }).click() // B15: the three plain choices
   await page.locator('input[type="file"]').setInputFiles(FIXTURE)
   const picker = page.getByRole('group', { name: 'Which question is this?' })
   await expect(picker).toBeVisible({ timeout: 20_000 })

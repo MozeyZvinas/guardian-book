@@ -1,4 +1,4 @@
-import type { InputClass, NoteDraft, NoticeOutput, PlanAgentTurn, ProfileCards, StepHint, TranslationOutput, WorkCheckOutput } from '@guardian-book/shared'
+import type { GuideOutput, InputClass, NoteDraft, NoticeOutput, PlanAgentTurn, ProfileCards, StepHint, TranslationOutput, WorkCheckOutput } from '@guardian-book/shared'
 import { loadConfig } from '../../src/config.js'
 import { createGateway, type Gateway } from '../../src/gateway/gateway.js'
 import { immediateSleep, okResponse } from '../../src/gateway/testing.js'
@@ -166,6 +166,30 @@ export function safeStepHint(): StepHint {
 }
 
 /**
+ * Help me with a question, scripted (B15): the typed question is read back as sent (the
+ * server has already turned `\( … \)` into `$…$`); a photo reads back as the first seed
+ * item's question, so the bank match and "Check my own working" show. The steps and the
+ * answer are the seed quadratic's: the mock does not do mathematics, it exercises the path.
+ */
+export const PHOTO_QUESTION = 'Solve for $x$:\n\n$$x^2 - 5x + 6 = 0$$'
+
+export function guideFromPrompt(request: ChatRequest): GuideOutput {
+  const typed = /<<<QUESTION\n([\s\S]*?)\nQUESTION>>>/.exec(userText(request))?.[1]
+  return {
+    question_md: hasImage(request) ? PHOTO_QUESTION : (typed ?? ''),
+    subject: 'Mathematics',
+    topic: 'Quadratic equations',
+    steps: [
+      { goal: 'Get everything on one side, equal to zero.', hint: 'Check that the right-hand side is already $0$.', worked: 'The equation is already in the form $x^2 - 5x + 6 = 0$.' },
+      { goal: 'Factorise the left-hand side into two brackets.', hint: 'Find two numbers that multiply to $6$ and add to $-5$.', worked: 'Both numbers are negative: $-2$ and $-3$, so $(x - 2)(x - 3) = 0$.' },
+      { goal: 'Set each bracket equal to zero and solve.', hint: 'A product is zero when one of its factors is zero.', worked: '$x - 2 = 0$ gives $x = 2$; $x - 3 = 0$ gives $x = 3$.' },
+    ],
+    final_answer: '$x = 2$ or $x = 3$',
+    confidence: 'high',
+  }
+}
+
+/**
  * A pseudo-translation (B12): the letters of every word outside a placeholder reversed,
  * so the verifier's rules hold (placeholders kept once, same length, no digit or link
  * added, hardly any English word left) without a real language model.
@@ -185,6 +209,8 @@ export function defaultAnswer(request: ChatRequest): TransportResult {
       return okResponse(pseudoTranslation(request), { requestId: `req_translate_${Date.now()}` })
     case 'step_hint':
       return okResponse(safeStepHint(), { requestId: `req_hint_${Date.now()}` })
+    case 'guide':
+      return okResponse(guideFromPrompt(request), { requestId: `req_guide_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` })
     case 'note':
       return okResponse(noteFromPrompt(request), { requestId: `req_note_${Date.now()}` })
     case 'classify':
