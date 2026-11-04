@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { skillTagSchema } from './items.js'
+import { languageSchema, translationViewSchema } from './language.js'
 import { MAX_INPUT_TEXT } from './practice.js'
 
 /**
@@ -149,6 +150,39 @@ export const guardianWeekResponseSchema = z.object({
   teacherMessages: z.array(teacherMessageSchema),
 })
 export type GuardianWeekResponse = z.infer<typeof guardianWeekResponseSchema>
+
+// ── the week in the parent's home language (brief B12) ──────────────────────────────────
+
+/** The three guardian-view texts of the plan, each with its translation state. */
+export const planTranslationsSchema = z.object({
+  gap: translationViewSchema,
+  action: translationViewSchema,
+  celebrate: translationViewSchema,
+})
+export type PlanTranslations = z.infer<typeof planTranslationsSchema>
+
+export const guardianPlanWithTranslationsSchema = guardianPlanViewSchema.extend({
+  /** Null when the guardian reads in English. */
+  translations: planTranslationsSchema.nullable(),
+})
+export type GuardianPlanWithTranslations = z.infer<typeof guardianPlanWithTranslationsSchema>
+
+export const teacherMessageWithTranslationSchema = teacherMessageSchema.extend({
+  translation: translationViewSchema.nullable(),
+})
+export type TeacherMessageWithTranslation = z.infer<typeof teacherMessageWithTranslationSchema>
+
+/**
+ * `GET /api/guardian/learners/:id/plan` as served (B12): the week plus the guardian's
+ * language and, when it is not English, a translation beside every parent-facing text.
+ * The English is always there; the translation is labelled model text (TRANSLATED_BY_AI_LABEL).
+ */
+export const guardianWeekViewSchema = guardianWeekResponseSchema.extend({
+  language: languageSchema,
+  plan: guardianPlanWithTranslationsSchema.nullable(),
+  teacherMessages: z.array(teacherMessageWithTranslationSchema),
+})
+export type GuardianWeekView = z.infer<typeof guardianWeekViewSchema>
 
 export const supportGivenResponseSchema = z.object({
   planId: uuid,

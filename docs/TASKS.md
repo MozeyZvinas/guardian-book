@@ -53,10 +53,10 @@ the same files.
 | B07 ∥ Teacher view: guidelines approval, class picture, confirm queue, review with feedback controls (agree / correct / add / audience), release, interventions (owner, follow-up, outcome, close), notes with origin labels, class notice, learner profile | 3 Nov | P0-10 | B04 | B / $30 | done (PR #7 merged 4 Nov) |
 | B08 Eval runner results + proof page `/evidence` | 3 Nov | P0-12 | B03, E1 | B / $10 | done (PR #6 merged 4 Nov) |
 | **Gate P0:** full run on the founder's phone | 3 Nov, 20:00 (D35) | all P0 | — | — | todo |
-| B09 PWA, polish (landing hero by surface, D35), E2E in CI; the Bring question picker shows the question itself (MathText), not the slug; `robots.txt` (allow `/`, `/evidence`; disallow `/api/`, `/learner/`, `/guardian/`, `/teacher/`, invite and join links; D36); then P1 in order (incl. P1-g teacher uploads a script) (voice, see-it card, overlay, open-weight row, WhatsApp text) | 3 Nov | P0-13, P1 | Gate P0 | A + B | todo |
+| B09 PWA, polish (landing hero by surface, D35), E2E in CI; the Bring question picker shows the question itself (MathText), not the slug; `robots.txt` (allow `/`, `/evidence`; disallow `/api/`, `/learner/`, `/guardian/`, `/teacher/`, invite and join links; D36); then P1 in order (incl. P1-g teacher uploads a script) (voice, see-it card, overlay, open-weight row, WhatsApp text) | 3 Nov | P0-13, P1 | Gate P0 | subscription | PR open (4 Nov): landing, /try, PWA, picker, robots, e2e job |
 | B10 Release hardening, restore drill, history scan, README | 3 Nov | P0-13 | B09 | B / $8 | todo |
-| B11 Red ink on the learner's photo; teacher uploads a learner's script (P1-c, P1-g) | 4 Nov | P1 | B04, B07 | subscription | todo |
-| B12 Parent's home language (af, zu, xh, tn, st) + Share to WhatsApp (D38, P1-e) | 4 Nov | P1 | B06, B07 | subscription | todo |
+| B11 Red ink on the learner's photo; teacher uploads a learner's script (P1-c, P1-g) | 4 Nov | P1 | B04, B07 | subscription | review (branch `b11-red-ink`; questions below) |
+| B12 Parent's home language (af, zu, xh, tn, st) + Share to WhatsApp (D38, P1-e) | 4 Nov | P1 | B06, B07 | subscription | review (PR open 4 Nov; live check done, $0.05) |
 | B13 Ask about a step by voice or typing (Muse Voice Transcribe, P1-a) | 4 Nov | P1 | B04, B06 | subscription | PR #12 open (branch `b13-ask-by-voice`; CI green; live check run 4 Nov: transcription 4.2 s / $0.00005, hint accepted on the 2nd call 32.0 s / $0.0157, see the B13 note below) |
 | B14 Open-weight comparison row (Muse Spark Open, P1-d) | 4 Nov | P1 | B08; founder's partner-host key | subscription | todo |
 | V1 Record the demo + X cut | 4 Nov, morning | — | B10 | Founder + planning | todo |
@@ -120,6 +120,39 @@ Add any question here, linked to a task ID.
   interventions due today or earlier, plus retention checks derived from events (2 days
   after a correct independent check, until a retention outcome is recorded). B06/B07 can
   rely on it.
+- **B11 · the script's background read is its own job, not B04's `runAssessment`.** The brief
+  says both "runs B04's background assessment" and "nothing reaches the learner or the parent
+  until the teacher releases it"; B04's job ends in B06's `afterProposed`, which for an
+  independent attempt writes `independent_check_completed` and issues a same-day Help Plan
+  (the integration test showed Lerato's Today carrying "tonight" from a script she cannot
+  open). `apps/api/src/teacher/scripts.ts` therefore runs the same read (same prompt,
+  `runModel`, verifier, `writeAssessment`, same `assess:<id>` job key) without
+  `afterProposed`; the loop's independent evidence for a script comes from `review_released`.
+  Residual, not fixable from B11's folders: `writeAssessment` still appends the `assessed`
+  event (basis `model_high` when every step is sure), so the learner's timeline shows "You
+  brought work" and "Your work was checked" rows (words only, no marks, no link) and the
+  Brain's independent evidence can move before release. Rule: keep this, or let B04's job
+  take a `skipLoop` flag, or gate those events on release.
+- **B11 · access gate on `school_provided` attempts:** the owner's `attempt.read`,
+  `attempt.assess`, `attempt.fix` and `review.read` are refused (404) until a released
+  review exists; teachers unchanged; guardians never. The input row carries the teacher in
+  `inputs.learner_id` (D37's precedent), so the learner's Today and inputs list never show
+  it; the audit rows (`script.uploaded`, `attempt.assess_started`) name her as the actor.
+- **B11 · outside the listed folders, all additive:** the route in `apps/web/src/app/router.tsx`
+  (the screen has to exist), one "Mark a script" link in the class picture's nav
+  (`routes/teacher/picture/Picture.tsx`), the `ink-red` tokens in `design/tokens.css` (the
+  brief asks for them), seven harness rows in `apps/api/test/access.integration.test.ts`
+  (the harness asks for rows, not files), the e2e fixture `apps/web/e2e/fixtures/script.png`
+  (synthetic, drawn with sharp) and two e2e specs. No handwriting font ships (no OFL file
+  to hand): the pen writes in the bold system face, as the brief allows.
+- **B11 · live check (4 Nov, Muse Spark 1.3, the synthetic script image, one teacher upload):**
+  one call, accepted first time, 16.0 s, $0.0157, total 3/4, every step `high`. Boxes landed
+  on the right line for all four steps (nearest-line match 4/4); vertical drift 39–59 grid
+  units (4–6 % of the height, the ellipse sits on or just under the line); steps 1 and 2
+  shared one box (the factorised line), so repeated ticks now sit side by side. The ink
+  stays on the photo. A real photo of handwritten working is not in the repo: if the founder
+  has one (adult, consented), repeat with `E2E_LIVE=1` and the scratch driver, and record
+  the placement.
 - **B05 · resolved by D37 and the 4 Nov update of PR #4:** Playwright (in the repo from
   B04), the evidence payload contract (B04's `assessed` event now writes `skills_correct` /
   `skills_lost` / `mode` through `evidencePayload()`), and `model_runs` rows (the profile
@@ -199,7 +232,95 @@ Add any question here, linked to a task ID.
   wrote `evals/results/latest.json`, committed with the conservative dataset label. Four tests
   committed by the first session had not run green (interval and money formatters, numerals in
   `SuiteSection.tsx`, the empty-state log check); fixed in `1b743a2`, described in the PR.
+- **B09 · finished 4 Nov, PR open.** Landing by surface (D35), `/try` with a seeded
+  "Try it (fictional)" class, install as an app (hand-written service worker, manifest,
+  icons from the Sentinel mark), the Bring picker through `MathText`, `robots.txt`, Open
+  Graph card, and the `e2e` CI job. Decisions to confirm:
+  1. **Files outside the brief's "own only" list**, each the smallest change the brief's
+     items need: `apps/api/src/config.ts` (`PUBLIC_TRY_CLASS_CODE`, `TRY_USER_DAILY_CALLS`),
+     `auth/signup.ts` (the server-side join), `modelRuns/caps.ts` (the try-it cap, applied
+     inside `checkCaps` by class-code hash), `routes/items.ts` + the shared `itemSummarySchema`
+     (`promptMd`, `approvedForYou`), a new public `routes/try.ts` (`GET /api/try`: available +
+     class name, never the code), `app.ts` wiring, `static.ts` (`sw.js` and the manifest are
+     `no-cache`), the shared `signUpBodySchema` (`tryClass: true`) and `signUpResponseSchema`
+     (`joinedClass`), `app/router.tsx` (`/try`), `api/auth.ts` (`tryStatus`), one import and
+     one line in `routes/learner/today/Today.tsx` (the install hint), `vitest.config.ts` +
+     `package.json` (a `web` unit project for the worker's fetch policy), and the e2e/integration
+     harnesses (`test/e2e/serve.ts`, `test/integration/db.ts`) so the try-it class is reachable.
+  2. **`.env.example` is write-denied** in this session: please add `PUBLIC_TRY_CLASS_CODE=`
+     (the seed prints it: `class try code`) and `TRY_USER_DAILY_CALLS=6`. On Railway, set
+     `PUBLIC_TRY_CLASS_CODE` to the production seed's try code, or `/try` says it is not on.
+  3. **The try-it teacher** is a seeded person (`try-teacher@demo.guardianbook.test`, "Ms
+     Demo") whose account gets a fresh random, unprinted password on every seed run, so the
+     class has a teacher but nobody can sign in as it (integration test).
+  4. **Seed counts changed:** 4 classes, 6 guideline approvals (3 items × 12A and try); the
+     auth test's counts were updated. The permission harness is unchanged.
+  5. **Picker:** unapproved items stay listed (after the approved ones) but disabled, with
+     "not approved for your class yet", rather than hidden. Say if they should be hidden.
+  6. **Service worker update policy:** `skipWaiting` + `clients.claim` as the brief says, no
+     "A new version is ready" prompt (spec 06 §5 asked for one): the next page load gets the
+     new build because pages are network-first and `index.html`/`sw.js` are never HTTP-cached.
+     Activating deletes older caches, so an already-open old page that lazy-loads a chunk
+     after a deploy falls back to the route error boundary's retry (the existing stale-bundle
+     behaviour, unchanged).
+  7. **`robots.txt`** follows the brief's list exactly (allow `/`, `/try`, `/evidence`;
+     disallow `/api/`, `/today`, `/brain`, `/me`, `/bring`, `/attempts/`, `/items/`,
+     `/calendar`, `/guardian`, `/teacher`); the row above's older list (`/learner/`, invite
+     and join links) is superseded by the brief.
+  8. **Port 8097 is shared** by every worktree's e2e server: two sessions running
+     `pnpm test:e2e` at once reuse or kill each other's server (seen twice on 4 Nov). Not a
+     code issue; CI runs alone.
 - **B08 · resolved on `main` (4 Nov):** the eval-only `.env.example` lines (`EVAL_DATASET_LABEL`,
   `EVAL_HELD_OUT`, `EVAL_NOT_YET`, `EVAL_PRIVACY_FILE`) landed in `af71f5c`; D37 keeps the
   synthetic dev cases in-repo at `apps/api/src/evals/fixtures/cases/` (real and held-out sets
   stay outside the repo).
+- **B12 · where the background translation starts.** The brief says "translate in the
+  background when the text is created (plan issued, note sent, feedback released)", but
+  those moments live in `plans/service.ts` (`storePlan`), `notes/service.ts` (`sendNote`)
+  and `teacher/review.ts` (`releaseReview`), which B12 does not own. So the job starts on
+  the first guardian read of the text (G1 or G2) and when the parent picks a language
+  (everything they can already see is warmed); G1 and G2 serve the English with
+  "Translation on its way" and refresh every 3 s (up to 8 times) until it lands. One line
+  in each of the three files (`translateForGuardians(...)`) would make it creation-time;
+  say if B12 or a later brief should add them.
+- **B12 · four small edits outside the owned folders**, all additive: `loop.test.ts`
+  (B06) now expects `translation: null` on a teacher message; three harness rows in
+  `test/access.integration.test.ts` for `/api/guardian/language`; `practiceGateway.ts`
+  answers `translate` with a pseudo-translation (every word's letters reversed);
+  `notesRouter` takes `TeacherDeps & Pick<PracticeDeps, 'jobs'>` (the same object
+  `createApp` already passes). `GuardianNoteView` and `GET /api/guardian/notes` gained
+  `translation` and `language`; the week is served as `GuardianWeekView` (the B06 schema
+  extended), so `plans/service.ts` is untouched. The guardian's language is read from
+  `GET /api/guardian/language`, not `/api/me` (`routes/me.ts` is not B12's). No `.env`
+  line is needed.
+- **B12 · live check (4 Nov, `muse-spark-1.3`, `translate-v1`, 6 calls, $0.050):** every
+  accepted output passed all five rules on the first call. The first isiZulu run was cut
+  off at a 2,000-token output budget (the model reasons before the JSON; 2,216 and 1,995
+  output tokens were needed), so the budget is 6,000 like the work check and an unusable
+  answer is remembered as `unavailable` (English stands, no re-spend). **For a fluent
+  speaker to check** (names and numbers were placeholders in the prompt and restored after):
+  - EN plan: *One step slipped this week: factorising. Ask Lerato to teach you step 2
+    tonight. Ten minutes is enough; you do not need to know the maths. Lerato brought 3
+    pieces of work this week and had every one checked.*
+  - ZU: *Isinyathelo esisodwa asihambanga kahle kuleli sonto: ukuhlukanisa ngezici. Cela
+    Lerato akufundise isinyathelo 2 namhlanje ebusuku. Imizuzu elishumi yanele; awudingi
+    ukwazi izibalo. Lerato ulethe imisebenzi engu-3 kuleli sonto futhi yonke yahloliwe.*
+  - AF: *Een stap het hierdie week geglip: faktorisering. Vra Lerato om jou vanaand stap 2
+    te leer. Tien minute is genoeg; jy hoef nie die wiskunde te ken nie. Lerato het hierdie
+    week 3 stukke werk gebring en elkeen laat nasien.*
+  - EN note: *This week Lerato worked on algebra. One step slipped: writing the final
+    answers after factorising. Please ask Lerato to explain that step to you tonight; 10
+    minutes is enough. Ms Dlamini*
+  - ZU: *Kuleli sonto Lerato usebenze nge-algebra. Isinyathelo esisodwa asihambanga kahle:
+    ukubhala izimpendulo zokugcina ngemuva kokufactorisa. Ngicela ucele Lerato ukuthi
+    akuchazele leso sinyathelo namhlanje ebusuku; 10 amaminithi anele. Ms Dlamini*
+  - AF: *Hierdie week het Lerato aan algebra gewerk. Een stap het geglip: om die finale
+    antwoorde na faktorisering neer te skryf. Vra Lerato asseblief om daardie stap vanaand
+    vir jou te verduidelik; 10 minute is genoeg. Ms Dlamini*
+- **B12 · synced with main (B11) on 4 Nov by merge commit:** two conflicts, both additive
+  (the `AuditAction` list in `audit/record.ts`; the B11 and B12 rows above), kept both sides;
+  no migration clash (main added none, 0004 stands). Running the whole e2e suite, not only
+  the B12 spec, showed `guardian-language.spec` leaving the parent in isiZulu on the shared
+  e2e server, so `loop.spec` (B06) read a mock-translated week; the spec now switches the
+  parent back to English at its end (test only, no product change). Typecheck, lint, unit,
+  integration (throwaway Postgres on 5438), build and all 9 e2e green after the merge.

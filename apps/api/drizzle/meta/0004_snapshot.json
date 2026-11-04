@@ -1,5 +1,5 @@
 {
-  "id": "413b68a4-3c78-49c2-a6b8-f72dfaffebce",
+  "id": "d6748433-bb7a-4f54-bef5-f8bcdcfd0e6c",
   "prevId": "bccec2ae-aefd-401b-ac9e-99162a9ca77f",
   "version": "7",
   "dialect": "postgresql",
@@ -2507,6 +2507,14 @@
           "primaryKey": false,
           "notNull": false
         },
+        "preferred_language": {
+          "name": "preferred_language",
+          "type": "language_code",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'en'"
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -3332,6 +3340,156 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.translations": {
+      "name": "translations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuid_generate_v7()"
+        },
+        "source_kind": {
+          "name": "source_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "language": {
+          "name": "language",
+          "type": "language_code",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_hash": {
+          "name": "source_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "text": {
+          "name": "text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "translation_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model_run_id": {
+          "name": "model_run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "provenance": {
+          "name": "provenance",
+          "type": "provenance",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provenance_detail": {
+          "name": "provenance_detail",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "training_permission": {
+          "name": "training_permission",
+          "type": "training_permission",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'not_permitted'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "translations_source_idx": {
+          "name": "translations_source_idx",
+          "columns": [
+            {
+              "expression": "source_kind",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "source_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "translations_model_run_id_model_runs_id_fk": {
+          "name": "translations_model_run_id_model_runs_id_fk",
+          "tableFrom": "translations",
+          "tableTo": "model_runs",
+          "columnsFrom": [
+            "model_run_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "translations_source_hash_language": {
+          "name": "translations_source_hash_language",
+          "nullsNotDistinct": false,
+          "columns": [
+            "source_hash",
+            "language"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "translations_text_len": {
+          "name": "translations_text_len",
+          "value": "char_length(\"translations\".\"text\") <= 2000"
+        },
+        "translations_ready_has_text": {
+          "name": "translations_ready_has_text",
+          "value": "\"translations\".\"status\" <> 'ready' or \"translations\".\"text\" is not null"
+        },
+        "translations_language_not_en": {
+          "name": "translations_language_not_en",
+          "value": "\"translations\".\"language\" <> 'en'"
+        }
+      },
+      "isRLSEnabled": false
+    },
     "public.user": {
       "name": "user",
       "schema": "",
@@ -3590,6 +3748,18 @@
         "approved"
       ]
     },
+    "public.language_code": {
+      "name": "language_code",
+      "schema": "public",
+      "values": [
+        "en",
+        "af",
+        "zu",
+        "xh",
+        "tn",
+        "st"
+      ]
+    },
     "public.learning_event_kind": {
       "name": "learning_event_kind",
       "schema": "public",
@@ -3623,8 +3793,7 @@
         "notice",
         "plan",
         "note",
-        "transcribe",
-        "step_hint"
+        "translate"
       ]
     },
     "public.model_run_status": {
@@ -3730,6 +3899,14 @@
         "not_permitted",
         "evaluation_only",
         "permitted"
+      ]
+    },
+    "public.translation_status": {
+      "name": "translation_status",
+      "schema": "public",
+      "values": [
+        "ready",
+        "unavailable"
       ]
     }
   },

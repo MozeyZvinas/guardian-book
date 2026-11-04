@@ -8,6 +8,7 @@ import { planAgentTurnSchema } from './plan.js'
 import { profileCardsSchema } from './profileCards.js'
 import { transcriptSchema } from './transcript.js'
 import type { ModelPurpose } from './purpose.js'
+import { translationOutputSchema } from './translate.js'
 import { workCheckOutputSchema } from './workCheck.js'
 
 export * from './common.js'
@@ -20,6 +21,7 @@ export * from './plan.js'
 export * from './profileCards.js'
 export * from './purpose.js'
 export * from './transcript.js'
+export * from './translate.js'
 export * from './workCheck.js'
 
 /** The output contract for each purpose. One place, so the gateway and verifier agree. */
@@ -31,6 +33,8 @@ export const MODEL_OUTPUT_SCHEMAS = {
   // One agent turn per call (B06): a tool to call, or `writePlan` carrying the plan.
   plan: planAgentTurnSchema,
   note: noteDraftSchema,
+  // B12: one parent-facing text into the parent's home language, placeholders kept.
+  translate: translationOutputSchema,
   // B13: speech to text is not a chat completion (no prompt, no JSON schema sent); the
   // contract still names the shape every `transcribe` run records. One hint per ask.
   transcribe: transcriptSchema,

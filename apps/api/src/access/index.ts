@@ -1,7 +1,7 @@
 import { and, eq, isNull } from 'drizzle-orm'
 import type { Actor } from '../auth/session.js'
 import type { DbOrTx } from '../db/client.js'
-import { attempts, calendarEvents, classMembers, classes, guardianLinks, inputs, interventions, notes, profiles } from '../db/schema.js'
+import { assessments, attempts, calendarEvents, classMembers, classes, guardianLinks, inputs, interventions, notes, profiles, reviews } from '../db/schema.js'
 
 /**
  * The `access` module (spec 03 §1, §4, §8.2, §9.2): the ONLY place permission decisions
@@ -50,6 +50,8 @@ export type Action =
   | 'note.create'
   | 'note.read'
   | 'note.update'
+  // B11: a teacher uploads one learner's script for marking (P1-g)
+  | 'script.upload'
 
 export type Resource =
   | { type: 'class'; id: string }
@@ -211,6 +213,29 @@ async function calendarEventRow(db: DbOrTx, eventId: string): Promise<{ scopeTyp
   return row ?? null
 }
 
+/**
+ * B11: a script the teacher uploaded for a learner (`attempts.provenance = school_provided`)
+ * stays with the teacher until she releases the review: the learner (and so the guardian
+ * space) cannot open the attempt, its image, its review or a fix before then. A learner's
+ * own work is readable at once, as before.
+ */
+async function ownerMaySeeAttempt(db: DbOrTx, subject: Subject, attemptId: string): Promise<boolean> {
+  const [row] = await db.select({ learnerId: attempts.learnerId, provenance: attempts.provenance }).from(attempts).where(eq(attempts.id, attemptId)).limit(1)
+  if (!row || !learnerOwns(subject, row.learnerId)) return false
+  if (row.provenance !== 'school_provided') return true
+  return releasedReviewExists(db, attemptId)
+}
+
+export async function releasedReviewExists(db: DbOrTx, attemptId: string): Promise<boolean> {
+  const [row] = await db
+    .select({ id: reviews.id })
+    .from(reviews)
+    .innerJoin(assessments, eq(assessments.id, reviews.assessmentId))
+    .where(and(eq(assessments.attemptId, attemptId), eq(reviews.state, 'released')))
+    .limit(1)
+  return Boolean(row)
+}
+
 async function teacherOwnsClass(db: DbOrTx, teacher: Subject, classId: string): Promise<boolean> {
   if (teacher.role !== 'teacher' || !teacher.schoolId) return false
   const [row] = await db
@@ -300,7 +325,7 @@ export async function can(db: DbOrTx, subject: Subject, action: Action, resource
       if (resource.type !== 'attempt') return false
       const [row] = await db.select({ learnerId: attempts.learnerId }).from(attempts).where(eq(attempts.id, resource.id)).limit(1)
       if (!row) return false
-      if (learnerOwns(subject, row.learnerId)) return true
+      if (subject.role === 'learner') return ownerMaySeeAttempt(db, subject, resource.id)
       if (subject.role === 'teacher') {
         return (await teacherOfLearner(db, subject, row.learnerId)) && sameSchool(db, subject, resource)
       }
@@ -337,9 +362,10 @@ export async function can(db: DbOrTx, subject: Subject, action: Action, resource
       return resource.type === 'learner' && learnerOwns(subject, resource.id)
 
     case 'attempt.assess': {
+      // The owner starts the check on their own work; a teacher-uploaded script is started by the upload (B11).
       if (resource.type !== 'attempt') return false
-      const [row] = await db.select({ learnerId: attempts.learnerId }).from(attempts).where(eq(attempts.id, resource.id)).limit(1)
-      return Boolean(row) && learnerOwns(subject, row?.learnerId ?? '')
+      const [row] = await db.select({ learnerId: attempts.learnerId, provenance: attempts.provenance }).from(attempts).where(eq(attempts.id, resource.id)).limit(1)
+      return Boolean(row) && row?.provenance !== 'school_provided' && learnerOwns(subject, row?.learnerId ?? '')
     }
 
     case 'calendar_event.read': {
@@ -393,10 +419,11 @@ export async function can(db: DbOrTx, subject: Subject, action: Action, resource
 
     case 'attempt.fix':
     case 'attempt.ask': {
-      // Only the owner redoes, or asks about, a step (spec 03 §8.3 `POST /api/attempts/:id/fix`: owner; B13 `/ask`).
+      // Only the owner redoes, or asks about, a step (spec 03 §8.3 `POST /api/attempts/:id/fix`: owner;
+      // B13 `/ask`); a teacher-uploaded script (a test, written alone) is never fixed or asked about (B11).
       if (resource.type !== 'attempt') return false
-      const [row] = await db.select({ learnerId: attempts.learnerId }).from(attempts).where(eq(attempts.id, resource.id)).limit(1)
-      return Boolean(row) && learnerOwns(subject, row?.learnerId ?? '')
+      const [row] = await db.select({ learnerId: attempts.learnerId, provenance: attempts.provenance }).from(attempts).where(eq(attempts.id, resource.id)).limit(1)
+      return Boolean(row) && row?.provenance !== 'school_provided' && learnerOwns(subject, row?.learnerId ?? '')
     }
 
     // ── B07: guidelines, reviews, interventions, notes ──────────────────────────────────────
@@ -419,7 +446,7 @@ export async function can(db: DbOrTx, subject: Subject, action: Action, resource
       if (resource.type !== 'attempt') return false
       const [row] = await db.select({ learnerId: attempts.learnerId }).from(attempts).where(eq(attempts.id, resource.id)).limit(1)
       if (!row) return false
-      if (learnerOwns(subject, row.learnerId)) return true
+      if (subject.role === 'learner') return ownerMaySeeAttempt(db, subject, resource.id)
       if (subject.role === 'teacher') return (await teacherOfLearner(db, subject, row.learnerId)) && sameSchool(db, subject, resource)
       return false
     }
@@ -457,6 +484,12 @@ export async function can(db: DbOrTx, subject: Subject, action: Action, resource
       if (!row || subject.role !== 'teacher') return false
       return row.teacherId === subject.userId && sameSchool(db, subject, resource)
     }
+
+    // ── B11: a teacher uploads a learner's script ───────────────────────────────────────────
+
+    case 'script.upload':
+      // The class teacher, in her school; the learner's membership is checked by the service.
+      return resource.type === 'class' && teacherOwnsClass(db, subject, resource.id)
 
     default:
       return false

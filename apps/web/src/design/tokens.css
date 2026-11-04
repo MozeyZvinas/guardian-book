@@ -23,6 +23,8 @@
   --color-pink-light: #ff5a7a; /* action on dark */
   --color-teal-light: #3dd6c6; /* progress on dark */
   --color-green: #153f38; /* the guardian portal's header and chips only (white on green 11.7:1) */
+  --color-red-ink: #b3261e; /* the teacher's red pen on a learner's own photo (B11); never a status colour (A1, A7) */
+  --color-red-ink-light: #ff7b72; /* the red pen's comments on the night ground */
 
   --radius-*: initial;
   --radius-card: 12px;
@@ -47,6 +49,7 @@
   --color-fg-muted: var(--gb-fg-muted);
   --color-action: var(--gb-action);
   --color-progress: var(--gb-progress);
+  --color-ink-red: var(--gb-ink-red);
 }
 
 :root {
@@ -57,6 +60,7 @@
   --gb-fg-muted: var(--color-muted);
   --gb-action: var(--color-pink);
   --gb-progress: var(--color-teal);
+  --gb-ink-red: var(--color-red-ink);
 }
 
 /* Night: prefers-color-scheme, with a data-theme override (spec 06 §3). */
@@ -68,6 +72,7 @@
     --gb-fg-muted: color-mix(in srgb, var(--color-night-text) 72%, var(--color-black));
     --gb-action: var(--color-pink-light);
     --gb-progress: var(--color-teal-light);
+    --gb-ink-red: var(--color-red-ink-light);
   }
 }
 
@@ -78,6 +83,7 @@
   --gb-fg-muted: color-mix(in srgb, var(--color-night-text) 72%, var(--color-black));
   --gb-action: var(--color-pink-light);
   --gb-progress: var(--color-teal-light);
+  --gb-ink-red: var(--color-red-ink-light);
 }
 
 @layer base {

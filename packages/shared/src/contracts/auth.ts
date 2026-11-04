@@ -31,6 +31,11 @@ export const signUpBodySchema = z
     role: signUpRoleSchema,
     /** Must be literally `true`; anything else is refused (D19). */
     ageAttested: z.literal(true, { error: `You must confirm "${AGE_ATTESTATION_LABEL}".` }),
+    /**
+     * B09: a sign-up from `/try`. The server, never the client, decides which class that
+     * means (`PUBLIC_TRY_CLASS_CODE`); learners only; ignored when unconfigured.
+     */
+    tryClass: z.literal(true).optional(),
   })
   .strict()
 export type SignUpBody = z.infer<typeof signUpBodySchema>
@@ -55,8 +60,17 @@ export type Profile = z.infer<typeof profileSchema>
 export const signUpResponseSchema = z.object({
   user: z.object({ id: z.string().uuid() }),
   profile: profileSchema,
+  /** B09: the class a `/try` sign-up joined, or null (not requested, not a learner, or try-it unconfigured). */
+  joinedClass: z.object({ id: z.string().uuid(), name: z.string() }).nullable().optional(),
 })
 export type SignUpResponse = z.infer<typeof signUpResponseSchema>
+
+/** B09: `GET /api/try`, public. The class name only; never the code. */
+export const tryStatusResponseSchema = z.object({
+  available: z.boolean(),
+  className: z.string().nullable(),
+})
+export type TryStatusResponse = z.infer<typeof tryStatusResponseSchema>
 
 /** The API's error envelope (spec 03 §5). */
 export const apiErrorSchema = z.object({

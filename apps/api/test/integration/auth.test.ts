@@ -24,9 +24,9 @@ describe('seeds', () => {
     expect(second.items).toEqual({ inserted: 0, updated: 0, unchanged: 3 })
     expect(before[TABLES.indexOf('user')]).toBe(Object.keys(SEED_PEOPLE).length)
     expect(before[TABLES.indexOf('schools')]).toBe(2)
-    expect(before[TABLES.indexOf('classes')]).toBe(3)
+    expect(before[TABLES.indexOf('classes')]).toBe(4) // 12A, 11B, 10C and the try-it class (B09)
     expect(before[TABLES.indexOf('class_members')]).toBe(8)
-    expect(before[TABLES.indexOf('guideline_approvals')]).toBe(3) // three seed items, approved for 12A (B06 added the follow-up item)
+    expect(before[TABLES.indexOf('guideline_approvals')]).toBe(6) // three seed items, approved for 12A and the try-it class
   })
 
   it('refuses a short seed password', async () => {

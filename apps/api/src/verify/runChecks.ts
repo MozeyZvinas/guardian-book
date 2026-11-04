@@ -3,6 +3,7 @@ import { WORK_CHECK_RULES } from './checks/work.js'
 import { STEP_HINT_RULES, TRANSCRIBE_RULES } from './checks/hint.js'
 import { NOTICE_RULES } from './checks/notice.js'
 import { CLASSIFY_RULES, NOTE_RULES, PLAN_RULES, PROFILE_CARDS_RULES } from './checks/plan.js'
+import { TRANSLATE_RULES } from './checks/translate.js'
 import type { CheckContexts, CheckResult, CheckRule } from './types.js'
 
 /**
@@ -30,6 +31,7 @@ export const RULE_SETS: RuleSets = {
   notice: NOTICE_RULES,
   plan: PLAN_RULES,
   note: NOTE_RULES,
+  translate: TRANSLATE_RULES,
   transcribe: TRANSCRIBE_RULES,
   step_hint: STEP_HINT_RULES,
 }

@@ -106,3 +106,10 @@ means action, never "wrong" (A1). Colour never carries correctness alone (A7).
   test globals vanish.
 - PWA: use a prompt-to-update service worker, and check every deploy in a fresh tab
   (stale bundles).
+
+## Parallel sessions (learned 4 Nov)
+- Several worktrees run at once: give each its own Postgres port **and its own e2e server port**
+  (don't all use 8097), and write scratch files (PR bodies, logs) under a name that includes the
+  brief (e.g. `/tmp/gb-b11-pr.md`), never a shared name.
+- If main gained a Drizzle migration since you branched, renumber yours after it and regenerate
+  its snapshot before you push.

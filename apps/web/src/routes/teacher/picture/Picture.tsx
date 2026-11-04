@@ -50,6 +50,7 @@ function PictureScreen({ me }: { me: MeResponse }) {
             </Link>
             <Link to={`/teacher/classes/${classId}/guidelines`}>Guidelines</Link>
             <Link to={`/teacher/classes/${classId}/notice`}>Upload a notice</Link>
+            <Link to={`/teacher/classes/${classId}/script`}>Mark a script</Link>
           </nav>
 
           <div className="grid gap-6 lg:grid-cols-2">

@@ -30,6 +30,7 @@ import { healthzRouter } from './routes/healthz.js'
 import { itemsRouter } from './routes/items.js'
 import { meRouter } from './routes/me.js'
 import { learnerSpaceRouter } from './routes/me/index.js'
+import { tryRouter } from './routes/try.js'
 import { webStatic } from './static.js'
 import { createStorage, type Storage } from './storage/index.js'
 import { teacherRouter } from './teacher/routes.js'
@@ -125,7 +126,7 @@ export function createApp(options: AppOptions): Express {
   if (db && auth) {
     // Sign-up is ours (one transaction with the profile); mounted before Better Auth's
     // handler, which reads the raw body itself and must come before express.json().
-    app.use(signUpRouter({ db, auth, logger }))
+    app.use(signUpRouter({ db, auth, logger, tryClassCode: config.tryIt.classCode }))
     app.all('/api/auth/{*splat}', toNodeHandler(auth))
 
     app.use('/api', express.json({ limit: '1mb' }))
@@ -139,13 +140,15 @@ export function createApp(options: AppOptions): Express {
       gateway,
       storage,
       logger,
-      limits: capLimits(config.meta),
+      limits: capLimits(config.meta, config.tryIt),
       jobs: options.jobs ?? new JobRegistry(logger),
       now: options.now ?? (() => new Date()),
       loop: { agentGateway, planMaxSteps: config.meta.planAgentMaxSteps, retentionCheckDays: config.loop.retentionCheckDays },
     }
     app.use(meRouter(db))
     app.use(learnerSpaceRouter(practice))
+    // B09: the public "Try it" status (is the try-it class reachable on this server?).
+    app.use(tryRouter({ db, tryClassCode: config.tryIt.classCode }))
     app.use(circleRouter(db))
     app.use(itemsRouter(db))
     app.use(inputsRouter(practice))
@@ -164,6 +167,7 @@ export function createApp(options: AppOptions): Express {
     app.use(voiceRouter({ db, transcriber, logger, limits: practice.limits, now: practice.now }))
   } else {
     app.use('/api', express.json({ limit: '1mb' }))
+    app.use(tryRouter({ db: null, tryClassCode: null }))
     app.use(API_PREFIXES, (_req, _res, next) => next(notConfigured()))
   }
 

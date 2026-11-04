@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { brainSkillSchema } from '../brain/contracts.js'
 import { guidelineStepSchema, guidelineStepTypeSchema } from './items.js'
+import { languageSchema, translationViewSchema } from './language.js'
 import { confidenceSchema, isoDateSchema } from './model/common.js'
 import { attemptModeSchema, attemptStatusSchema } from './practice.js'
 import { provenanceSchema } from './provenance.js'
@@ -473,10 +474,12 @@ export const guardianNoteViewSchema = z.object({
   label: z.string(),
   text: z.string(),
   sentAt: z.string(),
+  /** B12: the note in the guardian's home language, or null when they read in English. */
+  translation: translationViewSchema.nullable(),
 })
 export type GuardianNoteView = z.infer<typeof guardianNoteViewSchema>
 
-export const guardianNotesResponseSchema = z.object({ notes: z.array(guardianNoteViewSchema) })
+export const guardianNotesResponseSchema = z.object({ language: languageSchema, notes: z.array(guardianNoteViewSchema) })
 export type GuardianNotesResponse = z.infer<typeof guardianNotesResponseSchema>
 
 // ── T6 learner profile ─────────────────────────────────────────────────────────────────────

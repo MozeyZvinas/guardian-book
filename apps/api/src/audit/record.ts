@@ -44,6 +44,13 @@ export type AuditAction =
   | 'note.created'
   | 'note.approved'
   | 'note.sent'
+  // B11: the uploader of a learner's script is the actor of this row (D37 precedent)
+  | 'script.uploaded'
+  | 'script.upload_refused'
+  // B12
+  | 'guardian.language_set'
+  | 'translation.created'
+  | 'translation.refused'
   // B13
   | 'attempt.asked'
   | 'attempt.ask_refused'

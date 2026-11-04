@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="robots" content="noindex" />
+    <title>Offline · Guardian Book</title>
+    <!-- Served by the service worker when a page load fails. Self-contained: system fonts,
+         no script (the CSP allows none inline), Sentinel token values written out by hand. -->
+    <style>
+      :root {
+        --ground: #ffffff;
+        --fg: #1b1b1f;
+        --muted: #5e6664;
+        --action: #d8234b;
+        --surface: #f6f7f7;
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --ground: #111111;
+          --fg: #e9e9ec;
+          --muted: #a9a9ae;
+          --action: #ff5a7a;
+          --surface: #2a2a2d;
+        }
+      }
+      html {
+        background: var(--ground);
+        color: var(--fg);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+      }
+      main {
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 32px 16px 40px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        flex: 1;
+      }
+      .wordmark {
+        font-size: 20px;
+        letter-spacing: -0.01em;
+      }
+      .wordmark b {
+        font-weight: 600;
+      }
+      h1 {
+        font-size: clamp(1.75rem, 1.2rem + 3.2vw, 2.5rem);
+        line-height: 1.12;
+        letter-spacing: -0.015em;
+        margin: 0;
+      }
+      p {
+        margin: 0;
+        line-height: 1.5;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .card {
+        background: var(--surface);
+        border-radius: 12px;
+        padding: 16px;
+      }
+      a.button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0 20px;
+        border-radius: 12px;
+        background: var(--action);
+        color: #ffffff;
+        font-weight: 500;
+        text-decoration: none;
+      }
+      a.button:focus-visible {
+        outline: 2px solid var(--action);
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="wordmark"><b>Guardian</b> Book</p>
+      <h1>You’re offline.</h1>
+      <p>Guardian Book needs a connection to read your work and keep it safe. Nothing you submitted has been lost.</p>
+      <div class="card">
+        <p class="muted">Check your signal or Wi-Fi, then try again. Your work and your plan are waiting on the server.</p>
+      </div>
+      <p><a class="button" href="/today">Try again</a></p>
+    </main>
+  </body>
+</html>

@@ -33,8 +33,15 @@
     {
       "idx": 4,
       "version": "7",
-      "when": 1793791838804,
-      "tag": "0004_b13_voice_hints",
+      "when": 1793788768070,
+      "tag": "0004_b12_translations",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793795903199,
+      "tag": "0005_b13_voice_hints",
       "breakpoints": true
     }
   ]

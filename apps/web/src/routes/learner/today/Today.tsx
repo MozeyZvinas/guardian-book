@@ -9,6 +9,7 @@ import { Button, Card, FormError } from '../../../components/Form'
 import { LearnerShell } from '../../../components/LearnerShell'
 import { Skeleton } from '../../../components/Skeleton'
 import { daysWord, shortDate, shortDateTime } from '../../../lib/dates'
+import { InstallHint } from '../../../sw/InstallHint'
 
 /**
  * L1 · Today (spec 05 §4.2, §9): open → one next step. The check-in card outranks
@@ -122,6 +123,8 @@ function TodayScreen() {
           <Link to="/me">Invite a parent</Link> so they know how to help.
         </p>
       ) : null}
+
+      <InstallHint />
     </LearnerShell>
   )
 }
