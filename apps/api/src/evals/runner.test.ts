@@ -18,6 +18,7 @@ const quadGuideline: EvalCase['guideline'] = [
 const cases: EvalCase[] = [
   {
     id: 'quad-correct',
+    suite: 'work_check',
     category: 'fully_correct',
     legibility: null,
     item: { slug: 'alg-quad-01', prompt_md: 'Solve $x^2 - 5x + 6 = 0$', max_marks: 3 },
@@ -29,6 +30,7 @@ const cases: EvalCase[] = [
   },
   {
     id: 'quad-sign-error',
+    suite: 'work_check',
     category: 'clear_conceptual_error',
     legibility: null,
     item: { slug: 'alg-quad-01', prompt_md: 'Solve $x^2 - 5x + 6 = 0$', max_marks: 3 },
@@ -66,7 +68,7 @@ describe('eval runner', () => {
     const { logger, lines } = capturingLogger()
     const gateway = createMockGateway(config, logger, cases)
     const seen: string[] = []
-    const { results, filePath, latestPath } = await runEval({
+    const { results, filePath } = await runEval({
       evalDir,
       outDir,
       gateway,
@@ -94,11 +96,12 @@ describe('eval runner', () => {
     expect(results.summary.exact_total.ci95?.[0]).toBeGreaterThan(0)
 
     expect(path.basename(filePath)).toBe('2026-11-03T12-00-00-000Z-muse-spark-1.3-mock.json')
-    expect(path.basename(latestPath)).toBe('latest.json')
-    const written = JSON.parse(await readFile(latestPath, 'utf8')) as typeof results
+    const written = JSON.parse(await readFile(filePath, 'utf8')) as typeof results
     expect(written.summary.cases).toBe(2)
     expect(written.cases[1]?.model_first_lost_step).toBe('S1')
-    expect((await readdir(outDir)).sort()).toEqual(['2026-11-03T12-00-00-000Z-muse-spark-1.3-mock.json', 'latest.json'])
+    expect(written.cases.map((c) => c.answer_revealed)).toEqual([null, null])
+    // The raw file only: the committed latest.json is the summary, written by run.ts (B08).
+    expect(await readdir(outDir)).toEqual(['2026-11-03T12-00-00-000Z-muse-spark-1.3-mock.json'])
     // The gateway logged each call without any answer text.
     expect(lines.join('\n')).not.toContain('(x + 2)(x + 3)')
   })

@@ -50,10 +50,10 @@ the same files.
 | B04 Bring anything: inputs, work check → attempt → assessment (guideline approval enforced, provenance written), notice reader → calendar, `model_runs` | 2–3 Nov | P0-03, P0-04, P0-06 | B02 + B03 merged | A / $30 | done (PR #5 merged 4 Nov SAST; live smoke 2 calls, $0.024) |
 | B05 ∥ Profile cards, Today (+ check-in due), Brain page (assisted / independent / retained evidence), timeline | 3 Nov | P0-02, P0-07 | B02 + B03 merged | B / $20 | review (PR #4, branch `b05-profile-today-brain`; brought up to date with B04 on 4 Nov: assessed events through `evidencePayload()`, profile cards through `runModel`, KaTeX `MathText`; see questions below) |
 | B06 Help Plan agent, guardian view (Teacher-reviewed labels), "We did it", fix it → check it alone → follow-up check | 3 Nov | P0-05, P0-08, P0-09 | B04, B05 | A / $30 | todo |
-| B07 ∥ Teacher view: guidelines approval, class picture, confirm queue, review with feedback controls (agree / correct / add / audience), release, interventions (owner, follow-up, outcome, close), notes with origin labels, class notice, learner profile | 3 Nov | P0-10 | B04 | B / $30 | review (PR #7, branch `b07-teacher-space`; brought up to date with B05 on 4 Nov; see questions below) |
-| B08 Eval runner results + proof page `/evidence` | 3 Nov | P0-12 | B03, E1 | B / $10 | todo |
+| B07 ∥ Teacher view: guidelines approval, class picture, confirm queue, review with feedback controls (agree / correct / add / audience), release, interventions (owner, follow-up, outcome, close), notes with origin labels, class notice, learner profile | 3 Nov | P0-10 | B04 | B / $30 | review (PR #7, branch `b07-teacher-space`; brought up to date with B05 and B08 on 4 Nov; see questions below) |
+| B08 Eval runner results + proof page `/evidence` | 3 Nov | P0-12 | B03, E1 | B / $10 | in review (PR #6, 3 Nov; first live summary committed; brought up to date with B04 and B05 on 4 Nov; see the B08 notes below) |
 | **Gate P0:** full run on the founder's phone | 3 Nov, 20:00 (D35) | all P0 | — | — | todo |
-| B09 PWA, polish (landing hero by surface, D35), E2E in CI; `robots.txt` (allow `/`, `/evidence`; disallow `/api/`, `/learner/`, `/guardian/`, `/teacher/`, invite and join links; D36); then P1 in order (incl. P1-g teacher uploads a script) (voice, see-it card, overlay, open-weight row, WhatsApp text) | 3 Nov | P0-13, P1 | Gate P0 | A + B | todo |
+| B09 PWA, polish (landing hero by surface, D35), E2E in CI; the Bring question picker shows the question itself (MathText), not the slug; `robots.txt` (allow `/`, `/evidence`; disallow `/api/`, `/learner/`, `/guardian/`, `/teacher/`, invite and join links; D36); then P1 in order (incl. P1-g teacher uploads a script) (voice, see-it card, overlay, open-weight row, WhatsApp text) | 3 Nov | P0-13, P1 | Gate P0 | A + B | todo |
 | B10 Release hardening, restore drill, history scan, README | 3 Nov | P0-13 | B09 | B / $8 | todo |
 | V1 Record the demo + X cut | 4 Nov, morning | — | B10 | Founder + planning | todo |
 | B11 Freeze + submit by 20:00 SAST | 4 Nov | — | V1 | Founder | todo |
@@ -137,3 +137,12 @@ Add any question here, linked to a task ID.
 - **B07 · release by attempt:** `POST /api/teacher/attempts/:id/release` exists beside the
   spec's `POST /api/teacher/reviews/:id/release`, so "release before confirm → 409
   `not_confirmed`" is testable (a review ID does not exist before confirm).
+- **B08 · finished 3 Nov (second session), PR #6.** The integration suite (62 tests) wrote the
+  permission harness file; the live `pnpm eval:dev` over the 12 in-repo cases (12 calls, $0.17)
+  wrote `evals/results/latest.json`, committed with the conservative dataset label. Four tests
+  committed by the first session had not run green (interval and money formatters, numerals in
+  `SuiteSection.tsx`, the empty-state log check); fixed in `1b743a2`, described in the PR.
+- **B08 · resolved on `main` (4 Nov):** the eval-only `.env.example` lines (`EVAL_DATASET_LABEL`,
+  `EVAL_HELD_OUT`, `EVAL_NOT_YET`, `EVAL_PRIVACY_FILE`) landed in `af71f5c`; D37 keeps the
+  synthetic dev cases in-repo at `apps/api/src/evals/fixtures/cases/` (real and held-out sets
+  stay outside the repo).

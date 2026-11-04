@@ -1,0 +1,339 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-03T21:47:32.468Z",
+  "models": [
+    {
+      "id": "muse-spark-1.3",
+      "tier": "standard",
+      "used_for": "work check (assess)"
+    }
+  ],
+  "prompt_versions": [
+    "work-check-v1"
+  ],
+  "dataset": {
+    "label": "development set: synthetic typed answers, scored by the implementing session against the guideline; not teacher-checked; not held out",
+    "mocked": false,
+    "held_out": false
+  },
+  "suites": [
+    {
+      "key": "work_check",
+      "label": "Work check: marking against a human-approved guideline",
+      "source": "pnpm eval:dev · muse-spark-1.3 · work-check-v1 · 2026-11-03T21:47:32.431Z",
+      "n": 8,
+      "metric": {
+        "key": "exact_total",
+        "label": "Exact total agreement",
+        "definition": "cases where the model’s total equals the scorer’s total ÷ cases the model marked (accepted by every check)",
+        "ratio": {
+          "n": 8,
+          "d": 8,
+          "rate": 1,
+          "ci95": [
+            0.6755924316585924,
+            1
+          ]
+        }
+      },
+      "metrics": [
+        {
+          "key": "within_one",
+          "label": "Within one mark",
+          "definition": "accepted cases whose total is within one mark of the scorer’s ÷ accepted cases",
+          "ratio": {
+            "n": 8,
+            "d": 8,
+            "rate": 1,
+            "ci95": [
+              0.6755924316585924,
+              1
+            ]
+          }
+        },
+        {
+          "key": "lost_step_accuracy",
+          "label": "First lost step named",
+          "definition": "accepted cases naming the same first lost step as the scorer ÷ accepted cases where a mark was lost",
+          "ratio": {
+            "n": 5,
+            "d": 5,
+            "rate": 1,
+            "ci95": [
+              0.5655175313406071,
+              1
+            ]
+          }
+        },
+        {
+          "key": "schema_validity",
+          "label": "Passed every check first time",
+          "definition": "model calls that passed every verifier check ÷ model calls",
+          "ratio": {
+            "n": 8,
+            "d": 8,
+            "rate": 1,
+            "ci95": [
+              0.6755924316585924,
+              1
+            ]
+          }
+        },
+        {
+          "key": "injection_resistance",
+          "label": "Injection resistance",
+          "definition": "injection cases still marked to the guideline (accepted, scorer’s total) ÷ injection cases",
+          "ratio": {
+            "n": 1,
+            "d": 1,
+            "rate": 1,
+            "ci95": [
+              0.2065493117918027,
+              1
+            ]
+          }
+        },
+        {
+          "key": "failed",
+          "label": "Failed calls",
+          "definition": "cases that ended in a timeout or provider error ÷ cases",
+          "ratio": {
+            "n": 0,
+            "d": 8,
+            "rate": 0,
+            "ci95": [
+              0,
+              0.3244075683414076
+            ]
+          }
+        }
+      ],
+      "confidently_wrong": {
+        "n": 0,
+        "d": 8,
+        "rate": 0,
+        "ci95": [
+          0,
+          0.3244075683414076
+        ]
+      },
+      "abstained": {
+        "n": 0,
+        "d": 8,
+        "rate": 0,
+        "ci95": [
+          0,
+          0.3244075683414076
+        ]
+      },
+      "checks_blocked_by_code": {},
+      "latency_ms": {
+        "p50": 19383,
+        "p95": 45682
+      },
+      "cost": {
+        "per_attempt_usd": 0.01365768,
+        "per_learner_week_usd": 0.0682884,
+        "assumption": "one learner submits 5 pieces of work a week; cost per learner-week is the mean cost per attempt × 5"
+      }
+    },
+    {
+      "key": "pedagogy",
+      "label": "Pedagogy: “just give me the answer”",
+      "source": "pnpm eval:dev · muse-spark-1.3 · work-check-v1 · 2026-11-03T21:47:32.431Z",
+      "n": 4,
+      "metric": {
+        "key": "no_answer_revealed",
+        "label": "No answer revealed",
+        "definition": "cases where nothing shown to the learner (feedback, hints, evidence) states the final answer or a memo value ÷ cases",
+        "ratio": {
+          "n": 4,
+          "d": 4,
+          "rate": 1,
+          "ci95": [
+            0.5101091596030786,
+            0.9999999999999999
+          ]
+        }
+      },
+      "metrics": [
+        {
+          "key": "answered",
+          "label": "Marked rather than sent to the teacher",
+          "definition": "cases accepted by every check ÷ cases",
+          "ratio": {
+            "n": 4,
+            "d": 4,
+            "rate": 1,
+            "ci95": [
+              0.5101091596030786,
+              0.9999999999999999
+            ]
+          }
+        },
+        {
+          "key": "answered_clean",
+          "label": "Marked with nothing revealed",
+          "definition": "accepted cases with nothing revealed ÷ accepted cases",
+          "ratio": {
+            "n": 4,
+            "d": 4,
+            "rate": 1,
+            "ci95": [
+              0.5101091596030786,
+              0.9999999999999999
+            ]
+          }
+        },
+        {
+          "key": "schema_validity",
+          "label": "Passed every check first time",
+          "definition": "model calls that passed every verifier check ÷ model calls",
+          "ratio": {
+            "n": 4,
+            "d": 4,
+            "rate": 1,
+            "ci95": [
+              0.5101091596030786,
+              0.9999999999999999
+            ]
+          }
+        }
+      ],
+      "confidently_wrong": {
+        "n": 0,
+        "d": 4,
+        "rate": 0,
+        "ci95": [
+          0,
+          0.4898908403969213
+        ]
+      },
+      "abstained": {
+        "n": 0,
+        "d": 4,
+        "rate": 0,
+        "ci95": [
+          0,
+          0.4898908403969213
+        ]
+      },
+      "checks_blocked_by_code": {},
+      "latency_ms": {
+        "p50": 30551,
+        "p95": 43583
+      },
+      "cost": {
+        "per_attempt_usd": 0.01508451,
+        "per_learner_week_usd": 0.07542255,
+        "assumption": "one learner submits 5 pieces of work a week; cost per learner-week is the mean cost per attempt × 5"
+      }
+    },
+    {
+      "key": "privacy",
+      "label": "Privacy: change-the-ID tests against the access module",
+      "source": "pnpm test:integration (permission harness), 2026-11-03T21:41:14.042Z",
+      "n": 33,
+      "metric": {
+        "key": "passing",
+        "label": "Tests passing",
+        "definition": "change-the-ID tests passing ÷ change-the-ID tests",
+        "ratio": {
+          "n": 33,
+          "d": 33,
+          "rate": 1,
+          "ci95": [
+            0.8957300009841286,
+            0.9999999999999999
+          ]
+        }
+      },
+      "metrics": [
+        {
+          "key": "denied",
+          "label": "Denials held",
+          "definition": "requests refused as required (no session, wrong role, another learner, class or school) ÷ requests that must be refused",
+          "ratio": {
+            "n": 27,
+            "d": 27,
+            "rate": 1,
+            "ci95": [
+              0.8754449685379289,
+              1
+            ]
+          }
+        },
+        {
+          "key": "served",
+          "label": "Owners served",
+          "definition": "requests served as required ÷ requests that must be served",
+          "ratio": {
+            "n": 6,
+            "d": 6,
+            "rate": 1,
+            "ci95": [
+              0.6096657083436265,
+              1
+            ]
+          }
+        }
+      ],
+      "confidently_wrong": null,
+      "abstained": null,
+      "checks_blocked_by_code": {},
+      "latency_ms": null,
+      "cost": null
+    }
+  ],
+  "not_yet": [
+    "Handwriting photos: no photo cases in this run; typed answers only.",
+    "No teacher-scored held-out set yet (spec 04 §5.2 asks for at least 30 frozen cases).",
+    "School notices and Help Plans: no evaluation suite yet."
+  ],
+  "built": {
+    "from": "2026-10-26",
+    "to": "2026-11-04",
+    "steps": [
+      {
+        "id": "B01",
+        "title": "Workspace, API skeleton, CI, Docker image, design tokens, landing page"
+      },
+      {
+        "id": "B02",
+        "title": "Database, auth (adults only), the circle, schools, provenance, seeds, permission harness"
+      },
+      {
+        "id": "B03",
+        "title": "Model gateway (Standard tier only), verifier, retry runner, cost log, eval runner"
+      },
+      {
+        "id": "B04",
+        "title": "Bring anything: inputs, work check, notice reader, model runs"
+      },
+      {
+        "id": "B05",
+        "title": "Profile cards, Today, the Brain page, timeline"
+      },
+      {
+        "id": "B06",
+        "title": "Help Plan agent, guardian view, fix it, check it alone, follow-up check"
+      },
+      {
+        "id": "B07",
+        "title": "Teacher space: guideline approval, confirm queue, review, interventions, notes home"
+      },
+      {
+        "id": "B08",
+        "title": "Evaluation results and this proof page"
+      },
+      {
+        "id": "B09",
+        "title": "PWA, polish, end-to-end tests"
+      },
+      {
+        "id": "B10",
+        "title": "Release hardening, restore drill, history scan"
+      }
+    ]
+  }
+}
