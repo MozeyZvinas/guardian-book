@@ -373,6 +373,8 @@ export function nscWorkCheckSuite(results: EvalCaseResult[], source: string): Ev
   }
 }
 
+const NSC_ORDER: readonly string[] = ['nsc_guide', 'nsc_work_check']
+
 /** The committed file with the NSC suites replaced, models and prompts added, and the "not yet" lines for this run. */
 export function withNscSuites(
   existing: EvidenceFile,
@@ -387,7 +389,7 @@ export function withNscSuites(
     generated_at: options.generatedAt.toISOString(),
     models,
     prompt_versions: [...new Set([...existing.prompt_versions, ...options.promptVersions])],
-    suites: [...existing.suites.filter((suite) => !suite.key.startsWith('nsc_')), ...options.suites],
+    suites: [...existing.suites.filter((suite) => !suite.key.startsWith('nsc_')), ...[...options.suites].sort((a, b) => NSC_ORDER.indexOf(a.key) - NSC_ORDER.indexOf(b.key))],
     not_yet: [...existing.not_yet.filter((line) => !line.startsWith('Held-out NSC')), ...options.notYet],
   }
 }

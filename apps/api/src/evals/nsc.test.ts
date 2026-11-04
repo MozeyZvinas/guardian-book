@@ -222,6 +222,8 @@ describe('the held-out suites', () => {
     const twice = withNscSuites(once, { suites: [suite], model: 'muse-spark-1.3', promptVersions: ['guide-v1'], notYet: ['Held-out NSC suites: new'], generatedAt: new Date('2026-11-05T00:00:00Z') })
     expect(evidenceFileSchema.parse(twice)).toEqual(twice)
     expect(twice.suites.map((s) => s.key)).toEqual(['work_check', 'nsc_guide'])
+    const work = { ...suite, key: 'nsc_work_check' as const }
+    expect(withNscSuites(existing, { suites: [work, suite], model: 'm', promptVersions: [], notYet: [], generatedAt: new Date() }).suites.map((s) => s.key)).toEqual(['work_check', 'nsc_guide', 'nsc_work_check'])
     expect(twice.not_yet).toEqual(['Handwriting photos: no photo cases in this run.', 'Held-out NSC suites: new'])
     expect(twice.prompt_versions).toEqual(['work-check-v1', 'guide-v1'])
     expect(twice.models).toHaveLength(3)
