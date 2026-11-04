@@ -49,8 +49,8 @@ the same files.
 | B03 ∥ Model gateway, verifier, cost log, live smoke | 2 Nov | P0-11, P0-04 (model) | B01, F3 | B (subscription) / $25 | todo |
 | B04 Bring anything: inputs, work check → attempt → assessment (guideline approval enforced, provenance written), notice reader → calendar, `model_runs` | 2–3 Nov | P0-03, P0-04, P0-06 | B02 + B03 merged | A / $30 | done (PR #5 merged 4 Nov SAST; live smoke 2 calls, $0.024) |
 | B05 ∥ Profile cards, Today (+ check-in due), Brain page (assisted / independent / retained evidence), timeline | 3 Nov | P0-02, P0-07 | B02 + B03 merged | B / $20 | review (PR #4, branch `b05-profile-today-brain`; brought up to date with B04 on 4 Nov: assessed events through `evidencePayload()`, profile cards through `runModel`, KaTeX `MathText`; see questions below) |
-| B06 Help Plan agent, guardian view (Teacher-reviewed labels), "We did it", fix it → check it alone → follow-up check | 3 Nov | P0-05, P0-08, P0-09 | B04, B05 | A / $30 | review (PR open 4 Nov, branch `b06-loop-plan-guardian`; see questions below) |
-| B07 ∥ Teacher view: guidelines approval, class picture, confirm queue, review with feedback controls (agree / correct / add / audience), release, interventions (owner, follow-up, outcome, close), notes with origin labels, class notice, learner profile | 3 Nov | P0-10 | B04 | B / $30 | todo |
+| B06 Help Plan agent, guardian view (Teacher-reviewed labels), "We did it", fix it → check it alone → follow-up check | 3 Nov | P0-05, P0-08, P0-09 | B04, B05 | A / $30 | review (PR #8, branch `b06-loop-plan-guardian`; brought up to date with B08 and B07 on 4 Nov; see questions below) |
+| B07 ∥ Teacher view: guidelines approval, class picture, confirm queue, review with feedback controls (agree / correct / add / audience), release, interventions (owner, follow-up, outcome, close), notes with origin labels, class notice, learner profile | 3 Nov | P0-10 | B04 | B / $30 | review (PR #7, branch `b07-teacher-space`; brought up to date with B05 and B08 on 4 Nov; see questions below) |
 | B08 Eval runner results + proof page `/evidence` | 3 Nov | P0-12 | B03, E1 | B / $10 | in review (PR #6, 3 Nov; first live summary committed; brought up to date with B04 and B05 on 4 Nov; see the B08 notes below) |
 | **Gate P0:** full run on the founder's phone | 3 Nov, 20:00 (D35) | all P0 | — | — | todo |
 | B09 PWA, polish (landing hero by surface, D35), E2E in CI; the Bring question picker shows the question itself (MathText), not the slug; `robots.txt` (allow `/`, `/evidence`; disallow `/api/`, `/learner/`, `/guardian/`, `/teacher/`, invite and join links; D36); then P1 in order (incl. P1-g teacher uploads a script) (voice, see-it card, overlay, open-weight row, WhatsApp text) | 3 Nov | P0-13, P1 | Gate P0 | A + B | todo |
@@ -135,6 +135,35 @@ Add any question here, linked to a task ID.
   `RETENTION_CHECK_DAYS=` (default 2), `RESOURCE_LIST_PATH=` (admin CLI only).
 - **B06 · G2 Notes** calls B07's `GET /api/guardian/notes` (D37) and shows an empty state until
   it merges; the G1 teacher messages read `notes`, `review_feedback` and `interventions` directly.
+- **B06 · resolved on `main` (4 Nov):** D37 rules for the agent-turn `plan` purpose (each
+  step a verified `runModel` call, counted against the daily cap), the intervention sentence
+  in the parent's view, effort minutes not shown until measured, and the third seed item; the
+  `.env.example` lines landed in `7c07eb6`. PR #8 brought up to date with B07 the same day:
+  G2 Notes now reads B07's `GET /api/guardian/notes`.
+- **B07 · brought up to date with B05 on 4 Nov (PR #7):** review events build their payload
+  with B05's `evidencePayload()`; skill wording through `skillLabel(tag, 'teacher')` on
+  every teacher screen (guardian wording inside the note prompt, since the parent reads the
+  note); item prompts, criteria and typed answers through `MathText`; T6 shows the Brain's
+  projection (three marks per skill) instead of raw counts; the integration test now checks
+  an assigned intervention on `GET /api/me/checks` and a released review on `GET /api/me/brain`
+  (counted once, overriding the model's). Typed answers stay as `WorkViewer` shows them ("never
+  re-typeset", spec 05 §5); say if `MathText` should wrap them too.
+- **B07 · `guideline_approved` event subject:** `learning_events.learner_id` is NOT NULL and
+  there is no class-level event, so one event is written against the teacher's user ID
+  (D37's precedent for the class notice). Alternative: one event per learner in the class.
+- **B07 · learner-facing review route:** spec 03 §5 says `GET /api/attempts/:id` returns the
+  released review, but that is B04's service and B06 is touching it (fix/check), so B07 adds
+  `GET /api/attempts/:id/review` (owner after release: review + learner-audience feedback
+  with "Teacher-reviewed" / "From Ms Dlamini"; class teacher: everything; guardian: 404).
+  L3 should call it to show *Your teacher approved this result* (B06 or B09).
+- **B07 · `GET /api/guardian/notes`** (spec 03 §8.3) lives in `apps/api/src/notes/` (the label
+  depends on the note's origin) rather than a guardian folder; B06's G2 screen can read it.
+- **B07 · note prompts cite evidence by alias** (`E1`, `E2`), never by UUID: the gateway's
+  phone-number guard trips on digit runs in UUIDs, and the model only needs an opaque
+  handle. `model_runs.output` therefore holds aliases; the learner's own events are the map.
+- **B07 · release by attempt:** `POST /api/teacher/attempts/:id/release` exists beside the
+  spec's `POST /api/teacher/reviews/:id/release`, so "release before confirm → 409
+  `not_confirmed`" is testable (a review ID does not exist before confirm).
 - **B08 · finished 3 Nov (second session), PR #6.** The integration suite (62 tests) wrote the
   permission harness file; the live `pnpm eval:dev` over the 12 in-repo cases (12 calls, $0.17)
   wrote `evals/results/latest.json`, committed with the conservative dataset label. Four tests

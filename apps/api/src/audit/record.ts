@@ -31,6 +31,19 @@ export type AuditAction =
   | 'plan.not_issued'
   | 'guardian.support_given'
   | 'resources.loaded'
+  // B07
+  | 'guideline.approved'
+  | 'review.confirmed'
+  | 'review.released'
+  | 'review.feedback_added'
+  | 'intervention.assigned'
+  | 'intervention.updated'
+  | 'intervention.closed'
+  | 'note.drafted'
+  | 'note.draft_refused'
+  | 'note.created'
+  | 'note.approved'
+  | 'note.sent'
 
 export interface AuditInput {
   actorId: string | null
