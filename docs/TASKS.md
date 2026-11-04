@@ -492,7 +492,7 @@ Phase C spend: running total **$4.89** of $10 (`<CORPUS_DIR>/evals/spend.json`; 
 - **A repeatable equivalence check for answers?** The proof page publishes only the fixed
   comparison: 53 of 86 held-out 2026 May/June questions reach the memo's final answer, and 15 of
   the 57 shown with worked steps end on an answer it does not match. A hand reading of the 33
-  misses (not published) found 23 that give the memo's answer in another form (another coordinate
+  misses (not on the proof page) found 23 that give the memo's answer in another form (another coordinate
   separator, surd or index form, words or units after the value, terms in another order, extra
   working after the answer) and 10 that are different answers: P1 Q2.2.3, Q3.1, Q4.6, Q4.9, Q9.3,
   Q10.2.2; P2 Q1.2, Q2.2, Q7.4, Q7.6. By that reading, 76 of 86 reach the memo's answer and 6 of
