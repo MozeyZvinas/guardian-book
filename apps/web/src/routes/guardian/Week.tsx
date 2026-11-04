@@ -128,6 +128,14 @@ function WeekScreen({ me }: { me: MeResponse }) {
           {week.effort.days} {week.effort.days === 1 ? 'day' : 'days'} · {week.effort.pieces} {week.effort.pieces === 1 ? 'piece' : 'pieces'} of work
           {week.effort.topics.length > 0 ? ` · ${week.effort.topics.join(', ')}` : ''}
         </p>
+        {week.pastPapers ? (
+          <p className="m-0 text-sm" data-past-papers>
+            <span aria-hidden="true" className="text-progress">
+              ●{' '}
+            </span>
+            {week.pastPapers.sentence}
+          </p>
+        ) : null}
         <p className="m-0 text-sm text-fg-muted">Minutes are not measured yet.</p>
       </Card>
 
@@ -137,8 +145,17 @@ function WeekScreen({ me }: { me: MeResponse }) {
             <span className="font-medium">{week.coming.title}</span> · {daysWord(week.coming.daysAway)} ({shortDate(week.coming.onDate)})
           </p>
         ) : (
-          <p className="m-0 text-fg-muted">No confirmed dates yet.</p>
+          <p className="m-0 text-fg-muted">No confirmed exam dates yet.</p>
         )}
+        {week.practice.length > 0 ? (
+          <ul className="m-0 flex list-none flex-col gap-1 p-0 text-sm" aria-label="Class practice">
+            {week.practice.map((set) => (
+              <li key={`${set.title}-${set.dueOn}`}>
+                <span className="font-medium">Practice from the past papers:</span> {set.title} · {set.className} · {daysWord(set.daysAway)} ({shortDate(set.dueOn)})
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </Card>
 
       {plan ? (

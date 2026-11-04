@@ -91,6 +91,12 @@ function BrainScreen() {
           <strong>Secure</strong> means you did it on your own, and again later.
         </p>
         <p className="text-sm text-fg-muted">Only checked work and your teacher’s confirmations move these. One good day never does.</p>
+        {Object.keys(brain.whatComesUp).length > 0 ? (
+          <p className="text-sm text-fg-muted">
+            <span aria-hidden="true">◷ </span>
+            What comes up: how often a skill appears in the <Link to="/library">past papers</Link>, and the marks it carries.
+          </p>
+        ) : null}
       </div>
 
       <section aria-labelledby="skills-heading" className="flex flex-col gap-3">
@@ -111,7 +117,7 @@ function BrainScreen() {
           <ul className="m-0 grid list-none gap-2 p-0 sm:grid-cols-2">
             {skills.map((skill) => (
               <li key={skill.tag}>
-                <SkillChip skill={skill} selected={skill.tag === selectedTag} onSelect={() => setSelectedTag(skill.tag === selectedTag ? null : skill.tag)} />
+                <SkillChip skill={skill} selected={skill.tag === selectedTag} onSelect={() => setSelectedTag(skill.tag === selectedTag ? null : skill.tag)} comesUp={brain.whatComesUp[skill.tag]?.sentence ?? null} />
               </li>
             ))}
           </ul>

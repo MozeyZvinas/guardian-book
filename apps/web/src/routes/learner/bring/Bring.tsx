@@ -10,6 +10,7 @@ import { KindChips } from '../../../components/KindChip'
 import { LearnerShell } from '../../../components/LearnerShell'
 import { MathText } from '../../../components/MathText'
 import { StatusChip } from '../../../components/StatusChip'
+import { Attribution } from '../../library/LibraryFrame'
 
 /**
  * L2 · Bring anything (spec 05 §4.2): one capture for everything. Snap · Type · Ask;
@@ -225,6 +226,7 @@ function BringScreen() {
                           {item.topic} · {item.maxMarks} marks
                           {unapproved ? ' · not approved for your class yet' : ''}
                         </span>
+                        {item.attribution ? <Attribution text={item.attribution} /> : null}
                       </span>
                     </label>
                   )

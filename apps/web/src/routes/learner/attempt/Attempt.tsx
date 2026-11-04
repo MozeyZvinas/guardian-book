@@ -14,6 +14,7 @@ import { RedInk } from '../../../components/RedInk'
 import { planInk } from '../../../components/RedInkPlan'
 import { ConfidenceLabel, StepMap } from '../../../components/StepMap'
 import { WorkViewer } from '../../../components/WorkViewer'
+import { Attribution } from '../../library/LibraryFrame'
 
 /**
  * L3 · Feedback (spec 05 §4.2, §7, §9): the learner's own work as the hero, the step map,
@@ -153,6 +154,7 @@ function AttemptScreen() {
         <p className="m-0 text-sm text-fg-muted">{attempt.itemTopic}</p>
         <h1 className="text-display font-semibold text-balance">Your work</h1>
         <MathText as="p" text={attempt.itemPromptMd} className="m-0 font-serif whitespace-pre-wrap" />
+        {attempt.itemAttribution ? <Attribution text={attempt.itemAttribution} /> : null}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

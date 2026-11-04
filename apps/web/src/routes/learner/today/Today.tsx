@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import type { CheckIn, RecentInput, TodayResponse } from '@guardian-book/shared'
+import type { CheckIn, LearnerPractice, RecentInput, TodayResponse } from '@guardian-book/shared'
 import { getToday } from '../../../api/learner'
 import { checkAlone } from '../../../api/loop'
 import { RequireRole } from '../../../app/RequireRole'
@@ -97,6 +97,12 @@ function TodayScreen() {
 
       <BringAnything />
 
+      {today.practice.length > 0 ? <PracticeCard practice={today.practice} /> : null}
+
+      <p className="m-0 text-sm text-fg-muted">
+        <Link to="/library">Past papers</Link>: real exam questions, with their memos.
+      </p>
+
       {!today.hasCards ? (
         <EmptyState title="Tell me about you" action={<Link to="/me/setup">Four quick questions</Link>}>
           A sentence each. They help us say why a step matters to you.
@@ -187,6 +193,49 @@ function CheckInCard({ check, more }: { check: CheckIn; more: number }) {
         </span>
       </div>
       <FormError error={error} />
+    </Card>
+  )
+}
+
+/** B17: class practice the teacher set from the library, soonest due first, with how far you are. */
+function PracticeCard({ practice }: { practice: LearnerPractice[] }) {
+  return (
+    <Card title="Class practice">
+      <ul className="m-0 flex list-none flex-col gap-2 p-0" aria-label="Class practice">
+        {practice.map((set) => {
+          const due = set.daysAway < 0 ? `was due ${shortDate(set.dueOn)}` : `due ${daysWord(set.daysAway)} (${shortDate(set.dueOn)})`
+          const body = (
+            <>
+              <span className="flex flex-col">
+                <span className="font-medium">{set.title}</span>
+                <span className="text-sm text-fg-muted">
+                  {set.className} · {due}
+                </span>
+              </span>
+              <span className="text-sm tnum">
+                <span aria-hidden="true" className={set.done === set.total && set.total > 0 ? 'text-progress' : 'text-fg-muted'}>
+                  {set.done === set.total && set.total > 0 ? '✓ ' : '◯ '}
+                </span>
+                {set.done} of {set.total} done
+              </span>
+            </>
+          )
+          const className = 'flex min-h-11 items-center justify-between gap-3 rounded-card bg-ground px-4 py-3 no-underline text-fg'
+          return (
+            <li key={set.id}>
+              {set.path ? (
+                <Link to={`/library/${set.path}`} className={className}>
+                  {body}
+                </Link>
+              ) : (
+                <Link to={`/library?q=${encodeURIComponent(set.title)}`} className={className}>
+                  {body}
+                </Link>
+              )}
+            </li>
+          )
+        })}
+      </ul>
     </Card>
   )
 }

@@ -151,5 +151,21 @@ export const router = createBrowserRouter([
     lazy: () => import('../routes/teacher/script/Script').then((m) => ({ Component: m.TeacherScript })),
     errorElement: <RouteError />,
   },
+  // B17 (D40): the past-paper library (learners and teachers), a paper, and the teacher's approve-and-set-practice page.
+  {
+    path: '/library',
+    lazy: () => import('../routes/library/Library').then((m) => ({ Component: m.Library })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/library/:subject/:grade/:year/:session/:paper',
+    lazy: () => import('../routes/library/Paper').then((m) => ({ Component: m.Paper })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/teacher/classes/:id/library',
+    lazy: () => import('../routes/teacher/library/TeacherLibrary').then((m) => ({ Component: m.TeacherLibrary })),
+    errorElement: <RouteError />,
+  },
   { path: '*', element: <NotFound /> },
 ])

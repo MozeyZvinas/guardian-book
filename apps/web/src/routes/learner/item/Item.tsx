@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { itemResponseSchema, type AttemptMode, type ItemDetail } from '@guardian-book/shared'
 import { api, ApiRequestError } from '../../../api/client'
+import { diagramUrl } from '../../../api/library'
 import { assess, createAttempt, createInput } from '../../../api/practice'
 import { RequireRole } from '../../../app/RequireRole'
 import { CaptureSheet, type Capture } from '../../../components/CaptureSheet'
 import { Card, FormError } from '../../../components/Form'
 import { LearnerShell } from '../../../components/LearnerShell'
 import { MathText } from '../../../components/MathText'
+import { Attribution } from '../../library/LibraryFrame'
 import { AskAboutStep } from '../fix/AskAboutStep'
 
 /**
@@ -30,6 +32,8 @@ function ItemScreen() {
   const navigate = useNavigate()
   const from = params.get('from')
   const skill = params.get('skill')
+  // B17: opened from a paper in the library; the link back goes to that paper.
+  const paperPath = params.get('paper')
   const mode: AttemptMode = params.get('mode') === 'retention' ? 'retention' : params.get('mode') === 'independent' ? 'independent' : 'assisted'
   const why = (location.state as { why?: string } | null)?.why ?? (from ? 'Why this: one more like the last one, on your own.' : null)
   const [item, setItem] = useState<ItemDetail | null>(null)
@@ -81,7 +85,7 @@ function ItemScreen() {
     <LearnerShell>
       <div className="flex flex-col gap-2">
         {item ? <p className="m-0 text-sm text-fg-muted">{item.topic}</p> : null}
-        <h1 className="text-display font-semibold text-balance">{mode === 'assisted' ? 'One more like it' : mode === 'retention' ? 'Check it again' : 'Check it alone'}</h1>
+        <h1 className="text-display font-semibold text-balance">{paperPath && mode === 'assisted' ? 'Check my work' : mode === 'assisted' ? 'One more like it' : mode === 'retention' ? 'Check it again' : 'Check it alone'}</h1>
         {mode !== 'assisted' ? (
           <p className="m-0 flex flex-wrap items-center gap-2 text-sm">
             <span className="inline-flex items-center rounded-full bg-surface px-3 py-1 text-xs font-medium tracking-wide ring-1 ring-fg-muted/40">Independent</span>
@@ -94,7 +98,9 @@ function ItemScreen() {
       {item ? (
         <Card>
           <MathText as="p" text={item.promptMd} className="m-0 font-serif whitespace-pre-wrap" />
+          {item.diagramKey ? <img src={diagramUrl(item.id)} alt="Diagram for this question" className="max-w-full rounded-card bg-ground" loading="lazy" /> : null}
           <p className="m-0 text-sm text-fg-muted tnum">{item.maxMarks} marks</p>
+          {item.attribution ? <Attribution text={item.attribution} /> : null}
         </Card>
       ) : error ? null : (
         <p className="text-fg-muted" aria-live="polite">
@@ -112,6 +118,11 @@ function ItemScreen() {
       <FormError error={error} />
       <p className="text-sm text-fg-muted">
         {skill ? `Skill: ${skill}. ` : ''}
+        {paperPath ? (
+          <>
+            <Link to={`/library/${paperPath}`}>Back to the paper</Link> ·{' '}
+          </>
+        ) : null}
         <Link to="/today">Back to Today</Link>
       </p>
     </LearnerShell>
