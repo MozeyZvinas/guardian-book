@@ -15,7 +15,11 @@
     "content:load": "tsx src/content/load.ts",
     "resources:load": "tsx src/resources/load.ts",
     "eval:dev": "tsx src/evals/run.ts",
-    "smoke:live": "tsx src/evals/smoke.ts"
+    "smoke:live": "tsx src/evals/smoke.ts",
+    "corpus:list": "tsx src/corpus/list.ts",
+    "corpus:download": "tsx src/corpus/download.ts",
+    "corpus:extract": "tsx src/corpus/extract.ts",
+    "corpus:diagrams": "tsx src/corpus/upload-diagrams.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1161.0",
