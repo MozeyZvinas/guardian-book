@@ -1,4 +1,5 @@
 import type { z } from 'zod'
+import { guideOutputSchema } from './guide.js'
 import { stepHintSchema } from './hint.js'
 import { inputClassSchema } from './inputClass.js'
 import { toStrictJsonSchema, type StrictJsonSchema } from './jsonSchema.js'
@@ -12,6 +13,7 @@ import { translationOutputSchema } from './translate.js'
 import { workCheckOutputSchema } from './workCheck.js'
 
 export * from './common.js'
+export * from './guide.js'
 export * from './hint.js'
 export * from './inputClass.js'
 export * from './jsonSchema.js'
@@ -39,6 +41,8 @@ export const MODEL_OUTPUT_SCHEMAS = {
   // contract still names the shape every `transcribe` run records. One hint per ask.
   transcribe: transcriptSchema,
   step_hint: stepHintSchema,
+  // B15: any question read back and taken step by step; two reads must agree before a worked step is shown.
+  guide: guideOutputSchema,
 } as const satisfies Record<ModelPurpose, z.ZodType>
 
 export type ModelOutputSchemas = typeof MODEL_OUTPUT_SCHEMAS

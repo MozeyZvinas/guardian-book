@@ -73,6 +73,8 @@ export const modelRunPurposeEnum = pgEnum('model_run_purpose', [
   // B13 (migration 0005): voice transcription and ask-about-a-step hints.
   'transcribe',
   'step_hint',
+  // B15 (migration 0006): help me with a question, read twice and compared.
+  'guide',
 ])
 export const modelRunStatusEnum = pgEnum('model_run_status', ['accepted', 'retried', 'exhausted', 'failed'])
 export const calendarScopeEnum = pgEnum('calendar_scope', ['class', 'learner'])
@@ -95,6 +97,8 @@ export const languageCodeEnum = pgEnum('language_code', GUARDIAN_LANGUAGES)
 export const translationStatusEnum = pgEnum('translation_status', ['ready', 'unavailable'])
 /** B17: class practice from the library is a whole paper or every question on a skill. */
 export const practiceKindEnum = pgEnum('practice_kind', PRACTICE_KINDS)
+/** B15: where a guided question stands; `unsure` shows the read-back and the first hint only. */
+export const guideStatusEnum = pgEnum('guide_status', ['reading', 'ready', 'unsure', 'failed'])
 
 /** The three provenance columns every artifact table carries (spec 03 §9.1). */
 const provenanceColumns = () => ({
@@ -754,6 +758,53 @@ export const classPractice = pgTable(
   ],
 )
 
+/**
+ * B15: help me with a question. One row per read of one input (a photo or typed text);
+ * the learner's corrected read-back is a new row pointing back through `edited_from_id`.
+ * Status `reading` while the two independent reads run (`model_runs`, purpose `guide`);
+ * `ready` when both passed the verifier and agree on the final answer and confidence is
+ * not low; `unsure` when only the read-back and first hint may be shown; `failed` when
+ * nothing verified came back. The steps copied here are the accepted read's; provenance
+ * turns `model_generated` (with the run's detail) in the same write. Never a mark, never
+ * a learning event (the Brain does not move, brief B15 §5).
+ */
+export const guides = pgTable(
+  'guides',
+  {
+    id: id(),
+    learnerId: uuid('learner_id')
+      .notNull()
+      .references(() => user.id),
+    inputId: uuid('input_id')
+      .notNull()
+      .references(() => inputs.id),
+    editedFromId: uuid('edited_from_id'),
+    idempotencyKey: text('idempotency_key').notNull(),
+    status: guideStatusEnum('status').notNull().default('reading'),
+    questionMd: text('question_md'),
+    subject: text('subject'),
+    topic: text('topic'),
+    steps: jsonb('steps').notNull().default(sql`'[]'::jsonb`),
+    finalAnswer: text('final_answer'),
+    confidence: text('confidence'),
+    agreement: consistencyCheckEnum('agreement'),
+    matchedItemId: uuid('matched_item_id').references(() => items.id),
+    modelRunIds: uuid('model_run_ids').array().notNull().default(sql`'{}'::uuid[]`),
+    checks: jsonb('checks').notNull().default(sql`'[]'::jsonb`),
+    readingStartedAt: timestamp('reading_started_at', { withTimezone: true }),
+    ...provenanceColumns(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    unique('guides_learner_idempotency').on(t.learnerId, t.idempotencyKey),
+    index('guides_learner_created_idx').on(t.learnerId, t.createdAt),
+    index('guides_input_idx').on(t.inputId),
+    check('guides_confidence_level', sql`${t.confidence} is null or ${t.confidence} in ('high', 'medium', 'low')`),
+    check('guides_question_md_len', sql`char_length(${t.questionMd}) <= 2000`),
+    check('guides_ready_has_answer', sql`${t.status} <> 'ready' or (${t.questionMd} is not null and ${t.finalAnswer} is not null)`),
+  ],
+)
+
 // ── audit and usage ───────────────────────────────────────────────────────────────────────
 
 export const auditEvents = pgTable(
@@ -798,6 +849,7 @@ export const PROVENANCE_TABLES = [
   'resources',
   'translations',
   'class_practice',
+  'guides',
 ] as const
 
 /** Tables the database refuses to UPDATE or DELETE (migration 0002). */

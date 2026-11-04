@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router'
-import { skillLabel, type LibraryPaperResponse, type LibraryQuestion, type MeResponse } from '@guardian-book/shared'
+import { Link, useNavigate, useParams } from 'react-router'
+import { MAX_GUIDE_TEXT, skillLabel, type LibraryPaperResponse, type LibraryQuestion, type MeResponse } from '@guardian-book/shared'
 import { diagramUrl, libraryPaper } from '../../api/library'
 import { FormError } from '../../components/Form'
 import { MathText } from '../../components/MathText'
 import { Skeleton } from '../../components/Skeleton'
+import { createGuide } from '../learner/guide/api'
 import { Attribution, LibraryFrame } from './LibraryFrame'
 
 /**
  * One paper (brief B17 phase B §1): its questions rendered with MathText and diagrams,
  * marks and the attribution line on every one; a progress mark on the questions you have
- * done; Check my work (the homework check, memo steps as the guideline); the memo after
- * your own attempt, or for a teacher. "Download" goes to DBE's own page, never a PDF here.
+ * done; Check my work (the homework check, memo steps as the guideline) and Help me with
+ * this (B15's guide); the memo after your own attempt, or for a teacher. "Download" goes
+ * to DBE's own page, never a PDF here.
  */
 export function Paper() {
   const { subject = '', grade = '', year = '', session = '', paper = '' } = useParams()
@@ -22,12 +24,6 @@ export function Paper() {
     </LibraryFrame>
   )
 }
-
-/**
- * B15's "Help me with this" guide (`/guide/:id`) is not on main yet; the link stays hidden
- * until it is. Set this to the route when B15 merges.
- */
-const GUIDE_ROUTE: string | null = null
 
 type Load = { status: 'loading' } | { status: 'ready'; data: LibraryPaperResponse } | { status: 'error'; error: unknown }
 
@@ -86,6 +82,40 @@ const PROGRESS: Record<LibraryQuestion['progress'], { glyph: string; text: strin
 
 const STEP_TYPE: Record<'M' | 'A' | 'CA', string> = { M: 'Method', A: 'Accuracy', CA: 'Consistent accuracy' }
 
+/**
+ * "Help me with this" (brief B17 §B.1): B15's guide on this question. The question text goes
+ * to `POST /api/guide` as typed text (the same path as Bring → Help me with a question), and
+ * the learner lands on L9: read back, one step at a time, the answer last; never marked.
+ */
+function HelpMeWithThis({ question }: { question: LibraryQuestion }) {
+  const navigate = useNavigate()
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<unknown>(null)
+  const [idempotencyKey] = useState(() => crypto.randomUUID())
+
+  async function start() {
+    setBusy(true)
+    setError(null)
+    try {
+      const result = await createGuide({ text: question.promptMd, idempotencyKey }, null)
+      void navigate(`/guide/${result.guide.id}`)
+    } catch (err) {
+      setError(err)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <>
+      <button type="button" className="inline-flex min-h-11 items-center text-action underline disabled:opacity-60" onClick={() => void start()} disabled={busy}>
+        {busy ? 'Reading the question…' : 'Help me with this'}
+      </button>
+      <FormError error={error} />
+    </>
+  )
+}
+
 function QuestionCard({ question, teacher, paperPath }: { question: LibraryQuestion; teacher: boolean; paperPath: string }) {
   const progress = PROGRESS[question.progress]
   const audience = teacher ? 'teacher' : 'learner'
@@ -123,11 +153,7 @@ function QuestionCard({ question, teacher, paperPath }: { question: LibraryQuest
           ) : (
             <span className="text-sm text-fg-muted">Not approved for your class yet. Ask your teacher.</span>
           )}
-          {GUIDE_ROUTE ? (
-            <Link to={`${GUIDE_ROUTE}?item=${question.id}`} className="inline-flex min-h-11 items-center">
-              Help me with this
-            </Link>
-          ) : null}
+          {question.promptMd.length <= MAX_GUIDE_TEXT ? <HelpMeWithThis question={question} /> : null}
         </div>
       ) : null}
       {question.memoSteps ? (

@@ -1,5 +1,5 @@
 {
-  "id": "41ac0523-40d7-4312-bd88-1cef3e70b171",
+  "id": "62221f46-6138-46b6-b362-f80448003248",
   "prevId": "8b7d733b-f482-42af-9f64-76ef79d425b6",
   "version": "7",
   "dialect": "postgresql",
@@ -785,162 +785,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.class_practice": {
-      "name": "class_practice",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "uuid_generate_v7()"
-        },
-        "class_id": {
-          "name": "class_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "kind": {
-          "name": "kind",
-          "type": "practice_kind",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "skill_tag": {
-          "name": "skill_tag",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "paper_ref": {
-          "name": "paper_ref",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "item_ids": {
-          "name": "item_ids",
-          "type": "uuid[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::uuid[]"
-        },
-        "due_on": {
-          "name": "due_on",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "assigned_by": {
-          "name": "assigned_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "provenance": {
-          "name": "provenance",
-          "type": "provenance",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "provenance_detail": {
-          "name": "provenance_detail",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "training_permission": {
-          "name": "training_permission",
-          "type": "training_permission",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'not_permitted'"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "class_practice_class_due_idx": {
-          "name": "class_practice_class_due_idx",
-          "columns": [
-            {
-              "expression": "class_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "due_on",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "class_practice_class_id_classes_id_fk": {
-          "name": "class_practice_class_id_classes_id_fk",
-          "tableFrom": "class_practice",
-          "tableTo": "classes",
-          "columnsFrom": [
-            "class_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "class_practice_assigned_by_user_id_fk": {
-          "name": "class_practice_assigned_by_user_id_fk",
-          "tableFrom": "class_practice",
-          "tableTo": "user",
-          "columnsFrom": [
-            "assigned_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "class_practice_title_len": {
-          "name": "class_practice_title_len",
-          "value": "char_length(\"class_practice\".\"title\") between 1 and 160"
-        },
-        "class_practice_kind_ref": {
-          "name": "class_practice_kind_ref",
-          "value": "(\"class_practice\".\"kind\" = 'paper' and \"class_practice\".\"paper_ref\" is not null) or (\"class_practice\".\"kind\" = 'topic' and \"class_practice\".\"skill_tag\" is not null)"
-        }
-      },
-      "isRLSEnabled": false
-    },
     "public.classes": {
       "name": "classes",
       "schema": "",
@@ -1406,6 +1250,255 @@
         "guideline_steps_marks_nonneg": {
           "name": "guideline_steps_marks_nonneg",
           "value": "\"guideline_steps\".\"marks\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.guides": {
+      "name": "guides",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuid_generate_v7()"
+        },
+        "learner_id": {
+          "name": "learner_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "input_id": {
+          "name": "input_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "edited_from_id": {
+          "name": "edited_from_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "guide_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'reading'"
+        },
+        "question_md": {
+          "name": "question_md",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subject": {
+          "name": "subject",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "topic": {
+          "name": "topic",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "steps": {
+          "name": "steps",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "final_answer": {
+          "name": "final_answer",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "confidence": {
+          "name": "confidence",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agreement": {
+          "name": "agreement",
+          "type": "consistency_check",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "matched_item_id": {
+          "name": "matched_item_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "model_run_ids": {
+          "name": "model_run_ids",
+          "type": "uuid[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::uuid[]"
+        },
+        "checks": {
+          "name": "checks",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "reading_started_at": {
+          "name": "reading_started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "provenance": {
+          "name": "provenance",
+          "type": "provenance",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provenance_detail": {
+          "name": "provenance_detail",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "training_permission": {
+          "name": "training_permission",
+          "type": "training_permission",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'not_permitted'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "guides_learner_created_idx": {
+          "name": "guides_learner_created_idx",
+          "columns": [
+            {
+              "expression": "learner_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "guides_input_idx": {
+          "name": "guides_input_idx",
+          "columns": [
+            {
+              "expression": "input_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "guides_learner_id_user_id_fk": {
+          "name": "guides_learner_id_user_id_fk",
+          "tableFrom": "guides",
+          "tableTo": "user",
+          "columnsFrom": [
+            "learner_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "guides_input_id_inputs_id_fk": {
+          "name": "guides_input_id_inputs_id_fk",
+          "tableFrom": "guides",
+          "tableTo": "inputs",
+          "columnsFrom": [
+            "input_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "guides_matched_item_id_items_id_fk": {
+          "name": "guides_matched_item_id_items_id_fk",
+          "tableFrom": "guides",
+          "tableTo": "items",
+          "columnsFrom": [
+            "matched_item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "guides_learner_idempotency": {
+          "name": "guides_learner_idempotency",
+          "nullsNotDistinct": false,
+          "columns": [
+            "learner_id",
+            "idempotency_key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "guides_confidence_level": {
+          "name": "guides_confidence_level",
+          "value": "\"guides\".\"confidence\" is null or \"guides\".\"confidence\" in ('high', 'medium', 'low')"
+        },
+        "guides_question_md_len": {
+          "name": "guides_question_md_len",
+          "value": "char_length(\"guides\".\"question_md\") <= 2000"
+        },
+        "guides_ready_has_answer": {
+          "name": "guides_ready_has_answer",
+          "value": "\"guides\".\"status\" <> 'ready' or (\"guides\".\"question_md\" is not null and \"guides\".\"final_answer\" is not null)"
         }
       },
       "isRLSEnabled": false
@@ -2009,25 +2102,6 @@
           "notNull": true,
           "default": "'original'"
         },
-        "source_ref": {
-          "name": "source_ref",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "attribution": {
-          "name": "attribution",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "held_out": {
-          "name": "held_out",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "provenance": {
           "name": "provenance",
           "type": "provenance",
@@ -2071,13 +2145,9 @@
       },
       "policies": {},
       "checkConstraints": {
-        "items_source_known": {
-          "name": "items_source_known",
-          "value": "\"items\".\"source\" in ('original', 'dbe_nsc')"
-        },
-        "items_dbe_nsc_ref": {
-          "name": "items_dbe_nsc_ref",
-          "value": "\"items\".\"source\" <> 'dbe_nsc' or (\"items\".\"source_ref\" is not null and \"items\".\"attribution\" is not null)"
+        "items_source_original": {
+          "name": "items_source_original",
+          "value": "\"items\".\"source\" = 'original'"
         },
         "items_max_marks_pos": {
           "name": "items_max_marks_pos",
@@ -3875,6 +3945,16 @@
         "none"
       ]
     },
+    "public.guide_status": {
+      "name": "guide_status",
+      "schema": "public",
+      "values": [
+        "reading",
+        "ready",
+        "unsure",
+        "failed"
+      ]
+    },
     "public.guideline_step_type": {
       "name": "guideline_step_type",
       "schema": "public",
@@ -3974,7 +4054,8 @@
         "note",
         "translate",
         "transcribe",
-        "step_hint"
+        "step_hint",
+        "guide"
       ]
     },
     "public.model_run_status": {
@@ -4013,14 +4094,6 @@
         "draft",
         "approved",
         "sent"
-      ]
-    },
-    "public.practice_kind": {
-      "name": "practice_kind",
-      "schema": "public",
-      "values": [
-        "paper",
-        "topic"
       ]
     },
     "public.provenance": {

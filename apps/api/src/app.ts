@@ -12,6 +12,7 @@ import type { Db } from './db/client.js'
 import type { DbStatus } from './db/health.js'
 import { createGateway, type Gateway } from './gateway/gateway.js'
 import { createTranscriber, type Transcriber } from './gateway/transcribe.js'
+import { guideRouter } from './guide/routes.js'
 import { hintsRouter } from './hints/routes.js'
 import type { PracticeDeps } from './inputs/deps.js'
 import { inputsRouter } from './inputs/routes.js'
@@ -77,6 +78,7 @@ const API_PREFIXES = [
   '/api/calendar',
   '/api/voice',
   '/api/library',
+  '/api/guide',
 ]
 
 /** Same relative position from `apps/api/src` (tsx, tests) and `apps/api/dist` (node, the image). */
@@ -169,6 +171,8 @@ export function createApp(options: AppOptions): Express {
     app.use(voiceRouter({ db, transcriber, logger, limits: practice.limits, now: practice.now }))
     // B17 (D40): the past-paper library, approve-a-paper and class practice; noindex on every route.
     app.use(libraryRouter(practice))
+    // B15: help me with a question (any question, read twice, taken step by step; never marked).
+    app.use(guideRouter(practice))
   } else {
     app.use('/api', express.json({ limit: '1mb' }))
     app.use(tryRouter({ db: null, tryClassCode: null }))

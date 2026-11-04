@@ -122,6 +122,15 @@ test('Library → 2023 → November → P1 → a question → Check my work; pra
   await expect(questions.first()).toContainText('Checked')
   await expect(questions.first().getByText('Memo (after your attempt)')).toBeVisible()
   await expect(questions.nth(1).getByText('Memo', { exact: false })).toHaveCount(0)
+
+  // Help me with this (B15's guide) on question 1.2: read back, labelled practice, never marked.
+  await questions.nth(1).getByRole('button', { name: 'Help me with this' }).click()
+  await expect(page).toHaveURL(/\/guide\/[0-9a-f-]{36}$/)
+  await expect(page.getByRole('heading', { name: 'Is this your question?' })).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByText('AI-guided practice · not marked by your teacher')).toBeVisible()
+  await expect(page.getByText('correct to TWO decimal places')).toBeVisible()
+  await noOverflow(page)
+  await page.goto('/library/mathematics/12/2023/november/p1')
   await page.goto('/today')
   await expect(page.getByLabel('Class practice')).toContainText('1 of 3 done')
 

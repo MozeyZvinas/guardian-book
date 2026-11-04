@@ -59,6 +59,10 @@ export type AuditAction =
   | 'attempt.ask_refused'
   | 'voice.transcribed'
   | 'voice.transcribe_refused'
+  // B15: help me with a question
+  | 'guide.created'
+  | 'guide.create_refused'
+  | 'guide.read'
 
 export interface AuditInput {
   actorId: string | null

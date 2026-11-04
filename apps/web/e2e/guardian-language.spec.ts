@@ -29,6 +29,7 @@ test('the parent picks isiZulu; This week shows the AI label, Show English works
   await signIn(page, 'lerato@demo.guardianbook.test')
   await expect(page).toHaveURL(/\/today$/)
   await page.goto('/bring')
+  await page.getByRole('button', { name: /Check my work/ }).click() // B15: the three plain choices
   await page.getByRole('button', { name: /Type/ }).click()
   await page.getByLabel('Your working, line by line').fill('x² − 5x + 6 = 0\n(x − 2)(x − 3) = 0')
   await page.getByRole('button', { name: 'Use this' }).click()
