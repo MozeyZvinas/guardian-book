@@ -1,7 +1,7 @@
 import { and, eq, isNull } from 'drizzle-orm'
 import type { Actor } from '../auth/session.js'
 import type { DbOrTx } from '../db/client.js'
-import { assessments, attempts, calendarEvents, classMembers, classes, guardianLinks, inputs, interventions, notes, profiles, reviews } from '../db/schema.js'
+import { assessments, attempts, calendarEvents, classMembers, classes, guardianLinks, guides, inputs, interventions, notes, profiles, reviews } from '../db/schema.js'
 
 /**
  * The `access` module (spec 03 §1, §4, §8.2, §9.2): the ONLY place permission decisions
@@ -52,6 +52,9 @@ export type Action =
   | 'note.update'
   // B11: a teacher uploads one learner's script for marking (P1-g)
   | 'script.upload'
+  // B15: help me with a question (the learner's own, nobody else's; never a guardian or teacher)
+  | 'guide.create'
+  | 'guide.read'
 
 export type Resource =
   | { type: 'class'; id: string }
@@ -64,6 +67,7 @@ export type Resource =
   | { type: 'calendar_event'; id: string }
   | { type: 'intervention'; id: string }
   | { type: 'note'; id: string }
+  | { type: 'guide'; id: string }
 
 export interface Subject {
   userId: string
@@ -175,6 +179,10 @@ export async function sameSchool(db: DbOrTx, subject: Subject, resource: Resourc
     }
     case 'note': {
       const [row] = await db.select({ learnerId: notes.learnerId }).from(notes).where(eq(notes.id, resource.id)).limit(1)
+      return row ? sameSchool(db, subject, { type: 'learner', id: row.learnerId }) : false
+    }
+    case 'guide': {
+      const [row] = await db.select({ learnerId: guides.learnerId }).from(guides).where(eq(guides.id, resource.id)).limit(1)
       return row ? sameSchool(db, subject, { type: 'learner', id: row.learnerId }) : false
     }
     case 'guardian_link':
@@ -490,6 +498,18 @@ export async function can(db: DbOrTx, subject: Subject, action: Action, resource
     case 'script.upload':
       // The class teacher, in her school; the learner's membership is checked by the service.
       return resource.type === 'class' && teacherOwnsClass(db, subject, resource.id)
+
+    // ── B15: help me with a question ────────────────────────────────────────────────────────
+
+    case 'guide.create':
+      return resource.type === 'learner' && learnerOwns(subject, resource.id)
+
+    case 'guide.read': {
+      // The learner who asked, and nobody else: a guide is practice, never marked, never shared (spec 03 §8.2).
+      if (resource.type !== 'guide') return false
+      const [row] = await db.select({ learnerId: guides.learnerId }).from(guides).where(eq(guides.id, resource.id)).limit(1)
+      return Boolean(row) && learnerOwns(subject, row?.learnerId ?? '')
+    }
 
     default:
       return false
