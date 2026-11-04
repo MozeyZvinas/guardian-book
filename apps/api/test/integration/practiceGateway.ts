@@ -1,4 +1,4 @@
-import type { InputClass, NoteDraft, NoticeOutput, PlanAgentTurn, StepHint, TranslationOutput, WorkCheckOutput } from '@guardian-book/shared'
+import type { InputClass, NoteDraft, NoticeOutput, PlanAgentTurn, ProfileCards, StepHint, TranslationOutput, WorkCheckOutput } from '@guardian-book/shared'
 import { loadConfig } from '../../src/config.js'
 import { createGateway, type Gateway } from '../../src/gateway/gateway.js'
 import { immediateSleep, okResponse } from '../../src/gateway/testing.js'
@@ -76,6 +76,18 @@ export function goodWorkCheck(request: ChatRequest, options: { loseLast?: boolea
 
 export function classification(kind: InputClass['kind'], confidence: InputClass['confidence'] = 'high'): InputClass {
   return { kind, confidence, reason: 'Looks like it.' }
+}
+
+/** Cards straight from the four answer blocks (B16: setup sends composed, structured answers). */
+export function profileCardsFromPrompt(request: ChatRequest): ProfileCards {
+  const answers = [...userText(request).matchAll(/<<<ANSWER\n([\s\S]*?)\nANSWER>>>/g)].map((m) => (m[1] ?? '').trim()).map((text) => (text === '(blank)' ? '' : text))
+  const [dream = '', subjects = '', hardest = '', how = ''] = answers
+  return {
+    dream: dream || null,
+    subjects: subjects.split(',').map((s) => s.trim()).filter(Boolean).slice(0, 12),
+    hardest_subject: hardest || null,
+    how_i_learn: how || null,
+  }
 }
 
 /** Reads "<title> on <date>" lines out of a typed notice; a line ending in "?" is low confidence. */
@@ -188,6 +200,8 @@ export function defaultAnswer(request: ChatRequest): TransportResult {
       return okResponse(planAgentFromPrompt(request), { requestId: `req_plan_${Date.now()}` })
     case 'notice':
       return okResponse(noticeFromText(request), { requestId: `req_notice_${Date.now()}` })
+    case 'profile_cards':
+      return okResponse(profileCardsFromPrompt(request), { requestId: `req_profile_${Date.now()}` })
     default:
       return okResponse({})
   }

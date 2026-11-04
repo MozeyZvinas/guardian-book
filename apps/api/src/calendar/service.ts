@@ -7,6 +7,7 @@ import type { Db } from '../db/client.js'
 import { calendarEvents, classMembers, classes, guardianLinks, inputs, modelRuns } from '../db/schema.js'
 import { appendEvent } from '../evidence/append.js'
 import { PromptSafetyError } from '../gateway/promptSafety.js'
+import type { VerifiedRun } from '../gateway/verifiedCall.js'
 import type { PracticeDeps } from '../inputs/deps.js'
 import { scrubContacts } from '../inputs/text.js'
 import { HttpError, notFound } from '../lib/http.js'
@@ -21,6 +22,10 @@ import { NOTICE_MAX_TOKENS, NOTICE_PROMPT_VERSION, NOTICE_TIMEOUT_MS, buildNotic
  * then events: `confirmed` when the model was sure (still editable), `proposed` when not.
  * Provenance follows who brought the notice: the school (a teacher) or the learner.
  * Duplicates (same scope, date and title) are merged. A rejected event never reaches a guardian.
+ *
+ * B16 §5: an accepted answer with no dated events is `not_a_notice` ("I couldn't find any
+ * dates on this"), never `extracted`; `failed` is kept for a real failure (the gateway could
+ * not get an answer), and every non-accepted run logs its verifier codes.
  */
 
 export type CalendarScope = { type: 'class'; id: string } | { type: 'learner'; id: string }
@@ -83,7 +88,14 @@ export async function extractNotice(deps: PracticeDeps, params: { inputId: strin
     return
   }
   const { result } = outcome
-  if (result.status !== 'accepted' || !result.output || result.output.not_a_notice) return
+  if (result.status !== 'accepted' || !result.output) {
+    logger.warn('notice: not accepted', { inputId: params.inputId, status: result.status, error: result.error?.code ?? null, calls: result.runs.length, failedChecks: failedCheckCodes(result.runs) })
+    return
+  }
+  if (result.output.not_a_notice || result.output.events.length === 0) {
+    logger.info('notice: no dated events', { inputId: params.inputId, notANotice: result.output.not_a_notice, calls: result.runs.length })
+    return
+  }
 
   // Brief B04 §4: `school_provided` for a teacher's upload, `student_provided` for a learner's;
   // never training-permitted (D35).
@@ -120,6 +132,11 @@ export async function extractNotice(deps: PracticeDeps, params: { inputId: strin
 
 export const eventKey = (onDate: string, title: string): string => `${onDate}|${squash(title)}`
 
+/** The verifier codes that failed, per call, for the log ("why was this not accepted?"). */
+export function failedCheckCodes(runs: ReadonlyArray<Pick<VerifiedRun, 'checks'>>): string[][] {
+  return runs.map((run) => run.checks.filter((check) => !check.passed).map((check) => check.code))
+}
+
 /** Same date and (normalised) title → one event; the first occurrence wins. */
 export function dedupeEvents(events: NoticeEvent[]): NoticeEvent[] {
   const seen = new Set<string>()
@@ -155,8 +172,11 @@ export async function noticeState(deps: PracticeDeps, input: { id: string; kind:
     .limit(1)
   if (!run) return { state: 'none', events, proposed }
   if (run.status === 'accepted') {
-    const output = run.output as { not_a_notice?: boolean } | null
-    return { state: output?.not_a_notice ? 'not_a_notice' : 'extracted', events, proposed }
+    const output = run.output as { not_a_notice?: boolean; events?: unknown[] } | null
+    const dated = Array.isArray(output?.events) ? output.events.length : 0
+    // No dated events (whether the model said "not a notice" or just found none) reads as
+    // "I couldn't find any dates on this", never as "dates found" (B16 §5).
+    return { state: output?.not_a_notice || dated === 0 ? 'not_a_notice' : 'extracted', events, proposed }
   }
   if (run.status === 'exhausted' || run.status === 'retried') return { state: 'uncertain', events, proposed }
   return { state: 'failed', events, proposed }
