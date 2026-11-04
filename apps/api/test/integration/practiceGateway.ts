@@ -1,4 +1,4 @@
-import type { InputClass, NoticeOutput, WorkCheckOutput } from '@guardian-book/shared'
+import type { InputClass, NoteDraft, NoticeOutput, WorkCheckOutput } from '@guardian-book/shared'
 import { loadConfig } from '../../src/config.js'
 import { createGateway, type Gateway } from '../../src/gateway/gateway.js'
 import { immediateSleep, okResponse } from '../../src/gateway/testing.js'
@@ -89,8 +89,28 @@ export function noticeFromText(request: ChatRequest): NoticeOutput {
   return { events, not_a_notice: events.length === 0 }
 }
 
+/**
+ * A plain-language note that cites every evidence ID the prompt listed (B07). Short
+ * sentences, no jargon, nothing about the person: the verifier's NOTE_RULES accept it.
+ */
+export function noteFromPrompt(request: ChatRequest): NoteDraft {
+  const text = userText(request)
+  const block = /<<<EVIDENCE\n([\s\S]*?)\nEVIDENCE>>>/.exec(text)
+  const ids = (block?.[1] ?? '')
+    .split('\n')
+    .map((line) => line.split(' · ')[0]?.trim() ?? '')
+    .filter((id) => id.length > 0)
+  const slipped = /^- (.+?): /m.exec(text)?.[1] ?? 'one step'
+  return {
+    text: `This week your child worked on algebra. One step slipped: ${slipped.toLowerCase()}. Ask them to show you that step tonight. Two minutes is enough.`,
+    evidence_event_ids: ids,
+  }
+}
+
 export function defaultAnswer(request: ChatRequest): TransportResult {
   switch (purposeOf(request)) {
+    case 'note':
+      return okResponse(noteFromPrompt(request), { requestId: `req_note_${Date.now()}` })
     case 'classify':
       return okResponse(classification(/<<<NOTICE|notice|timetable/i.test(userText(request)) ? 'notice' : 'work'), { requestId: `req_classify_${Date.now()}` })
     case 'assess':

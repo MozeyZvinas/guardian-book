@@ -24,6 +24,19 @@ export type AuditAction =
   | 'attempt.assessed'
   | 'attempt.assess_refused'
   | 'calendar.decided'
+  // B07
+  | 'guideline.approved'
+  | 'review.confirmed'
+  | 'review.released'
+  | 'review.feedback_added'
+  | 'intervention.assigned'
+  | 'intervention.updated'
+  | 'intervention.closed'
+  | 'note.drafted'
+  | 'note.draft_refused'
+  | 'note.created'
+  | 'note.approved'
+  | 'note.sent'
 
 export interface AuditInput {
   actorId: string | null

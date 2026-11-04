@@ -12,7 +12,9 @@ import type { DbStatus } from './db/health.js'
 import { createGateway, type Gateway } from './gateway/gateway.js'
 import type { PracticeDeps } from './inputs/deps.js'
 import { inputsRouter } from './inputs/routes.js'
+import { interventionsRouter } from './interventions/routes.js'
 import { HttpError, notConfigured } from './lib/http.js'
+import { notesRouter } from './notes/routes.js'
 import type { Logger } from './logger.js'
 import { requestLog } from './middleware/requestLog.js'
 import { securityHeaders } from './middleware/securityHeaders.js'
@@ -25,6 +27,7 @@ import { meRouter } from './routes/me.js'
 import { learnerSpaceRouter } from './routes/me/index.js'
 import { webStatic } from './static.js'
 import { createStorage, type Storage } from './storage/index.js'
+import { teacherRouter } from './teacher/routes.js'
 
 export interface AppOptions {
   config: AppConfig
@@ -133,6 +136,10 @@ export function createApp(options: AppOptions): Express {
     app.use(inputsRouter(practice))
     app.use(attemptsRouter(practice))
     app.use(calendarRouter(practice))
+    // B07: the teacher space, interventions and notes home (spec 03 §5, §8.3, §9.3).
+    app.use(teacherRouter(practice))
+    app.use(interventionsRouter(practice))
+    app.use(notesRouter(practice))
   } else {
     app.use('/api', express.json({ limit: '1mb' }))
     app.use(API_PREFIXES, (_req, _res, next) => next(notConfigured()))

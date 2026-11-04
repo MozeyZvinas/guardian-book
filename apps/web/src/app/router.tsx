@@ -71,5 +71,36 @@ export const router = createBrowserRouter([
     lazy: () => import('../routes/teacher/Classes').then((m) => ({ Component: m.TeacherClasses })),
     errorElement: <RouteError />,
   },
+  // Teacher space (spec 05 §4.4, §9; B07): T2 picture, T3 queue, T3a review, T4 notes, T6 learner, T7 guidelines.
+  {
+    path: '/teacher/classes/:id',
+    lazy: () => import('../routes/teacher/picture/Picture').then((m) => ({ Component: m.TeacherPicture })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/teacher/classes/:id/queue',
+    lazy: () => import('../routes/teacher/queue/Queue').then((m) => ({ Component: m.TeacherQueue })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/teacher/attempts/:id',
+    lazy: () => import('../routes/teacher/review/Review').then((m) => ({ Component: m.TeacherReview })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/teacher/classes/:id/notes',
+    lazy: () => import('../routes/teacher/notes/Notes').then((m) => ({ Component: m.TeacherNotes })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/teacher/classes/:id/guidelines',
+    lazy: () => import('../routes/teacher/guidelines/Guidelines').then((m) => ({ Component: m.TeacherGuidelines })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/teacher/learners/:id',
+    lazy: () => import('../routes/teacher/learner/LearnerProfile').then((m) => ({ Component: m.TeacherLearner })),
+    errorElement: <RouteError />,
+  },
   { path: '*', element: <NotFound /> },
 ])

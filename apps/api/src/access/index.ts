@@ -1,7 +1,7 @@
 import { and, eq, isNull } from 'drizzle-orm'
 import type { Actor } from '../auth/session.js'
 import type { DbOrTx } from '../db/client.js'
-import { attempts, calendarEvents, classMembers, classes, guardianLinks, inputs, profiles } from '../db/schema.js'
+import { attempts, calendarEvents, classMembers, classes, guardianLinks, inputs, interventions, notes, profiles } from '../db/schema.js'
 
 /**
  * The `access` module (spec 03 §1, §4, §8.2, §9.2): the ONLY place permission decisions
@@ -33,6 +33,17 @@ export type Action =
   | 'attempt.assess'
   | 'calendar_event.read'
   | 'calendar_event.decide'
+  // B07 (spec 03 §4, §8.2, §9.2): the teacher space
+  | 'guideline.read'
+  | 'guideline.approve'
+  | 'review.write'
+  | 'review.read'
+  | 'intervention.create'
+  | 'intervention.read'
+  | 'intervention.update'
+  | 'note.create'
+  | 'note.read'
+  | 'note.update'
 
 export type Resource =
   | { type: 'class'; id: string }
@@ -43,6 +54,8 @@ export type Resource =
   | { type: 'school'; id: string | null }
   | { type: 'input'; id: string }
   | { type: 'calendar_event'; id: string }
+  | { type: 'intervention'; id: string }
+  | { type: 'note'; id: string }
 
 export interface Subject {
   userId: string
@@ -148,12 +161,34 @@ export async function sameSchool(db: DbOrTx, subject: Subject, resource: Resourc
       if (!row) return false
       return sameSchool(db, subject, row.scopeType === 'class' ? { type: 'class', id: row.scopeId } : { type: 'learner', id: row.scopeId })
     }
+    case 'intervention': {
+      const [row] = await db.select({ classId: interventions.classId }).from(interventions).where(eq(interventions.id, resource.id)).limit(1)
+      return row ? sameSchool(db, subject, { type: 'class', id: row.classId }) : false
+    }
+    case 'note': {
+      const [row] = await db.select({ learnerId: notes.learnerId }).from(notes).where(eq(notes.id, resource.id)).limit(1)
+      return row ? sameSchool(db, subject, { type: 'learner', id: row.learnerId }) : false
+    }
     case 'guardian_link':
     case 'item':
       return true // not school-scoped
     default:
       return false
   }
+}
+
+async function interventionRow(db: DbOrTx, id: string): Promise<{ classId: string; learnerId: string } | null> {
+  const [row] = await db.select({ classId: interventions.classId, learnerId: interventions.learnerId }).from(interventions).where(eq(interventions.id, id)).limit(1)
+  return row ?? null
+}
+
+async function noteRow(db: DbOrTx, id: string): Promise<{ teacherId: string; learnerId: string; guardianId: string; status: string } | null> {
+  const [row] = await db
+    .select({ teacherId: notes.teacherId, learnerId: notes.learnerId, guardianId: notes.guardianId, status: notes.status })
+    .from(notes)
+    .where(eq(notes.id, id))
+    .limit(1)
+  return row ?? null
 }
 
 async function inputRow(db: DbOrTx, inputId: string): Promise<{ learnerId: string; kind: 'work' | 'notice' | 'question' } | null> {
@@ -335,6 +370,65 @@ export async function can(db: DbOrTx, subject: Subject, action: Action, resource
       if (!row) return false
       if (row.scopeType === 'learner') return learnerOwns(subject, row.scopeId)
       return teacherOwnsClass(db, subject, row.scopeId)
+    }
+
+    // ── B07: guidelines, reviews, interventions, notes ──────────────────────────────────────
+
+    case 'guideline.read':
+    case 'guideline.approve':
+      // The class teacher reads the guideline to approve it (spec 03 §9.2), before any attempt exists.
+      return resource.type === 'class' && teacherOwnsClass(db, subject, resource.id)
+
+    case 'review.write': {
+      // Confirm, release, add feedback: the teacher of a learner in one of their classes, same school.
+      if (resource.type !== 'attempt' || subject.role !== 'teacher') return false
+      const [row] = await db.select({ learnerId: attempts.learnerId }).from(attempts).where(eq(attempts.id, resource.id)).limit(1)
+      if (!row) return false
+      return (await teacherOfLearner(db, subject, row.learnerId)) && sameSchool(db, subject, resource)
+    }
+
+    case 'review.read': {
+      // The owner (the route serves it only once released) or the class teacher. Guardians never.
+      if (resource.type !== 'attempt') return false
+      const [row] = await db.select({ learnerId: attempts.learnerId }).from(attempts).where(eq(attempts.id, resource.id)).limit(1)
+      if (!row) return false
+      if (learnerOwns(subject, row.learnerId)) return true
+      if (subject.role === 'teacher') return (await teacherOfLearner(db, subject, row.learnerId)) && sameSchool(db, subject, resource)
+      return false
+    }
+
+    case 'intervention.create':
+      return resource.type === 'class' && teacherOwnsClass(db, subject, resource.id)
+
+    case 'intervention.read':
+    case 'intervention.update': {
+      if (resource.type !== 'intervention') return false
+      const row = await interventionRow(db, resource.id)
+      if (!row) return false
+      if (subject.role === 'teacher') return teacherOwnsClass(db, subject, row.classId)
+      // A learner reads their own (action and follow-up date only; the route trims it). Guardians go through the plan (B06).
+      if (action === 'intervention.read') return learnerOwns(subject, row.learnerId)
+      return false
+    }
+
+    case 'note.create':
+      return resource.type === 'learner' && subject.role === 'teacher' && teacherOfLearner(db, subject, resource.id)
+
+    case 'note.read': {
+      if (resource.type !== 'note') return false
+      const row = await noteRow(db, resource.id)
+      if (!row) return false
+      if (subject.role === 'teacher') return row.teacherId === subject.userId && sameSchool(db, subject, resource)
+      // A guardian reads a note only once sent, and only when addressed to them (spec 03 §8.2).
+      if (subject.role === 'guardian') return row.guardianId === subject.userId && row.status === 'sent' && guardianLinkedTo(db, subject.userId, row.learnerId)
+      return false
+    }
+
+    case 'note.update': {
+      if (resource.type !== 'note') return false
+      const row = await noteRow(db, resource.id)
+      if (!row || subject.role !== 'teacher') return false
+      return row.teacherId === subject.userId && sameSchool(db, subject, resource)
     }
 
     default:
