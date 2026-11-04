@@ -1,21 +1,24 @@
-import { readFile, readdir, mkdir, writeFile, copyFile } from 'node:fs/promises'
+import { readFile, readdir, mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { WorkCheckOutput } from '@guardian-book/shared'
 import type { Gateway } from '../gateway/gateway.js'
 import { WORK_CHECK_MAX_TOKENS, WORK_CHECK_PROMPT_VERSION, WORK_CHECK_TIMEOUT_MS, buildWorkCheckSystem, buildWorkCheckUser, workCheckContext, type WorkCheckPromptInput } from '../gateway/prompts/workCheck.v1.js'
 import { verifiedCall, type VerifiedRun } from '../gateway/verifiedCall.js'
 import type { CheckCode } from '../verify/types.js'
-import { evalCaseSchema, type EvalCase } from './cases.js'
+import { evalCaseSchema, type EvalCase, type EvalSuite } from './cases.js'
+import { answerRevealed } from './pedagogy.js'
 import { percentile, ratio, type Ratio } from './stats.js'
 
 /**
- * The dev eval runner (spec 04 §5; B03 item 6): reads cases from a directory outside the
- * repo, runs `verifiedCall` for `assess` on each, and writes a results file with per-case
- * output, checks, latency and cost, plus a summary where every rate has its denominator.
+ * The dev eval runner (spec 04 §5; B03 item 6): reads cases from a directory, runs
+ * `verifiedCall` for `assess` on each, and writes a raw results file (git-ignored: it holds
+ * per-case output) with a summary where every rate has its denominator. The committed
+ * `latest.json` is built from it by `summary.ts` (B08).
  */
 
 export interface EvalCaseResult {
   id: string
+  suite: EvalSuite
   category: string | null
   legibility: number | null
   status: 'accepted' | 'exhausted' | 'failed'
@@ -27,6 +30,8 @@ export interface EvalCaseResult {
   model_first_lost_step: string | null
   lost_step_match: boolean | null
   all_steps_high_confidence: boolean | null
+  /** Pedagogy cases only: true when something shown to the learner states the answer; null elsewhere. */
+  answer_revealed: boolean | null
   calls: number
   cost_usd: number
   latency_ms: number
@@ -119,6 +124,7 @@ export function firstLostStep(output: WorkCheckOutput, guidelineOrder: string[])
 export async function runCase(evalCase: EvalCase, evalDir: string, gateway: Gateway): Promise<EvalCaseResult> {
   const input = await promptInputFor(evalCase, evalDir)
   const user = buildWorkCheckUser(input)
+  const context = workCheckContext(input)
   const result = await verifiedCall({
     gateway,
     purpose: 'assess',
@@ -126,7 +132,7 @@ export async function runCase(evalCase: EvalCase, evalDir: string, gateway: Gate
     system: buildWorkCheckSystem(),
     user: user.text,
     images: user.images,
-    context: workCheckContext(input),
+    context,
     maxTokens: WORK_CHECK_MAX_TOKENS,
     timeoutMs: WORK_CHECK_TIMEOUT_MS,
   })
@@ -137,6 +143,7 @@ export async function runCase(evalCase: EvalCase, evalDir: string, gateway: Gate
   const hasLostMark = evalCase.expected.first_lost_step !== null
   return {
     id: evalCase.id,
+    suite: evalCase.suite,
     category: evalCase.category,
     legibility: evalCase.legibility,
     status: result.status,
@@ -148,6 +155,7 @@ export async function runCase(evalCase: EvalCase, evalDir: string, gateway: Gate
     model_first_lost_step: modelFirstLost,
     lost_step_match: output && hasLostMark ? modelFirstLost === evalCase.expected.first_lost_step : null,
     all_steps_high_confidence: output ? output.steps.every((step) => step.confidence === 'high') : null,
+    answer_revealed: evalCase.suite === 'pedagogy' && output ? answerRevealed(output, context) : null,
     calls: result.runs.length,
     cost_usd: result.totalCostUsd,
     latency_ms: result.totalLatencyMs,
@@ -189,7 +197,7 @@ export function summarise(results: EvalCaseResult[]): EvalSummary {
   }
 }
 
-export async function runEval(options: RunEvalOptions): Promise<{ results: EvalResults; filePath: string; latestPath: string }> {
+export async function runEval(options: RunEvalOptions): Promise<{ results: EvalResults; filePath: string }> {
   const now = options.now ?? (() => new Date())
   const cases = await loadCases(options.evalDir)
   const caseResults: EvalCaseResult[] = []
@@ -212,8 +220,6 @@ export async function runEval(options: RunEvalOptions): Promise<{ results: EvalR
   await mkdir(options.outDir, { recursive: true })
   const stamp = ranAt.toISOString().replace(/[:.]/g, '-')
   const filePath = path.join(options.outDir, `${stamp}-${options.gateway.model}${options.mocked ? '-mock' : ''}.json`)
-  const latestPath = path.join(options.outDir, 'latest.json')
   await writeFile(filePath, `${JSON.stringify(results, null, 2)}\n`)
-  await copyFile(filePath, latestPath)
-  return { results, filePath, latestPath }
+  return { results, filePath }
 }
