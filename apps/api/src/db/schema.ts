@@ -18,6 +18,7 @@ import {
 } from 'drizzle-orm/pg-core'
 import {
   EVENT_BASES,
+  GUARDIAN_LANGUAGES,
   GUIDELINE_STEP_TYPES,
   ITEM_STATUSES,
   LEARNING_EVENT_KINDS,
@@ -65,6 +66,7 @@ export const modelRunPurposeEnum = pgEnum('model_run_purpose', [
   'notice',
   'plan',
   'note',
+  'translate',
 ])
 export const modelRunStatusEnum = pgEnum('model_run_status', ['accepted', 'retried', 'exhausted', 'failed'])
 export const calendarScopeEnum = pgEnum('calendar_scope', ['class', 'learner'])
@@ -82,6 +84,9 @@ export const noteAudienceEnum = pgEnum('note_audience', ['learner', 'guardian', 
 export const interventionStatusEnum = pgEnum('intervention_status', ['open', 'checking', 'closed'])
 export const interventionOutcomeEnum = pgEnum('intervention_outcome', ['improved', 'no_change', 'needs_more'])
 export const reviewFeedbackKindEnum = pgEnum('review_feedback_kind', ['agree', 'correct', 'add'])
+/** B12: the parent's home language (brief B12; D38). */
+export const languageCodeEnum = pgEnum('language_code', GUARDIAN_LANGUAGES)
+export const translationStatusEnum = pgEnum('translation_status', ['ready', 'unavailable'])
 
 /** The three provenance columns every artifact table carries (spec 03 §9.1). */
 const provenanceColumns = () => ({
@@ -176,6 +181,8 @@ export const profiles = pgTable(
     cards: jsonb('cards'),
     cardsSourceText: text('cards_source_text'),
     cardsModelRunId: uuid('cards_model_run_id'),
+    /** B12: the language a guardian reads This week and Notes in; `en` for everyone else. */
+    preferredLanguage: languageCodeEnum('preferred_language').notNull().default('en'),
     createdAt: createdAt(),
   },
   (t) => [
@@ -664,6 +671,36 @@ export const interventions = pgTable(
   ],
 )
 
+/**
+ * B12: a cached translation of one parent-facing text into one language. Keyed on the
+ * hash of the source text, so two guardians (or two reads) share one verified translation.
+ * `ready` rows carry the text; `unavailable` rows record that the model could not do it
+ * after three verified calls (the English stands). Never a learner's work.
+ */
+export const translations = pgTable(
+  'translations',
+  {
+    id: id(),
+    /** `plan_gap`, `plan_action`, `plan_celebrate`, `note`, `review_feedback`, `intervention`. */
+    sourceKind: text('source_kind').notNull(),
+    sourceId: uuid('source_id').notNull(),
+    language: languageCodeEnum('language').notNull(),
+    sourceHash: text('source_hash').notNull(),
+    text: text('text'),
+    status: translationStatusEnum('status').notNull(),
+    modelRunId: uuid('model_run_id').references(() => modelRuns.id),
+    ...provenanceColumns(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    unique('translations_source_hash_language').on(t.sourceHash, t.language),
+    index('translations_source_idx').on(t.sourceKind, t.sourceId),
+    check('translations_text_len', sql`char_length(${t.text}) <= 2000`),
+    check('translations_ready_has_text', sql`${t.status} <> 'ready' or ${t.text} is not null`),
+    check('translations_language_not_en', sql`${t.language} <> 'en'`),
+  ],
+)
+
 // ── audit and usage ───────────────────────────────────────────────────────────────────────
 
 export const auditEvents = pgTable(
@@ -706,6 +743,7 @@ export const PROVENANCE_TABLES = [
   'help_plans',
   'calendar_events',
   'resources',
+  'translations',
 ] as const
 
 /** Tables the database refuses to UPDATE or DELETE (migration 0002). */
