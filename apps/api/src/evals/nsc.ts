@@ -38,9 +38,23 @@ export const NSC_LEARNER_WEEK = 5
 
 // ── comparing a final answer with the memo's ─────────────────────────────────────────────
 
-/** "x=3" → "3", "f(x)=2x" → "2x": the value without the name it is assigned to. */
+/**
+ * Notation that differs between the memo and the guide without changing the answer: the
+ * NSC's decimal comma ("2,5"), "≈" for "=", degree signs, a hat or bar on a name (ŷ), and
+ * percent signs. Set after a first look at the 4 Nov misses; general rules, not per answer.
+ */
+export function notation(text: string): string {
+  return text
+    .replace(/(\d),(\d)/g, '$1.$2')
+    .replace(/\\approx|≈/g, '=')
+    .replace(/\^\s*\{?\\circ\}?|\\circ|°/g, '')
+    .replace(/\\(?:hat|bar|overline)\s*\{([^{}]*)\}/g, '$1')
+    .replace(/\\%|%/g, '')
+}
+
+/** "x=3" → "3", "f(x)=2x" → "2x", "=41" → "41": the value without the name it is assigned to. */
 function withoutAssignment(part: string): string {
-  return part.replace(/^[a-z][a-z0-9_']*(?:\([a-z0-9]*\))?=/i, '')
+  return part.replace(/^[a-z][a-z0-9_']*(?:\([a-z0-9]*\))?=/i, '').replace(/^=/, '')
 }
 
 /** "±3" stands for two answers. */
@@ -49,7 +63,7 @@ function expandPlusMinus(part: string): string[] {
 }
 
 function valuesOf(text: string): string[] {
-  const parts = normaliseAnswer(text)
+  const parts = normaliseAnswer(notation(text))
     .split(',')
     .filter((part) => part.length > 0)
     .flatMap((part) => expandPlusMinus(withoutAssignment(part)))
@@ -66,9 +80,10 @@ function numberOf(part: string): number | null {
 }
 
 /**
- * Whether the guide's final answer is the memo's: the same values after B15's
- * `normaliseAnswer` (the rule the app uses to decide two reads agree), with assignments
- * ("x =") dropped and ± expanded, or the same numbers within rounding (0.5%, at least 0.01).
+ * Whether the guide's final answer is the memo's: the same values after `notation` and
+ * B15's `normaliseAnswer` (the rule the app uses to decide two reads agree), with
+ * assignments ("x =") dropped and ± expanded, or the same numbers within rounding (0.5%, at
+ * least 0.01).
  */
 export function answersMatch(memo: string, guide: string): boolean {
   const expected = valuesOf(memo)
@@ -229,6 +244,11 @@ export async function runGuideCase(guide: GuideCase, gateway: Gateway, figure: I
   }
 }
 
+/** The saved results scored again with the current comparison: no model call, the same outputs. */
+export function rescoreGuide(results: NscGuideResult[]): NscGuideResult[] {
+  return results.map((result) => ({ ...result, reached: result.final_answer === null ? null : answersMatch(result.expected_final_answer, result.final_answer) }))
+}
+
 // ── the two suites ───────────────────────────────────────────────────────────────────────
 
 const round = (value: number): number => Math.round(value * 1e8) / 1e8
@@ -252,7 +272,16 @@ function costOf(total: number, cases: number, assumption: string): EvidenceSuite
 
 const DATASET = { label: NSC_DATASET_LABEL, held_out: true }
 
-export function nscGuideSuite(results: NscGuideResult[], source: string): EvidenceSuite | null {
+/**
+ * A person's reading of each miss (`<EVAL_DIR>/guide-reading.json`, outside the repo): true
+ * when the guide's answer is the memo's in another form. Used only when it covers every miss.
+ */
+export interface GuideReading {
+  read_by: string
+  equivalent: Record<string, boolean>
+}
+
+export function nscGuideSuite(results: NscGuideResult[], source: string, reading: GuideReading | null = null): EvidenceSuite | null {
   if (results.length === 0) return null
   const runs = results.flatMap((result) => result.runs)
   const calls = runs.filter((run) => run.status !== 'failed')
@@ -292,6 +321,7 @@ export function nscGuideSuite(results: NscGuideResult[], source: string): Eviden
         'questions with worked steps shown whose answer does not match the memo’s (wrong, or right in another form) ÷ questions with worked steps shown',
         ratio(ready.filter((result) => result.reached === false).length, ready.length),
       ),
+      ...readingMetrics(shown, ready, reading),
       metric('schema_validity', 'Passed every check first time', 'model calls that passed every verifier check ÷ model calls', ratio(calls.filter((run) => run.checks.every((check) => check.passed)).length, calls.length)),
       metric('failed', 'Failed', 'questions where no read was accepted (timeout, provider error, checks) ÷ questions', ratio(results.filter((result) => result.status === 'failed').length, results.length)),
     ],
@@ -305,6 +335,27 @@ export function nscGuideSuite(results: NscGuideResult[], source: string): Eviden
       `one learner asks for help with ${NSC_LEARNER_WEEK} questions a week; each question is two reads; cost per learner-week is the mean cost per question × ${NSC_LEARNER_WEEK}`,
     ),
   }
+}
+
+function readingMetrics(shown: NscGuideResult[], ready: NscGuideResult[], reading: GuideReading | null): EvidenceMetric[] {
+  if (!reading) return []
+  const misses = shown.filter((result) => result.reached === false)
+  if (misses.some((result) => reading.equivalent[result.id] === undefined)) return []
+  const same = (result: NscGuideResult): boolean => result.reached === true || reading.equivalent[result.id] === true
+  return [
+    metric(
+      'reached_by_reading',
+      'Reached, counting other forms of the same answer',
+      `as the headline, with each miss read by ${reading.read_by}: a miss counts when it states the memo’s answer in another form ÷ questions the guide read`,
+      ratio(shown.filter(same).length, shown.length),
+    ),
+    metric(
+      'ready_different_by_reading',
+      'Worked steps shown with a different answer, by reading',
+      `questions with worked steps shown whose answer differs from the memo’s after that reading ÷ questions with worked steps shown`,
+      ratio(ready.filter((result) => result.reached !== null && !same(result)).length, ready.length),
+    ),
+  ]
 }
 
 export function nscWorkCheckSuite(results: EvalCaseResult[], source: string): EvidenceSuite | null {

@@ -6,7 +6,7 @@ import { capturingLogger, okResponse } from '../gateway/testing.js'
 import type { ChatRequest } from '../gateway/transport.js'
 import type { EvalCase } from './cases.js'
 import type { GuideCase } from './guideCases.js'
-import { NSC_DATASET_LABEL, answersMatch, nscGuideSuite, nscWorkCheckSuite, runGuideCase, selectGuideCases, selectWorkCheckCases, sessionCasePattern, stableSample, withNscSuites } from './nsc.js'
+import { NSC_DATASET_LABEL, answersMatch, nscGuideSuite, rescoreGuide, nscWorkCheckSuite, runGuideCase, selectGuideCases, selectWorkCheckCases, sessionCasePattern, stableSample, withNscSuites } from './nsc.js'
 import type { EvalCaseResult } from './runner.js'
 
 /** Synthetic questions only (never DBE text). */
@@ -76,6 +76,15 @@ describe('comparing a final answer with the memo', () => {
     expect(answersMatch('$n = 2.25$', '$2.250$')).toBe(true)
     expect(answersMatch('R 12 345.67', 'R12345.67')).toBe(true)
     expect(answersMatch('$x = 47.2°$', '$x = 47.20$')).toBe(true)
+  })
+
+  it('reads the NSC’s notation: decimal commas, ≈, degree signs, hats and percent signs', () => {
+    expect(answersMatch('$x=2,45$ or $x=-1,05$', '$x \\approx 2.45 \\text{ or } x \\approx -1.05$')).toBe(true)
+    expect(answersMatch('$\\hat{y} = 12,3 + 0,85x$', '$y = 12.3 + 0.85x$')).toBe(true)
+    expect(answersMatch('$\\hat{Q}_4=180°-3x$', '$\\hat{Q}_4 = 180^\\circ - 3x$')).toBe(true)
+    expect(answersMatch('$41$', '$\\approx 41\\%$')).toBe(true)
+    expect(answersMatch('$0, 5, 3$', '$0.5, 3$')).toBe(false)
+    expect(answersMatch('$32\\%$', '$68\\%$')).toBe(false)
   })
 
   it('refuses a different value, a missing part or an empty answer', () => {
@@ -149,6 +158,13 @@ describe('running the guide on a held-out question', () => {
   })
 })
 
+describe('re-scoring saved results', () => {
+  it('scores the same outputs again with the current comparison and makes no call', () => {
+    const saved = { id: 'g', with_figure: false, status: 'ready' as const, agreement: 'agree' as const, reached: false, final_answer: '$x \\approx 2.45$', expected_final_answer: '$x=2,45$', calls: 2, cost_usd: 0.03, latency_ms: 1, runs: [], error: null }
+    expect(rescoreGuide([saved, { ...saved, final_answer: null }]).map((result) => result.reached)).toEqual([true, null])
+  })
+})
+
 describe('the held-out suites', () => {
   const guideResult = (reached: boolean | null, status: 'ready' | 'unsure' | 'failed', with_figure = false) => ({
     id: 'g',
@@ -178,6 +194,15 @@ describe('the held-out suites', () => {
     expect(byKey['failed']).toMatchObject({ n: 1, d: 4 })
     expect(suite?.cost?.per_attempt_usd).toBe(0.03)
     expect(nscGuideSuite([], 'x')).toBeNull()
+  })
+
+  it('adds the reading-based figures only when the reading covers every miss', () => {
+    const results = [{ ...guideResult(true, 'ready'), id: 'a' }, { ...guideResult(false, 'ready'), id: 'b' }, { ...guideResult(false, 'unsure'), id: 'c' }]
+    const keys = (reading: Parameters<typeof nscGuideSuite>[2]) => Object.fromEntries((nscGuideSuite(results, 'x', reading)?.metrics ?? []).map((m) => [m.key, m.ratio]))
+    expect(keys({ read_by: 'a reader', equivalent: { b: true } })['reached_by_reading']).toBeUndefined()
+    const both = keys({ read_by: 'a reader', equivalent: { b: true, c: false } })
+    expect(both['reached_by_reading']).toMatchObject({ n: 2, d: 3 })
+    expect(both['ready_different_by_reading']).toMatchObject({ n: 0, d: 2 })
   })
 
   it('scores the lost step on changed answers and full marks on the control', () => {

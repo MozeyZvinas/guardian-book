@@ -12,6 +12,7 @@ import { writeEvidence } from './summary.js'
 import {
   figureFor,
   loadGuideCases,
+  rescoreGuide,
   nscGuideSuite,
   nscWorkCheckSuite,
   runGuideCase,
@@ -19,6 +20,7 @@ import {
   selectWorkCheckCases,
   sessionCasePattern,
   withNscSuites,
+  type GuideReading,
   type NscGuideResult,
 } from './nsc.js'
 
@@ -31,7 +33,9 @@ import {
  * Options: `--session=2026-may_june` (default: the newest held-out session, D31),
  * `--sample=30` (changed answers; the unchanged memo working for the same questions runs
  * as the control), `--cap=10` (US dollars for phase C in all, across runs, from
- * `<CORPUS_DIR>/evals/spend.json`), `--concurrency=4`, `--only=guide|work_check`.
+ * `<CORPUS_DIR>/evals/spend.json`), `--concurrency=4`, `--only=guide|work_check`,
+ * `--rescore-guide=<raw guide results file>` (score saved guide outputs again with the current
+ * comparison: no model call, nothing spent).
  */
 
 interface Args {
@@ -40,10 +44,11 @@ interface Args {
   cap: number
   concurrency: number
   only: 'guide' | 'work_check' | null
+  rescoreGuide: string | null
 }
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { session: HELD_OUT_SESSIONS[0] ?? '2026-may_june', sample: 30, cap: 10, concurrency: 4, only: null }
+  const args: Args = { session: HELD_OUT_SESSIONS[0] ?? '2026-may_june', sample: 30, cap: 10, concurrency: 4, only: null, rescoreGuide: null }
   for (const arg of argv) {
     const [name, value = ''] = arg.split('=')
     if (name === '--session') args.session = value
@@ -51,6 +56,7 @@ function parseArgs(argv: string[]): Args {
     else if (name === '--cap') args.cap = Math.max(0, Number(value) || 0)
     else if (name === '--concurrency') args.concurrency = Math.max(1, Number(value) || 1)
     else if (name === '--only' && (value === 'guide' || value === 'work_check')) args.only = value
+    else if (name === '--rescore-guide' && value.length > 0) args.rescoreGuide = value
     else throw new Error(`unknown option ${arg}`)
   }
   return args
@@ -103,17 +109,29 @@ async function main(): Promise<void> {
     const selection = selectGuideCases(await loadGuideCases(path.join(heldOutDir, 'guide')), pattern)
     console.log(`  guide: ${selection.cases.length} question(s), ${selection.withFigure} with a figure attached; left out ${selection.givenResult} that print their result`)
     const before = spent
-    const results = await pool(selection.cases, args.concurrency, async (guide): Promise<NscGuideResult | null> => {
-      if (left() <= 0.1) return null
-      const result = await runGuideCase(guide, gateway, await figureFor(guide, heldOutDir))
-      spent += result.cost_usd
-      console.log(`    ${guide.id}: ${result.status} · ${result.reached === null ? 'no answer' : result.reached ? 'memo answer' : 'other answer'} · ${result.calls} call(s) · ${Math.round(result.latency_ms / 1000)} s · $${result.cost_usd.toFixed(4)}`)
-      return result
-    })
-    record('nsc_guide', results.length, spent - before)
+    const saved = args.rescoreGuide ? (JSON.parse(readFileSync(args.rescoreGuide, 'utf8')) as { ran_at: string; results: NscGuideResult[] }) : null
+    const results = saved
+      ? rescoreGuide(saved.results)
+      : await pool(selection.cases, args.concurrency, async (guide): Promise<NscGuideResult | null> => {
+          if (left() <= 0.1) return null
+          const result = await runGuideCase(guide, gateway, await figureFor(guide, heldOutDir))
+          spent += result.cost_usd
+          console.log(`    ${guide.id}: ${result.status} · ${result.reached === null ? 'no answer' : result.reached ? 'memo answer' : 'other answer'} · ${result.calls} call(s) · ${Math.round(result.latency_ms / 1000)} s · $${result.cost_usd.toFixed(4)}`)
+          return result
+        })
+    if (saved) console.log(`  guide: re-scored ${results.length} saved result(s) from ${saved.ran_at}; no model call`)
+    else record('nsc_guide', results.length, spent - before)
     if (results.length < selection.cases.length) stopped.push(`guide: ${selection.cases.length - results.length} question(s) not run (cost cap)`)
-    writeFileSync(path.join(resultsDir, `${ranAt.toISOString().replace(/[:.]/g, '-')}-nsc-guide.json`), `${JSON.stringify({ ran_at: ranAt.toISOString(), model: gateway.model, results }, null, 2)}\n`)
-    const suite = nscGuideSuite(results, `pnpm eval:nsc · ${gateway.model} · ${GUIDE_PROMPT_VERSION} + ${GUIDE_CHECK_PROMPT_VERSION} · ${ranAt.toISOString()}`)
+    const guideFile = `${ranAt.toISOString().replace(/[:.]/g, '-')}-nsc-guide${saved ? '-rescored' : ''}.json`
+    const guideRaw = saved ? { ran_at: saved.ran_at, rescored_at: ranAt.toISOString(), model: gateway.model, results } : { ran_at: ranAt.toISOString(), model: gateway.model, results }
+    writeFileSync(path.join(resultsDir, guideFile), `${JSON.stringify(guideRaw, null, 2)}\n`)
+    const readingFile = path.join(heldOutDir, 'guide-reading.json')
+    const reading = existsSync(readingFile) ? (JSON.parse(readFileSync(readingFile, 'utf8')) as GuideReading) : null
+    const suite = nscGuideSuite(
+      results,
+      `pnpm eval:nsc · ${gateway.model} · ${GUIDE_PROMPT_VERSION} + ${GUIDE_CHECK_PROMPT_VERSION} · ${saved ? `${saved.ran_at}, re-scored ${ranAt.toISOString()}` : ranAt.toISOString()}`,
+      reading,
+    )
     if (suite) suites.push(suite)
     notYet.push(
       `Held-out NSC guide: ${selection.withFigure} question(s) printed with a figure went in typed with the figure attached as a photo (the app takes typed text or a photo, not both); ${selection.givenResult} that ask to prove or show a printed result were left out.`,
