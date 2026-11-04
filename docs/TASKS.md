@@ -446,6 +446,11 @@ its step marks add up to the paper's marks. A *draft* failed a check three times
 
 Running extraction total (`model_runs`, purpose `extract`): **$15.24** over 684 recorded calls = $15.13 on the papers above + $0.12 for a 6-call dry run. Not in `model_runs`: 2 call(s), $0.06 (logged by the gateway but never recorded: both in the first run that stopped when a database connection dropped; its other 19 calls are in `model_runs`). Each paper's cost is the sum of its own `model_runs` rows, matched by request ID to the run logs (runs before 5 Nov used one subject ID per process; later runs record one per paper).
 
+**Prompt version.** Every extraction call above recorded `extract-v1`. The committed prompt is
+`extract-v2` (`apps/api/src/corpus/prompt.v2.ts`): identical except the one-line format example
+of a memo step's criterion, which in v1 matched a real paper's working and so is kept out of the
+repo (D40). A re-run records `extract-v2`; cached page reads keep their `extract-v1` stamp.
+
 Loaded into the local database with `pnpm content:load ~/guardian-book-corpus/items`: 782 items
 (584 practice, 198 held out: 2026 May/June and 2025 November), every one `dbe_nsc` with its
 `source_ref`, its attribution line and `licensed_content`; 481 carry a `diagram_key`, served by
