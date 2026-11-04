@@ -10,8 +10,9 @@ import {
 } from '@guardian-book/shared'
 
 /**
- * One evaluation suite: the metrics table (a table from the tablet breakpoint up, a stack
- * of cards on a phone), then the run facts. Every figure comes from the suite object and
+ * One evaluation suite: its own dataset when it has one (B17's held-out NSC suites), the
+ * metrics table (a table from the tablet breakpoint up, a stack of cards on a phone), then
+ * the run facts. Every figure comes from the suite object and
  * is formatted by the shared helpers; nothing numeric lives in this file.
  */
 
@@ -59,6 +60,14 @@ export function SuiteSection({ suite }: { suite: EvidenceSuite }) {
         <p className="text-sm text-fg-muted tnum">
           n = {suite.n} · {suite.source}
         </p>
+        {suite.dataset ? (
+          <p className="text-sm">
+            Dataset: {suite.dataset.label}.{' '}
+            <span className="text-fg-muted">
+              {suite.dataset.held_out ? 'Held out: these questions were never offered as practice.' : 'Not a held-out set.'}
+            </span>
+          </p>
+        ) : null}
       </div>
 
       {/* Tablet and up: a table with the denominator and the interval on every row. */}

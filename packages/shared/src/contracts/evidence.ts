@@ -29,7 +29,9 @@ export const evidenceRatioSchema = z.strictObject({
 })
 export type EvidenceRatio = z.infer<typeof evidenceRatioSchema>
 
-export const EVIDENCE_SUITE_KEYS = ['work_check', 'pedagogy', 'privacy'] as const
+// B17 phase C adds the held-out NSC suites: the guide against the memo's final answer, and the
+// work check on memo working with one step perturbed.
+export const EVIDENCE_SUITE_KEYS = ['work_check', 'pedagogy', 'privacy', 'nsc_guide', 'nsc_work_check'] as const
 export const evidenceSuiteKeySchema = z.enum(EVIDENCE_SUITE_KEYS)
 export type EvidenceSuiteKey = z.infer<typeof evidenceSuiteKeySchema>
 
@@ -42,9 +44,20 @@ export const evidenceMetricSchema = z.strictObject({
 })
 export type EvidenceMetric = z.infer<typeof evidenceMetricSchema>
 
+/** A suite's own dataset, when it differs from the file's (B17: held-out NSC questions, memos as truth). */
+export const evidenceSuiteDatasetSchema = z.strictObject({
+  /** Plain words: what the cases are and what counts as truth. */
+  label: z.string().min(1).max(400),
+  /** True when the questions were kept out of practice and of every prompt before this run. */
+  held_out: z.boolean(),
+})
+export type EvidenceSuiteDataset = z.infer<typeof evidenceSuiteDatasetSchema>
+
 export const evidenceSuiteSchema = z.strictObject({
   key: evidenceSuiteKeySchema,
   label: z.string().min(1).max(160),
+  /** Set when the suite ran on another dataset than the file's `dataset`; absent otherwise. */
+  dataset: evidenceSuiteDatasetSchema.optional(),
   /** Where the numbers came from: the command, the model and the run, or the test run. */
   source: z.string().min(1).max(300),
   /** The cases (or tests) in this suite. */
