@@ -11,7 +11,7 @@
   "scripts": {
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint . && node scripts/check-token-colours.mjs",
-    "test": "vitest run --project shared --project api",
+    "test": "vitest run --project shared --project api --project web",
     "test:integration": "vitest run --project api-integration",
     "test:e2e": "playwright test",
     "build": "pnpm -r build",

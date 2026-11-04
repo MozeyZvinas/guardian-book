@@ -5,8 +5,10 @@ import express, { Router } from 'express'
 /**
  * Serves the built web app (`apps/web/dist`) with a single-page-app fallback: any GET that is
  * not `/api/...` and not a real file gets `index.html`. Hashed assets are cached for a year;
- * `index.html` is never cached, so a fresh tab always gets the current bundle.
+ * `index.html`, the service worker and the manifest are never cached, so a fresh tab
+ * always gets the current bundle and a deploy is picked up on the next load (B09).
  */
+const NEVER_CACHED_FILES = new Set(['sw.js', 'manifest.webmanifest'])
 export function webStatic(distDir: string): Router {
   const router = Router()
   const indexPath = path.join(distDir, 'index.html')
@@ -20,7 +22,11 @@ export function webStatic(distDir: string): Router {
           const assets = `${path.sep}assets${path.sep}`
           res.setHeader(
             'Cache-Control',
-            filePath.includes(assets) ? 'public, max-age=31536000, immutable' : 'public, max-age=3600',
+            filePath.includes(assets)
+              ? 'public, max-age=31536000, immutable'
+              : NEVER_CACHED_FILES.has(path.basename(filePath))
+                ? 'no-cache'
+                : 'public, max-age=3600',
           )
         },
       }),
