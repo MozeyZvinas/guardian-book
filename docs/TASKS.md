@@ -56,7 +56,7 @@ the same files.
 | B09 PWA, polish (landing hero by surface, D35), E2E in CI; the Bring question picker shows the question itself (MathText), not the slug; `robots.txt` (allow `/`, `/evidence`; disallow `/api/`, `/learner/`, `/guardian/`, `/teacher/`, invite and join links; D36); then P1 in order (incl. P1-g teacher uploads a script) (voice, see-it card, overlay, open-weight row, WhatsApp text) | 3 Nov | P0-13, P1 | Gate P0 | A + B | todo |
 | B10 Release hardening, restore drill, history scan, README | 3 Nov | P0-13 | B09 | B / $8 | todo |
 | B11 Red ink on the learner's photo; teacher uploads a learner's script (P1-c, P1-g) | 4 Nov | P1 | B04, B07 | subscription | todo |
-| B12 Parent's home language (af, zu, xh, tn, st) + Share to WhatsApp (D38, P1-e) | 4 Nov | P1 | B06, B07 | subscription | todo |
+| B12 Parent's home language (af, zu, xh, tn, st) + Share to WhatsApp (D38, P1-e) | 4 Nov | P1 | B06, B07 | subscription | review (PR open 4 Nov; live check done, $0.05) |
 | B13 Ask about a step by voice or typing (Muse Voice Transcribe, P1-a) | 4 Nov | P1 | B04, B06 | subscription | todo |
 | B14 Open-weight comparison row (Muse Spark Open, P1-d) | 4 Nov | P1 | B08; founder's partner-host key | subscription | todo |
 | V1 Record the demo + X cut | 4 Nov, morning | — | B10 | Founder + planning | todo |
@@ -177,3 +177,46 @@ Add any question here, linked to a task ID.
   `EVAL_HELD_OUT`, `EVAL_NOT_YET`, `EVAL_PRIVACY_FILE`) landed in `af71f5c`; D37 keeps the
   synthetic dev cases in-repo at `apps/api/src/evals/fixtures/cases/` (real and held-out sets
   stay outside the repo).
+- **B12 · where the background translation starts.** The brief says "translate in the
+  background when the text is created (plan issued, note sent, feedback released)", but
+  those moments live in `plans/service.ts` (`storePlan`), `notes/service.ts` (`sendNote`)
+  and `teacher/review.ts` (`releaseReview`), which B12 does not own. So the job starts on
+  the first guardian read of the text (G1 or G2) and when the parent picks a language
+  (everything they can already see is warmed); G1 and G2 serve the English with
+  "Translation on its way" and refresh every 3 s (up to 8 times) until it lands. One line
+  in each of the three files (`translateForGuardians(...)`) would make it creation-time;
+  say if B12 or a later brief should add them.
+- **B12 · four small edits outside the owned folders**, all additive: `loop.test.ts`
+  (B06) now expects `translation: null` on a teacher message; three harness rows in
+  `test/access.integration.test.ts` for `/api/guardian/language`; `practiceGateway.ts`
+  answers `translate` with a pseudo-translation (every word's letters reversed);
+  `notesRouter` takes `TeacherDeps & Pick<PracticeDeps, 'jobs'>` (the same object
+  `createApp` already passes). `GuardianNoteView` and `GET /api/guardian/notes` gained
+  `translation` and `language`; the week is served as `GuardianWeekView` (the B06 schema
+  extended), so `plans/service.ts` is untouched. The guardian's language is read from
+  `GET /api/guardian/language`, not `/api/me` (`routes/me.ts` is not B12's). No `.env`
+  line is needed.
+- **B12 · live check (4 Nov, `muse-spark-1.3`, `translate-v1`, 6 calls, $0.050):** every
+  accepted output passed all five rules on the first call. The first isiZulu run was cut
+  off at a 2,000-token output budget (the model reasons before the JSON; 2,216 and 1,995
+  output tokens were needed), so the budget is 6,000 like the work check and an unusable
+  answer is remembered as `unavailable` (English stands, no re-spend). **For a fluent
+  speaker to check** (names and numbers were placeholders in the prompt and restored after):
+  - EN plan: *One step slipped this week: factorising. Ask Lerato to teach you step 2
+    tonight. Ten minutes is enough; you do not need to know the maths. Lerato brought 3
+    pieces of work this week and had every one checked.*
+  - ZU: *Isinyathelo esisodwa asihambanga kahle kuleli sonto: ukuhlukanisa ngezici. Cela
+    Lerato akufundise isinyathelo 2 namhlanje ebusuku. Imizuzu elishumi yanele; awudingi
+    ukwazi izibalo. Lerato ulethe imisebenzi engu-3 kuleli sonto futhi yonke yahloliwe.*
+  - AF: *Een stap het hierdie week geglip: faktorisering. Vra Lerato om jou vanaand stap 2
+    te leer. Tien minute is genoeg; jy hoef nie die wiskunde te ken nie. Lerato het hierdie
+    week 3 stukke werk gebring en elkeen laat nasien.*
+  - EN note: *This week Lerato worked on algebra. One step slipped: writing the final
+    answers after factorising. Please ask Lerato to explain that step to you tonight; 10
+    minutes is enough. Ms Dlamini*
+  - ZU: *Kuleli sonto Lerato usebenze nge-algebra. Isinyathelo esisodwa asihambanga kahle:
+    ukubhala izimpendulo zokugcina ngemuva kokufactorisa. Ngicela ucele Lerato ukuthi
+    akuchazele leso sinyathelo namhlanje ebusuku; 10 amaminithi anele. Ms Dlamini*
+  - AF: *Hierdie week het Lerato aan algebra gewerk. Een stap het geglip: om die finale
+    antwoorde na faktorisering neer te skryf. Vra Lerato asseblief om daardie stap vanaand
+    vir jou te verduidelik; 10 minute is genoeg. Ms Dlamini*
