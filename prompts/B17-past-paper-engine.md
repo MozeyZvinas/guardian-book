@@ -68,7 +68,9 @@ existing loop, and measured on the proof page.
 5. **"What comes up":** per skill, how often it appears and how many marks it carries across
    the extracted papers ("Factorising: in every Paper 1 since 2022, about 6 marks"), shown on
    Brain chips and in the teacher's class picture.
-6. **Privacy:** the noindex header on every route behind sign-in and every `/api` response;
+6. **Privacy (founder, 4 Nov):** crawlers may read only the public pages: `/`, `/try`, `/evidence`
+   (plus static assets and `robots.txt`). Every other HTML route, including `/signin` and
+   `/signup`, and every `/api` response sends `X-Robots-Tag: noindex, nofollow, noarchive`;
    `robots.txt` (B09) also disallows `/library`; a test asserts no library response contains a
    bucket URL.
 
