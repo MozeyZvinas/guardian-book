@@ -24,6 +24,13 @@ export type AuditAction =
   | 'attempt.assessed'
   | 'attempt.assess_refused'
   | 'calendar.decided'
+  // B06
+  | 'attempt.fix_created'
+  | 'plan.issued'
+  | 'plan.template_issued'
+  | 'plan.not_issued'
+  | 'guardian.support_given'
+  | 'resources.loaded'
   // B07
   | 'guideline.approved'
   | 'review.confirmed'

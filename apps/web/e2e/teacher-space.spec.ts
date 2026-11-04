@@ -45,7 +45,7 @@ test('a teacher approves the guideline, reviews, corrects, adds a note, releases
   await page.getByRole('link', { name: 'Guidelines' }).first().click()
   await expect(page.getByRole('heading', { name: 'Marking guidelines' })).toBeVisible()
   const approve = page.getByRole('button', { name: 'Approve for 11B' })
-  await expect(approve).toHaveCount(2)
+  await expect(approve).toHaveCount(3) // two B02 items plus B06's check-alone match (D37)
   await approve.first().click()
   await expect(page.getByText(/Approved for 11B/).first()).toBeVisible()
   await noOverflow(page)

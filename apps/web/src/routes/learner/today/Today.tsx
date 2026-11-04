@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import type { CheckIn, RecentInput, TodayResponse } from '@guardian-book/shared'
 import { getToday } from '../../../api/learner'
+import { checkAlone } from '../../../api/loop'
 import { RequireRole } from '../../../app/RequireRole'
 import { EmptyState } from '../../../components/EmptyState'
 import { Button, Card, FormError } from '../../../components/Form'
@@ -137,7 +138,28 @@ function BringAnything() {
 }
 
 function CheckInCard({ check, more }: { check: CheckIn; more: number }) {
+  const navigate = useNavigate()
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<unknown>(null)
   const when = check.overdueDays === 0 ? 'today' : `${check.overdueDays} ${check.overdueDays === 1 ? 'day' : 'days'} ago`
+
+  async function start() {
+    setBusy(true)
+    setError(null)
+    try {
+      const match = await checkAlone(check.skillTag, 'retention', null)
+      if (!match.item) {
+        setError(new Error('No new question for this skill yet. Your teacher can add one.'))
+        return
+      }
+      void navigate(`/items/${match.item.id}?mode=retention&skill=${encodeURIComponent(check.skillTag)}`, { state: { why: match.why } })
+    } catch (err) {
+      setError(err)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <Card title="Check-in due">
       <p>
@@ -152,10 +174,16 @@ function CheckInCard({ check, more }: { check: CheckIn; more: number }) {
         )}
       </p>
       {check.action ? <p className="text-sm text-fg-muted">{check.action}</p> : null}
-      <p className="text-sm text-fg-muted">
-        Due {shortDate(check.dueOn)}
-        {more > 0 ? ` · ${more} more` : ''}. The check-alone screen arrives with the next build.
-      </p>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button type="button" variant="quiet" onClick={() => void start()} disabled={busy}>
+          {busy ? 'Finding a question…' : 'Check it alone'}
+        </Button>
+        <span className="text-sm text-fg-muted">
+          Due {shortDate(check.dueOn)}
+          {more > 0 ? ` · ${more} more` : ''}
+        </span>
+      </div>
+      <FormError error={error} />
     </Card>
   )
 }
@@ -168,14 +196,15 @@ function TonightCard({ today }: { today: TodayResponse }) {
       </Card>
     )
   }
+  const target = today.tonight.attemptId ? `/attempts/${today.tonight.attemptId}/fix` : '/bring'
   return (
     <Card title="Tonight’s step">
       <p className="font-medium">{today.tonight.step}</p>
       {today.tonight.why ? <p className="text-sm text-fg-muted">{today.tonight.why}</p> : null}
       <div>
-        <Button type="button" variant="quiet" disabled title="The fix-it screen arrives with the next build">
+        <Link to={target} className="inline-flex min-h-11 items-center justify-center rounded-card border border-fg-muted/50 bg-surface px-5 font-medium text-fg no-underline">
           Start
-        </Button>
+        </Link>
       </div>
     </Card>
   )

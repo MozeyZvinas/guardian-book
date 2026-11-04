@@ -61,7 +61,7 @@ describe('T7 · guidelines', () => {
     const dlamini = await signInAs(app(), 'msDlamini')
     const mine = await request(app()).get(`/api/teacher/classes/${C['12A'].id}/guidelines`).set('Cookie', dlamini)
     expect(mine.status).toBe(200)
-    expect(mine.body.items).toHaveLength(2)
+    expect(mine.body.items).toHaveLength(3) // two B02 items plus B06's check-alone match (D37)
     expect(mine.body.items[0].steps.map((s: { stepType: string }) => s.stepType)).toEqual(['M', 'A', 'CA', 'A'])
     expect(mine.body.items.every((i: { approval: unknown }) => i.approval !== null)).toBe(true) // the seed approves for 12A
     expect(mine.body.items[0]).toMatchObject({ aiDrafted: false, provenance: 'original_human' })

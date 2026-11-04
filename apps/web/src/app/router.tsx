@@ -61,9 +61,46 @@ export const router = createBrowserRouter([
     lazy: () => import('../routes/teacher/notice/Notice').then((m) => ({ Component: m.TeacherNotice })),
     errorElement: <RouteError />,
   },
+  // B06: L4 fix it, L5 follow-up question.
+  {
+    path: '/attempts/:id/fix',
+    lazy: () => import('../routes/learner/fix/Fix').then((m) => ({ Component: m.Fix })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/items/:id',
+    lazy: () => import('../routes/learner/item/Item').then((m) => ({ Component: m.Item })),
+    errorElement: <RouteError />,
+  },
+  // Guardian space (spec 05 §4.3): G0 link, G1 this week, G2 notes, G3 calendar, G4 settings.
   {
     path: '/guardian/link',
     lazy: () => import('../routes/guardian/Link').then((m) => ({ Component: m.GuardianLink })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/guardian',
+    lazy: () => import('../routes/guardian/Home').then((m) => ({ Component: m.GuardianHome })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/guardian/learners/:id',
+    lazy: () => import('../routes/guardian/Week').then((m) => ({ Component: m.GuardianWeek })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/guardian/notes',
+    lazy: () => import('../routes/guardian/Notes').then((m) => ({ Component: m.GuardianNotes })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/guardian/calendar',
+    lazy: () => import('../routes/guardian/Calendar').then((m) => ({ Component: m.GuardianCalendar })),
+    errorElement: <RouteError />,
+  },
+  {
+    path: '/guardian/settings',
+    lazy: () => import('../routes/guardian/Settings').then((m) => ({ Component: m.GuardianSettings })),
     errorElement: <RouteError />,
   },
   {

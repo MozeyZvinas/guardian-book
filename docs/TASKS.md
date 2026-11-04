@@ -49,7 +49,7 @@ the same files.
 | B03 ∥ Model gateway, verifier, cost log, live smoke | 2 Nov | P0-11, P0-04 (model) | B01, F3 | B (subscription) / $25 | todo |
 | B04 Bring anything: inputs, work check → attempt → assessment (guideline approval enforced, provenance written), notice reader → calendar, `model_runs` | 2–3 Nov | P0-03, P0-04, P0-06 | B02 + B03 merged | A / $30 | done (PR #5 merged 4 Nov SAST; live smoke 2 calls, $0.024) |
 | B05 ∥ Profile cards, Today (+ check-in due), Brain page (assisted / independent / retained evidence), timeline | 3 Nov | P0-02, P0-07 | B02 + B03 merged | B / $20 | review (PR #4, branch `b05-profile-today-brain`; brought up to date with B04 on 4 Nov: assessed events through `evidencePayload()`, profile cards through `runModel`, KaTeX `MathText`; see questions below) |
-| B06 Help Plan agent, guardian view (Teacher-reviewed labels), "We did it", fix it → check it alone → follow-up check | 3 Nov | P0-05, P0-08, P0-09 | B04, B05 | A / $30 | todo |
+| B06 Help Plan agent, guardian view (Teacher-reviewed labels), "We did it", fix it → check it alone → follow-up check | 3 Nov | P0-05, P0-08, P0-09 | B04, B05 | A / $30 | review (PR #8, branch `b06-loop-plan-guardian`; brought up to date with B08 and B07 on 4 Nov; see questions below) |
 | B07 ∥ Teacher view: guidelines approval, class picture, confirm queue, review with feedback controls (agree / correct / add / audience), release, interventions (owner, follow-up, outcome, close), notes with origin labels, class notice, learner profile | 3 Nov | P0-10 | B04 | B / $30 | review (PR #7, branch `b07-teacher-space`; brought up to date with B05 and B08 on 4 Nov; see questions below) |
 | B08 Eval runner results + proof page `/evidence` | 3 Nov | P0-12 | B03, E1 | B / $10 | in review (PR #6, 3 Nov; first live summary committed; brought up to date with B04 and B05 on 4 Nov; see the B08 notes below) |
 | **Gate P0:** full run on the founder's phone | 3 Nov, 20:00 (D35) | all P0 | — | — | todo |
@@ -113,6 +113,33 @@ Add any question here, linked to a task ID.
   (build first); B09 adds the CI job.
 - **B04 · item prompts** render as Markdown/LaTeX source (no KaTeX yet: no new dependencies).
   B09 polish, or allow `katex` now.
+- **B06 · the `plan` purpose is now an agent turn:** `MODEL_OUTPUT_SCHEMAS.plan` is
+  `planAgentTurnSchema` (`{tool, reason, plan | null}`) so every agent step goes through
+  `runModel` and the verifier (TOOL_UNKNOWN on the requested tool, STEPS_EXCEEDED, a new
+  `PLAN_MISSING` code, the content rules on `turn.plan`, plus HINT_LEAKS_ANSWER over the
+  learner view against the gap item's memo values). `planOutputSchema` and the pure rule
+  functions are unchanged. Confirm, or rule that tool steps bypass `runModel`.
+- **B06 · intervention audience:** spec 03 §9.2 shows a guardian an intervention "if the
+  teacher chose the guardian audience", but `interventions` has no audience column (B02/B07).
+  G1 shows open interventions as the spec 05 §9 sentence only (teacher, skill, check-in date),
+  never the teacher's action line. Say whether B07 adds an audience, or this stays.
+- **B06 · effort minutes:** nothing measures time on task, so G1 shows days, pieces of work
+  and topics and says minutes are not measured yet (no invented number). Confirm.
+- **B06 · the weekly trigger** is lazy: a plan from an earlier week is refreshed in the
+  background on the next read of `GET /api/me/plan` or the guardian week (no scheduler, no
+  table). Confirm.
+- **B06 · a third seed item** (`alg-12-factorise-trinomial-2`, original, same tags) so "check
+  it alone" has an unattempted match in dev and in the e2e; the real pack (C1) covers Railway.
+- **B06 · `.env.example`** could not be edited (write denied): please add
+  `META_MODEL_AGENT=` (default META_MODEL), `PLAN_AGENT_MAX_STEPS=` (default 8),
+  `RETENTION_CHECK_DAYS=` (default 2), `RESOURCE_LIST_PATH=` (admin CLI only).
+- **B06 · G2 Notes** calls B07's `GET /api/guardian/notes` (D37) and shows an empty state until
+  it merges; the G1 teacher messages read `notes`, `review_feedback` and `interventions` directly.
+- **B06 · resolved on `main` (4 Nov):** D37 rules for the agent-turn `plan` purpose (each
+  step a verified `runModel` call, counted against the daily cap), the intervention sentence
+  in the parent's view, effort minutes not shown until measured, and the third seed item; the
+  `.env.example` lines landed in `7c07eb6`. PR #8 brought up to date with B07 the same day:
+  G2 Notes now reads B07's `GET /api/guardian/notes`.
 - **B07 · brought up to date with B05 on 4 Nov (PR #7):** review events build their payload
   with B05's `evidencePayload()`; skill wording through `skillLabel(tag, 'teacher')` on
   every teacher screen (guardian wording inside the note prompt, since the parent reads the

@@ -1,0 +1,47 @@
+{
+  "slug": "alg-12-factorise-trinomial-2",
+  "topic": "Algebra: equations",
+  "skill_tags": ["factorise-trinomial", "solve-quadratic-by-factors"],
+  "prompt_md": "Solve for $x$ by factorising: $x^2 + x - 12 = 0$.",
+  "diagram_key": null,
+  "max_marks": 4,
+  "author": "Guardian Book planning session (original, written for this build)",
+  "reviewer": "pending",
+  "reviewed_at": null,
+  "source": "original",
+  "provenance": "original_human",
+  "guideline_steps": [
+    {
+      "step_no": 1,
+      "step_type": "M",
+      "criterion": "Recognises a quadratic in standard form and attempts to factorise (two brackets, or a pair of numbers that multiply to $-12$ and add to $1$).",
+      "marks": 1,
+      "skill_tag": "factorise-trinomial",
+      "notes": null
+    },
+    {
+      "step_no": 2,
+      "step_type": "A",
+      "criterion": "Correct factors: $(x + 4)(x - 3) = 0$.",
+      "marks": 1,
+      "skill_tag": "factorise-trinomial",
+      "notes": "Accept the factors in either order."
+    },
+    {
+      "step_no": 3,
+      "step_type": "CA",
+      "criterion": "Sets each factor equal to zero.",
+      "marks": 1,
+      "skill_tag": "solve-quadratic-by-factors",
+      "notes": "Consistent accuracy: earned on the learner's own factors."
+    },
+    {
+      "step_no": 4,
+      "step_type": "A",
+      "criterion": "Both solutions stated: $x = -4$ and $x = 3$.",
+      "marks": 1,
+      "skill_tag": "solve-quadratic-by-factors",
+      "notes": null
+    }
+  ]
+}

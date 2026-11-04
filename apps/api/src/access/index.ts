@@ -33,6 +33,10 @@ export type Action =
   | 'attempt.assess'
   | 'calendar_event.read'
   | 'calendar_event.decide'
+  // B06 (spec 03 §8.2, §9.2): the Help Plan, "We did it", fix it
+  | 'plan.read'
+  | 'plan.done'
+  | 'attempt.fix'
   // B07 (spec 03 §4, §8.2, §9.2): the teacher space
   | 'guideline.read'
   | 'guideline.approve'
@@ -370,6 +374,26 @@ export async function can(db: DbOrTx, subject: Subject, action: Action, resource
       if (!row) return false
       if (row.scopeType === 'learner') return learnerOwns(subject, row.scopeId)
       return teacherOwnsClass(db, subject, row.scopeId)
+    }
+
+    // ── B06: the Help Plan, "We did it", fix it ─────────────────────────────────────────────
+
+    case 'plan.read':
+      // Own learner view; a linked guardian's guardian view; the class teacher's teacher view (spec 03 §8.2).
+      if (resource.type !== 'learner') return false
+      if (learnerOwns(subject, resource.id)) return true
+      if (subject.role === 'guardian') return guardianLinkedTo(db, subject.userId, resource.id)
+      if (subject.role === 'teacher') return teacherOfLearner(db, subject, resource.id)
+      return false
+
+    case 'plan.done':
+      return resource.type === 'learner' && subject.role === 'guardian' && guardianLinkedTo(db, subject.userId, resource.id)
+
+    case 'attempt.fix': {
+      // Only the owner redoes a step (spec 03 §8.3 `POST /api/attempts/:id/fix`: owner).
+      if (resource.type !== 'attempt') return false
+      const [row] = await db.select({ learnerId: attempts.learnerId }).from(attempts).where(eq(attempts.id, resource.id)).limit(1)
+      return Boolean(row) && learnerOwns(subject, row?.learnerId ?? '')
     }
 
     // ── B07: guidelines, reviews, interventions, notes ──────────────────────────────────────

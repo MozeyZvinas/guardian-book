@@ -5,7 +5,17 @@ import type { CapLimits } from '../modelRuns/caps.js'
 import type { JobRegistry } from '../modelRuns/jobs.js'
 import type { Storage } from '../storage/index.js'
 
-/** What the inputs, assessment and calendar services need. Built once in `createApp`. */
+/** The loop's settings (B06): the Help Plan agent and the follow-up check. */
+export interface LoopDeps {
+  /** The agent's gateway (`META_MODEL_AGENT`); the work-check gateway when they are the same model. */
+  agentGateway: Gateway
+  /** At most this many agent steps per plan (`PLAN_AGENT_MAX_STEPS`, default 8). */
+  planMaxSteps: number
+  /** Days from a correct independent check to the follow-up check (`RETENTION_CHECK_DAYS`, default 2). */
+  retentionCheckDays: number
+}
+
+/** What the inputs, assessment, calendar, plan and guardian services need. Built once in `createApp`. */
 export interface PracticeDeps {
   db: Db
   gateway: Gateway
@@ -15,4 +25,5 @@ export interface PracticeDeps {
   limits: CapLimits
   jobs: JobRegistry
   now: () => Date
+  loop: LoopDeps
 }

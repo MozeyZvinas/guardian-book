@@ -21,12 +21,12 @@ describe('seeds', () => {
     const second = await seed(ctx.db, { password: TEST_PASSWORD })
     const after = await Promise.all(TABLES.map((t) => countRows(ctx.db, t)))
     expect(after).toEqual(before)
-    expect(second.items).toEqual({ inserted: 0, updated: 0, unchanged: 2 })
+    expect(second.items).toEqual({ inserted: 0, updated: 0, unchanged: 3 })
     expect(before[TABLES.indexOf('user')]).toBe(Object.keys(SEED_PEOPLE).length)
     expect(before[TABLES.indexOf('schools')]).toBe(2)
     expect(before[TABLES.indexOf('classes')]).toBe(3)
     expect(before[TABLES.indexOf('class_members')]).toBe(8)
-    expect(before[TABLES.indexOf('guideline_approvals')]).toBe(2)
+    expect(before[TABLES.indexOf('guideline_approvals')]).toBe(3) // three seed items, approved for 12A (B06 added the follow-up item)
   })
 
   it('refuses a short seed password', async () => {

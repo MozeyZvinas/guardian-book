@@ -43,6 +43,11 @@ const envSchema = z.object({
   META_API_KEY: optionalString,
   META_BASE_URL: optionalString,
   META_MODEL: optionalString,
+  /** The Help Plan agent's model (spec 03 §8.5); defaults to META_MODEL. */
+  META_MODEL_AGENT: optionalString,
+  PLAN_AGENT_MAX_STEPS: optionalPositiveInt,
+  /** Days after a correct independent check until the follow-up check is due (P0-05; default 2). */
+  RETENTION_CHECK_DAYS: optionalPositiveInt,
   MODEL_DAILY_BUDGET_USD: optionalNumber,
   MODEL_USER_DAILY_CALLS: optionalPositiveInt,
   BUCKET_ENDPOINT: optionalString,
@@ -76,6 +81,15 @@ export interface MetaConfig {
   userDailyCalls: number | null
   /** True when META_MODEL named a Contributor-tier model and was refused (D24). */
   refusedModel: boolean
+  /** The Help Plan agent's model (B06; spec 03 §8.5). Same tier rule; defaults to `model`. */
+  agentModel: string
+  /** At most this many agent steps per Help Plan (default 8). */
+  planAgentMaxSteps: number
+}
+
+export interface LoopConfig {
+  /** Days from a correct independent check to the follow-up check (default 2). */
+  retentionCheckDays: number
 }
 
 export interface BucketConfig {
@@ -99,6 +113,7 @@ export interface AppConfig {
   meta: MetaConfig
   bucket: BucketConfig
   sentry: SentryConfig
+  loop: LoopConfig
   /** Problems found while reading env, in plain words. Never contain values. */
   notes: string[]
 }
@@ -132,6 +147,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   if (refusedModel) {
     notes.push('META_MODEL: refused, Contributor-tier model IDs are not allowed (D24)')
   }
+  const model = refusedModel ? DEFAULT_META_MODEL : requestedModel
+  const requestedAgentModel = values.META_MODEL_AGENT ?? model
+  const refusedAgentModel = requestedAgentModel.toLowerCase().endsWith(REFUSED_MODEL_SUFFIX)
+  if (refusedAgentModel) {
+    notes.push('META_MODEL_AGENT: refused, Contributor-tier model IDs are not allowed (D24)')
+  }
 
   const bucket: BucketConfig = {
     configured: false,
@@ -161,15 +182,20 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       configured: Boolean(values.META_API_KEY) && !refusedModel,
       apiKey: values.META_API_KEY ?? null,
       baseUrl: values.META_BASE_URL ?? DEFAULT_META_BASE_URL,
-      model: refusedModel ? DEFAULT_META_MODEL : requestedModel,
+      model,
       dailyBudgetUsd: values.MODEL_DAILY_BUDGET_USD ?? null,
       userDailyCalls: values.MODEL_USER_DAILY_CALLS ?? null,
       refusedModel,
+      agentModel: refusedAgentModel ? model : requestedAgentModel,
+      planAgentMaxSteps: values.PLAN_AGENT_MAX_STEPS ?? 8,
     },
     bucket,
     sentry: {
       configured: Boolean(values.SENTRY_DSN),
       dsn: values.SENTRY_DSN ?? null,
+    },
+    loop: {
+      retentionCheckDays: values.RETENTION_CHECK_DAYS ?? 2,
     },
     notes,
   }

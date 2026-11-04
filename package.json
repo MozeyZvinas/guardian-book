@@ -20,6 +20,7 @@
     "db:migrate": "pnpm --filter @guardian-book/api db:migrate",
     "db:seed": "pnpm --filter @guardian-book/api db:seed",
     "content:load": "pnpm --filter @guardian-book/api content:load",
+    "resources:load": "pnpm --filter @guardian-book/api resources:load",
     "eval:dev": "pnpm --filter @guardian-book/api eval:dev",
     "smoke:live": "pnpm --filter @guardian-book/api smoke:live"
   },

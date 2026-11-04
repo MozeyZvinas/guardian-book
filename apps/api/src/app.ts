@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { toNodeHandler } from 'better-auth/node'
 import express, { type ErrorRequestHandler, type Express } from 'express'
+import { fixRouter } from './assessment/fix.js'
 import { attemptsRouter } from './assessment/routes.js'
 import { createAuth, type Auth } from './auth/auth.js'
 import { attachSession } from './auth/session.js'
@@ -19,7 +20,9 @@ import type { Logger } from './logger.js'
 import { requestLog } from './middleware/requestLog.js'
 import { securityHeaders } from './middleware/securityHeaders.js'
 import { JobRegistry, capLimits } from './modelRuns/index.js'
+import { plansRouter } from './plans/routes.js'
 import { circleRouter } from './routes/circle.js'
+import { guardianRouter } from './routes/guardian/index.js'
 import { evidenceRouter } from './routes/evidence.js'
 import { healthzRouter } from './routes/healthz.js'
 import { itemsRouter } from './routes/items.js'
@@ -120,6 +123,10 @@ export function createApp(options: AppOptions): Express {
 
     app.use('/api', express.json({ limit: '1mb' }))
     app.use('/api', attachSession(auth, db))
+    // The Help Plan agent's model (`META_MODEL_AGENT`, spec 03 §8.5): the same gateway when
+    // it is the same model; an injected (test) gateway serves both.
+    const agentGateway =
+      options.gateway ?? (config.meta.agentModel === config.meta.model ? gateway : createGateway({ config: { ...config.meta, model: config.meta.agentModel }, logger }))
     const practice: PracticeDeps = {
       db,
       gateway,
@@ -128,6 +135,7 @@ export function createApp(options: AppOptions): Express {
       limits: capLimits(config.meta),
       jobs: options.jobs ?? new JobRegistry(logger),
       now: options.now ?? (() => new Date()),
+      loop: { agentGateway, planMaxSteps: config.meta.planAgentMaxSteps, retentionCheckDays: config.loop.retentionCheckDays },
     }
     app.use(meRouter(db))
     app.use(learnerSpaceRouter(practice))
@@ -135,7 +143,11 @@ export function createApp(options: AppOptions): Express {
     app.use(itemsRouter(db))
     app.use(inputsRouter(practice))
     app.use(attemptsRouter(practice))
+    app.use(fixRouter(practice))
     app.use(calendarRouter(practice))
+    // B06: the Help Plan and check it alone (learner), the week and "We did it" (guardian).
+    app.use(plansRouter(practice))
+    app.use(guardianRouter(practice))
     // B07: the teacher space, interventions and notes home (spec 03 §5, §8.3, §9.3).
     app.use(teacherRouter(practice))
     app.use(interventionsRouter(practice))

@@ -147,7 +147,7 @@ describe('items and the guideline rule', () => {
     const learner = await signInAs(ctx.app, 'sipho')
     const list = await request(ctx.app).get('/api/items').set('Cookie', learner)
     expect(list.status).toBe(200)
-    expect(list.body.items.map((i: { slug: string }) => i.slug)).toEqual(['alg-12-factorise-trinomial', 'alg-12-nature-of-roots'])
+    expect(list.body.items.map((i: { slug: string }) => i.slug)).toEqual(['alg-12-factorise-trinomial', 'alg-12-factorise-trinomial-2', 'alg-12-nature-of-roots'])
     expect(JSON.stringify(list.body)).not.toContain('guidelineSteps')
 
     const itemId = list.body.items[0].id
