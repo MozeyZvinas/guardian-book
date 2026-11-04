@@ -7,12 +7,13 @@ import { createDb } from '../../src/db/client.js'
 import { runMigrations } from '../../src/db/migrate.js'
 import { seed } from '../../src/db/seed.js'
 import { createGateway } from '../../src/gateway/gateway.js'
+import { createTranscriber } from '../../src/gateway/transcribe.js'
 import { logger } from '../../src/logger.js'
 import { JobRegistry } from '../../src/modelRuns/jobs.js'
 import { memoryStorage } from '../../src/storage/index.js'
 import { TEST_PASSWORD, resetDatabase } from '../integration/db.js'
 import { integrationDatabaseUrl } from '../integration/harness.js'
-import { scriptedModel } from '../integration/practiceGateway.js'
+import { scriptedModel, scriptedTranscriber } from '../integration/practiceGateway.js'
 
 /**
  * The end-to-end server (brief B04 §6): the real app on a fresh, seeded loopback database
@@ -50,6 +51,8 @@ const config = loadConfig({
   BETTER_AUTH_URL: `http://127.0.0.1:${port}`,
 })
 const gateway = live ? createGateway({ config: config.meta, logger }) : scriptedModel().gateway
+// B13: voice. Live swaps in Muse Voice Transcribe from `.env`; otherwise every clip says the same thing.
+const transcriber = live ? createTranscriber({ config: config.meta, logger }) : scriptedTranscriber().transcriber
 const storage = memoryStorage(`http://127.0.0.1:${port}/e2e-bucket`)
 const jobs = new JobRegistry(logger)
 
@@ -61,6 +64,7 @@ const app = createApp({
   db: handle.db,
   gateway,
   storage,
+  transcriber,
   jobs,
 })
 
