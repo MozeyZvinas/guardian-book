@@ -295,7 +295,7 @@ export function nscGuideSuite(results: NscGuideResult[], source: string): Eviden
       metric(
         'ready_other_answer',
         'Worked steps shown, answer not the memo’s',
-        'what a learner sees: questions shown with worked steps whose final answer the same fixed comparison does not match to the memo’s (wrong, or right in another form) ÷ questions shown with worked steps',
+        'what a learner sees: questions shown with worked steps whose final answer the same fixed comparison cannot match with the memo’s (wrong, or right in another form) ÷ questions shown with worked steps',
         ratio(ready.filter((result) => result.reached === false).length, ready.length),
       ),
       metric('reached_typed', 'Typed questions', 'questions without a figure, typed in: the memo’s final answer reached ÷ such questions the guide read', reachedOf(shown.filter((result) => !result.with_figure))),

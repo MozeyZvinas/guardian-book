@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-04T22:56:17.824Z",
+  "generated_at": "2026-11-04T23:02:57.970Z",
   "models": [
     {
       "id": "muse-spark-1.3",
@@ -303,7 +303,7 @@
         "label": "held-out NSC questions (newest session), memos as truth",
         "held_out": true
       },
-      "source": "pnpm eval:nsc · muse-spark-1.3 · guide-v1 + guide-check-v1 · 2026-11-04T22:20:58.081Z, re-scored 2026-11-04T22:56:17.824Z",
+      "source": "pnpm eval:nsc · muse-spark-1.3 · guide-v1 + guide-check-v1 · 2026-11-04T22:20:58.081Z, re-scored 2026-11-04T23:02:57.970Z",
       "n": 78,
       "metric": {
         "key": "memo_answer_reached",
@@ -323,7 +323,7 @@
         {
           "key": "ready_other_answer",
           "label": "Worked steps shown, answer not the memo’s",
-          "definition": "what a learner sees: questions shown with worked steps whose final answer the same fixed comparison does not match to the memo’s (wrong, or right in another form) ÷ questions shown with worked steps",
+          "definition": "what a learner sees: questions shown with worked steps whose final answer the same fixed comparison cannot match with the memo’s (wrong, or right in another form) ÷ questions shown with worked steps",
           "ratio": {
             "n": 14,
             "d": 51,
