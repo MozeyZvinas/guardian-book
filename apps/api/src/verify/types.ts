@@ -121,6 +121,16 @@ export interface TranslateContext {
   language: string
 }
 
+/** Ask about a step (B13): the values a hint must not state, from the whole item's guideline. */
+export interface HintContext {
+  guideline: GuidelineStepContext[]
+  finalAnswer: string | null
+  /** Memo values (accuracy criteria) of every step on the item, not only the one asked about. */
+  memoValues: string[]
+}
+/** Speech to text has no rule set: nothing is proposed, the words go back to the person who said them. */
+export type TranscribeContext = Record<string, never>
+
 export interface CheckContexts {
   classify: ClassifyContext
   profile_cards: ProfileCardsContext
@@ -129,6 +139,8 @@ export interface CheckContexts {
   plan: PlanContext
   note: NoteContext
   translate: TranslateContext
+  transcribe: TranscribeContext
+  step_hint: HintContext
 }
 
 export type CheckContextFor<P extends ModelPurpose> = CheckContexts[P]

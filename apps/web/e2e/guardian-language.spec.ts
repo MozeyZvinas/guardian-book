@@ -32,7 +32,7 @@ test('the parent picks isiZulu; This week shows the AI label, Show English works
   await page.getByRole('button', { name: /Type/ }).click()
   await page.getByLabel('Your working, line by line').fill('x² − 5x + 6 = 0\n(x − 2)(x − 3) = 0')
   await page.getByRole('button', { name: 'Use this' }).click()
-  await page.getByLabel('Which question is this?').selectOption({ index: 1 })
+  await page.getByRole('group', { name: 'Which question is this?' }).getByRole('radio').first().check()
   await page.getByRole('button', { name: 'Check my work' }).click()
   await expect(page.getByRole('heading', { name: /Where it slipped: step 4/ })).toBeVisible({ timeout: 20_000 })
 

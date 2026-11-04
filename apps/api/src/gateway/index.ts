@@ -5,4 +5,5 @@ export { FORBIDDEN_PROMPT_KEYS, PromptSafetyError, assertPromptSafe, findUnsafeT
 export { MAX_RETRIES, isRetryableStatus, parseRetryAfterMs, retryDelayMs } from './retry.js'
 export { chatCompletionBodySchema, imageToPart, type ChatRequest, type ImageInput, type Transport, type TransportResult } from './transport.js'
 export * from './verifiedCall.js'
+export * from './transcribe.js'
 export * from './prompts/workCheck.v1.js'

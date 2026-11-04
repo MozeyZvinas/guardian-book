@@ -66,7 +66,11 @@ export const modelRunPurposeEnum = pgEnum('model_run_purpose', [
   'notice',
   'plan',
   'note',
+  // B12 (migration 0004): a parent-facing text into the parent's home language.
   'translate',
+  // B13 (migration 0005): voice transcription and ask-about-a-step hints.
+  'transcribe',
+  'step_hint',
 ])
 export const modelRunStatusEnum = pgEnum('model_run_status', ['accepted', 'retried', 'exhausted', 'failed'])
 export const calendarScopeEnum = pgEnum('calendar_scope', ['class', 'learner'])

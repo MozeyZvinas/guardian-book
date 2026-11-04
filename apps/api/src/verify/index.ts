@@ -49,5 +49,6 @@ export {
   translationWords,
   urlAdded,
 } from './checks/translate.js'
+export { STEP_HINT_RULES, TRANSCRIBE_RULES, hintGuardValues, stepHintInferenceForbidden, stepHintLeaksAnswer } from './checks/hint.js'
 export { PLAIN_LANGUAGE_MAX_MEDIAN_WORDS, evidenceRefs, inferenceForbidden, plainLanguage, stringsIn } from './checks/common.js'
 export * from './text.js'

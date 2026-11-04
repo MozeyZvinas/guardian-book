@@ -1,7 +1,8 @@
-import type { InputClass, NoteDraft, NoticeOutput, PlanAgentTurn, TranslationOutput, WorkCheckOutput } from '@guardian-book/shared'
+import type { InputClass, NoteDraft, NoticeOutput, PlanAgentTurn, StepHint, TranslationOutput, WorkCheckOutput } from '@guardian-book/shared'
 import { loadConfig } from '../../src/config.js'
 import { createGateway, type Gateway } from '../../src/gateway/gateway.js'
 import { immediateSleep, okResponse } from '../../src/gateway/testing.js'
+import { createTranscriber, type TranscribeRequest, type Transcriber, type TranscribeTransportResult } from '../../src/gateway/transcribe.js'
 import type { ChatRequest, TransportResult } from '../../src/gateway/transport.js'
 import { silentLogger } from '../../src/logger.js'
 
@@ -147,6 +148,11 @@ export function noteFromPrompt(request: ChatRequest): NoteDraft {
   }
 }
 
+/** A hint that answers without giving the step away (B13): the verifier accepts it on every seed item. */
+export function safeStepHint(): StepHint {
+  return { hint: 'Look at the signs: the two numbers in the brackets must multiply to the last term and add to the middle one. Check each sign.' }
+}
+
 /**
  * A pseudo-translation (B12): the letters of every word outside a placeholder reversed,
  * so the verifier's rules hold (placeholders kept once, same length, no digit or link
@@ -165,6 +171,8 @@ export function defaultAnswer(request: ChatRequest): TransportResult {
   switch (purposeOf(request)) {
     case 'translate':
       return okResponse(pseudoTranslation(request), { requestId: `req_translate_${Date.now()}` })
+    case 'step_hint':
+      return okResponse(safeStepHint(), { requestId: `req_hint_${Date.now()}` })
     case 'note':
       return okResponse(noteFromPrompt(request), { requestId: `req_note_${Date.now()}` })
     case 'classify':
@@ -209,4 +217,34 @@ export function scriptedModel(): ScriptedModel {
       queue.length = 0
     },
   }
+}
+
+/**
+ * Muse Voice Transcribe, scripted (B13): every clip transcribes to `transcript`; the
+ * duration is read off the WAV length (16 kHz mono 16-bit: 32 bytes per millisecond), so
+ * cost and latency are recorded as they would be. A test can queue overrides.
+ */
+export interface ScriptedTranscriber {
+  transcriber: Transcriber
+  requests: TranscribeRequest[]
+  queue: TranscribeTransportResult[]
+}
+
+export function scriptedTranscriber(transcript = 'Why is it minus six?'): ScriptedTranscriber {
+  const requests: TranscribeRequest[] = []
+  const queue: TranscribeTransportResult[] = []
+  const config = loadConfig({ META_API_KEY: 'integration-only-key' })
+  const transcriber = createTranscriber({
+    config: config.meta,
+    logger: silentLogger,
+    sleep: immediateSleep,
+    transport: async (request) => {
+      requests.push(request)
+      const next = queue.shift()
+      if (next) return next
+      const audioDurationMs = Math.max(0, Math.round((request.audio.length - 44) / 32))
+      return { ok: true, status: 200, requestId: `voice_${Date.now()}`, body: { sessionId: request.sessionId, transcript, audioDurationMs, turns: [] } }
+    },
+  })
+  return { transcriber, requests, queue }
 }

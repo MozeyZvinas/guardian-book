@@ -21,7 +21,8 @@ export function contentSecurityPolicy(imageOrigins: string[]): string {
   ].join('; ')
 }
 
-export const PERMISSIONS_POLICY = 'camera=(self), microphone=(), geolocation=(), payment=()'
+/** The microphone is for hold-to-talk on the learner's own screens only (B13); nothing else opens. */
+export const PERMISSIONS_POLICY = 'camera=(self), microphone=(self), geolocation=(), payment=()'
 
 export function securityHeaders(options: { imageOrigins?: string[] } = {}): RequestHandler {
   const policy = contentSecurityPolicy(options.imageOrigins ?? [])

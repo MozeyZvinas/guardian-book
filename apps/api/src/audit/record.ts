@@ -51,6 +51,11 @@ export type AuditAction =
   | 'guardian.language_set'
   | 'translation.created'
   | 'translation.refused'
+  // B13
+  | 'attempt.asked'
+  | 'attempt.ask_refused'
+  | 'voice.transcribed'
+  | 'voice.transcribe_refused'
 
 export interface AuditInput {
   actorId: string | null

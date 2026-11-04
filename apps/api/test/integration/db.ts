@@ -9,6 +9,7 @@ import { runMigrations } from '../../src/db/migrate.js'
 import { seed, type SeedResult } from '../../src/db/seed.js'
 import { SEED_PEOPLE, type SeedPersonKey } from '../../src/db/seed-data.js'
 import type { Gateway } from '../../src/gateway/gateway.js'
+import type { Transcriber } from '../../src/gateway/transcribe.js'
 import { silentLogger } from '../../src/logger.js'
 import { JobRegistry } from '../../src/modelRuns/jobs.js'
 import { memoryStorage, type Storage } from '../../src/storage/index.js'
@@ -50,6 +51,8 @@ export interface FreshContextOptions {
   gateway?: Gateway
   /** `null` = uploads answer 503; default: in-memory storage. */
   storage?: Storage | null
+  /** A scripted transcriber (B13); default: unconfigured, voice answers 503. */
+  transcriber?: Transcriber
   now?: () => Date
 }
 
@@ -77,6 +80,7 @@ export async function freshContext(options: FreshContextOptions = {}): Promise<T
     db: handle.db,
     ...(options.gateway ? { gateway: options.gateway } : {}),
     storage: options.storage === undefined ? memoryStorage() : options.storage,
+    ...(options.transcriber ? { transcriber: options.transcriber } : {}),
     jobs,
     ...(options.now ? { now: options.now } : {}),
   })

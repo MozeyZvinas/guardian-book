@@ -11,6 +11,8 @@ import type { AppConfig } from './config.js'
 import type { Db } from './db/client.js'
 import type { DbStatus } from './db/health.js'
 import { createGateway, type Gateway } from './gateway/gateway.js'
+import { createTranscriber, type Transcriber } from './gateway/transcribe.js'
+import { hintsRouter } from './hints/routes.js'
 import type { PracticeDeps } from './inputs/deps.js'
 import { inputsRouter } from './inputs/routes.js'
 import { interventionsRouter } from './interventions/routes.js'
@@ -32,6 +34,7 @@ import { tryRouter } from './routes/try.js'
 import { webStatic } from './static.js'
 import { createStorage, type Storage } from './storage/index.js'
 import { teacherRouter } from './teacher/routes.js'
+import { voiceRouter } from './voice/routes.js'
 
 export interface AppOptions {
   config: AppConfig
@@ -49,6 +52,8 @@ export interface AppOptions {
   gateway?: Gateway
   /** Private object storage; built from `config.bucket` by default (null = uploads answer 503). */
   storage?: Storage | null
+  /** Muse Voice Transcribe (B13; a scripted one in tests); built from `config.meta` by default (unconfigured = voice answers 503). */
+  transcriber?: Transcriber
   /** Background jobs (assessment, notice extraction); tests await them. */
   jobs?: JobRegistry
   now?: () => Date
@@ -69,6 +74,7 @@ const API_PREFIXES = [
   '/api/inputs',
   '/api/attempts',
   '/api/calendar',
+  '/api/voice',
 ]
 
 /** Same relative position from `apps/api/src` (tsx, tests) and `apps/api/dist` (node, the image). */
@@ -105,6 +111,7 @@ export function createApp(options: AppOptions): Express {
     options.auth ?? (db && config.auth.secret && config.auth.url ? createAuth(db, { secret: config.auth.secret, url: config.auth.url }) : null)
   const gateway = options.gateway ?? createGateway({ config: config.meta, logger })
   const storage = options.storage === undefined ? createStorage(config.bucket, logger) : options.storage
+  const transcriber = options.transcriber ?? createTranscriber({ config: config.meta, logger })
   const app = express()
 
   app.disable('x-powered-by')
@@ -155,6 +162,9 @@ export function createApp(options: AppOptions): Express {
     app.use(teacherRouter(practice))
     app.use(interventionsRouter(practice))
     app.use(notesRouter(practice))
+    // B13: ask about a step (typed or by voice); the clip is transcribed and never stored.
+    app.use(hintsRouter(practice))
+    app.use(voiceRouter({ db, transcriber, logger, limits: practice.limits, now: practice.now }))
   } else {
     app.use('/api', express.json({ limit: '1mb' }))
     app.use(tryRouter({ db: null, tryClassCode: null }))

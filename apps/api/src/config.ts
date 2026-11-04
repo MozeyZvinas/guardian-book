@@ -13,6 +13,11 @@ import { z } from 'zod'
 export const DEFAULT_PORT = 8080
 export const DEFAULT_META_BASE_URL = 'https://api.meta.ai/v1'
 export const DEFAULT_META_MODEL = 'muse-spark-1.3'
+/**
+ * Meta, "Speech to text" (https://dev.meta.ai/docs/speech-to-text), read 4 Nov 2026: the
+ * example sets `"model":"muse-voice-transcribe-1.0"` (B13).
+ */
+export const DEFAULT_META_TRANSCRIBE_MODEL = 'muse-voice-transcribe-1.0'
 export const REFUSED_MODEL_SUFFIX = '-contributor'
 
 const blankToUndefined = (value: unknown): unknown =>
@@ -45,6 +50,8 @@ const envSchema = z.object({
   META_MODEL: optionalString,
   /** The Help Plan agent's model (spec 03 §8.5); defaults to META_MODEL. */
   META_MODEL_AGENT: optionalString,
+  /** Muse Voice Transcribe's model ID (B13); defaults to `muse-voice-transcribe-1.0`. */
+  META_MODEL_TRANSCRIBE: optionalString,
   PLAN_AGENT_MAX_STEPS: optionalPositiveInt,
   /** Days after a correct independent check until the follow-up check is due (P0-05; default 2). */
   RETENTION_CHECK_DAYS: optionalPositiveInt,
@@ -89,6 +96,8 @@ export interface MetaConfig {
   agentModel: string
   /** At most this many agent steps per Help Plan (default 8). */
   planAgentMaxSteps: number
+  /** The speech-to-text model (B13). Same tier rule (D24). */
+  transcribeModel: string
 }
 
 export interface LoopConfig {
@@ -170,6 +179,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     notes.push('META_MODEL_AGENT: refused, Contributor-tier model IDs are not allowed (D24)')
   }
 
+  const requestedTranscribeModel = values.META_MODEL_TRANSCRIBE ?? DEFAULT_META_TRANSCRIBE_MODEL
+  const refusedTranscribeModel = requestedTranscribeModel.toLowerCase().endsWith(REFUSED_MODEL_SUFFIX)
+  if (refusedTranscribeModel) {
+    notes.push('META_MODEL_TRANSCRIBE: refused, Contributor-tier model IDs are not allowed (D24)')
+  }
+
   const bucket: BucketConfig = {
     configured: false,
     endpoint: values.BUCKET_ENDPOINT ?? null,
@@ -204,6 +219,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       refusedModel,
       agentModel: refusedAgentModel ? model : requestedAgentModel,
       planAgentMaxSteps: values.PLAN_AGENT_MAX_STEPS ?? 8,
+      transcribeModel: refusedTranscribeModel ? DEFAULT_META_TRANSCRIBE_MODEL : requestedTranscribeModel,
     },
     bucket,
     sentry: {
