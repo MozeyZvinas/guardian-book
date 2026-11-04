@@ -1,12 +1,70 @@
 # Guardian Book
 
-Guardian Book is a lifelong learning intelligence that grows with each learner. It knows
-how they learn and what they dream of, keeps them a step ahead, and connects them to the
-people who help them, from school to career. It starts in high school (Grades 8–12) in
-South Africa.
+**Every learner understood. Every next step clearer.**
 
-**Status:** building, for the Meta Global AI Developer Hackathon (scope v2, D34). Start with
-[`START-HERE.md`](START-HERE.md).
+Guardian Book is a student success and guidance platform for high schools, built for the
+three people around every learner: the learner, their parent or guardian, and their
+teacher. A learner brings their work; Meta's **Muse Spark** finds the exact step they're stuck
+on and gives a hint, never the answer; the learner fixes it and proves it alone; and one plan
+reaches all three people, each in their own words. The teacher stays in charge of every mark
+and every note home.
+
+**Live:** [guardianbook.app](https://guardianbook.app) · **Proof:**
+[guardianbook.app/evidence](https://guardianbook.app/evidence) · Built for the Meta Global AI
+Developer Hackathon, 26 Oct – 4 Nov 2026, by one founder.
+
+## The learner support loop
+
+1. **The teacher approves the marking.** Each question's step-by-step guideline (M, A, CA
+   marks) is approved per class; AI-drafted guidelines are labelled until a teacher checks
+   them. Nothing is marked against an unapproved guideline.
+2. **Bring anything.** A photo of handwritten working, a typed answer, or a school notice.
+   Muse Spark (vision + structured output) reads the learner's own working against the
+   approved guideline and returns each step with evidence and confidence. A notice becomes
+   dated events, confirmed before anyone sees them.
+3. **Checks the model can't skip.** One verifier with stable reason codes (unknown step, marks
+   over the maximum, missing evidence, a hint that leaks the answer, a date out of range, an
+   unvetted resource, jargon in the parent view, an inferred personality label, low
+   confidence). Failures re-ask, at most three calls in total; then a teacher decides. It
+   fails closed.
+4. **Fix it, then check it alone.** The learner redoes the lost step, then answers a new
+   question with no hints. The Brain keeps three kinds of evidence apart (with help, on your
+   own, later) and schedules a follow-up check; "secure" needs both an independent and a
+   later success.
+5. **One plan, three views.** A bounded tool-calling agent on Muse Spark (at most 8 steps,
+   trace stored, safe template fallback) writes tonight's step for the learner, one
+   ten-minute action in plain words for the parent, and the shared gap for the teacher.
+6. **The teacher closes the loop.** Review with the checks list; agree, correct or add in her
+   own words; release; assign a follow-up from the class picture; approve every AI-drafted
+   note home. Parents see "Teacher-reviewed".
+
+## Meta's models in this build
+
+Muse Spark 1.3 through the Meta Model API (OpenAI-compatible SDK), **Standard tier only**:
+Contributor model IDs are refused in code (D24). Every call goes through one gateway with
+daily spend and per-learner call caps, and writes a `model_runs` row (tokens, cost, latency,
+checks). Uses: reading handwriting and notices (vision, structured output), the Help Plan
+agent (tool calls), profile cards and notes home (drafting). Prompts carry the question, the
+guideline and the work, never names or emails. Learners' work never trains a model.
+
+## Proof, with denominators
+
+Read live from `evals/results/latest.json` on [the proof page](https://guardianbook.app/evidence):
+8 of 8 synthetic typed answers marked to the exact total (95% interval 68–100%); 4 of 4
+"just give me the answer" requests got no answer; 33 of 33 change-the-ID privacy tests pass.
+The dataset is a development set scored by us, **not teacher-checked and not held out**;
+photo cases, notices and Help Plans have no published suite yet.
+
+## Privacy and safety
+
+- Every account holder in this build is an adult (Meta's API terms); sign-up requires "I am
+  18 or older". The demo school and people are fictional.
+- One `access` module decides every permission, with a school boundary on every check, and a
+  table-driven harness tests "change the ID" for every role. Parents never see a learner's
+  answers or photos.
+- `learning_events`, `assessments` and `model_runs` are append-only (a database trigger
+  refuses UPDATE and DELETE). Every artifact carries provenance; training permission is
+  `not_permitted` everywhere.
 
 ## Where things live
 
@@ -71,17 +129,23 @@ docker run --rm -p 8080:8080 guardian-book
 ## Built during the Meta hackathon (from 28 Oct 2026)
 
 Every line of product code in `apps/`, `packages/` and `scripts/` was written in this repo
-during the event (D27), one brief at a time:
+during the event (D27), one brief at a time (`prompts/`), each merged through a pull request
+with six required CI checks:
 
-- **B01** (1 Nov 2026) · Workspace, API skeleton (`/healthz`, config check, structured
-  logs with redaction, security headers, static serving), Sentinel tokens and the landing
-  screen, Dockerfile and compose, CI with six checks, deploy runbook.
-- **B02** (3 Nov 2026) · The schema (every table in spec 03, Postgres enums, UUID v7,
-  append-only triggers, provenance columns, schools as tenants), Better Auth with a
-  one-transaction sign-up and age attestation, the `access` module and its permission
-  harness, the circle (class codes, guardian codes, links, revoke), items and the content
-  loader, the seeded demo circle, and the sign-up, sign-in, learner, guardian and teacher
-  screens.
+- **B01** · Workspace, API skeleton, Sentinel tokens, Dockerfile, CI, deploy runbook.
+- **B02** · Schema, append-only triggers, provenance, schools as tenants, Better Auth with age
+  attestation, the `access` module and permission harness, the circle, the content loader,
+  the demo seed.
+- **B03** · The Meta model gateway (retries, cost log, prompt safety), the verifier and its
+  retry runner, the eval runner.
+- **B04** · Bring anything, the homework check (background assessment, guideline approval
+  enforced, spend caps), photo storage with EXIF stripped, notice to calendar.
+- **B05** · The Brain (pure reducer with property tests), profile cards, Today, KaTeX maths.
+- **B06** · Fix it, check it alone, the follow-up check, the Help Plan agent, the parent's
+  space.
+- **B07** · The teacher space: guidelines, review with feedback controls, release, the class
+  picture, interventions, notes home.
+- **B08** · The eval summary and the proof page.
 
 ## Pre-existing inputs
 
