@@ -53,7 +53,7 @@ the same files.
 | B07 ∥ Teacher view: guidelines approval, class picture, confirm queue, review with feedback controls (agree / correct / add / audience), release, interventions (owner, follow-up, outcome, close), notes with origin labels, class notice, learner profile | 3 Nov | P0-10 | B04 | B / $30 | done (PR #7 merged 4 Nov) |
 | B08 Eval runner results + proof page `/evidence` | 3 Nov | P0-12 | B03, E1 | B / $10 | done (PR #6 merged 4 Nov) |
 | **Gate P0:** full run on the founder's phone | 3 Nov, 20:00 (D35) | all P0 | — | — | todo |
-| B09 PWA, polish (landing hero by surface, D35), E2E in CI; the Bring question picker shows the question itself (MathText), not the slug; `robots.txt` (allow `/`, `/evidence`; disallow `/api/`, `/learner/`, `/guardian/`, `/teacher/`, invite and join links; D36); then P1 in order (incl. P1-g teacher uploads a script) (voice, see-it card, overlay, open-weight row, WhatsApp text) | 3 Nov | P0-13, P1 | Gate P0 | A + B | todo |
+| B09 PWA, polish (landing hero by surface, D35), E2E in CI; the Bring question picker shows the question itself (MathText), not the slug; `robots.txt` (allow `/`, `/evidence`; disallow `/api/`, `/learner/`, `/guardian/`, `/teacher/`, invite and join links; D36); then P1 in order (incl. P1-g teacher uploads a script) (voice, see-it card, overlay, open-weight row, WhatsApp text) | 3 Nov | P0-13, P1 | Gate P0 | subscription | PR open (4 Nov): landing, /try, PWA, picker, robots, e2e job |
 | B10 Release hardening, restore drill, history scan, README | 3 Nov | P0-13 | B09 | B / $8 | todo |
 | B11 Red ink on the learner's photo; teacher uploads a learner's script (P1-c, P1-g) | 4 Nov | P1 | B04, B07 | subscription | todo |
 | B12 Parent's home language (af, zu, xh, tn, st) + Share to WhatsApp (D38, P1-e) | 4 Nov | P1 | B06, B07 | subscription | todo |
@@ -173,6 +173,44 @@ Add any question here, linked to a task ID.
   wrote `evals/results/latest.json`, committed with the conservative dataset label. Four tests
   committed by the first session had not run green (interval and money formatters, numerals in
   `SuiteSection.tsx`, the empty-state log check); fixed in `1b743a2`, described in the PR.
+- **B09 · finished 4 Nov, PR open.** Landing by surface (D35), `/try` with a seeded
+  "Try it (fictional)" class, install as an app (hand-written service worker, manifest,
+  icons from the Sentinel mark), the Bring picker through `MathText`, `robots.txt`, Open
+  Graph card, and the `e2e` CI job. Decisions to confirm:
+  1. **Files outside the brief's "own only" list**, each the smallest change the brief's
+     items need: `apps/api/src/config.ts` (`PUBLIC_TRY_CLASS_CODE`, `TRY_USER_DAILY_CALLS`),
+     `auth/signup.ts` (the server-side join), `modelRuns/caps.ts` (the try-it cap, applied
+     inside `checkCaps` by class-code hash), `routes/items.ts` + the shared `itemSummarySchema`
+     (`promptMd`, `approvedForYou`), a new public `routes/try.ts` (`GET /api/try`: available +
+     class name, never the code), `app.ts` wiring, `static.ts` (`sw.js` and the manifest are
+     `no-cache`), the shared `signUpBodySchema` (`tryClass: true`) and `signUpResponseSchema`
+     (`joinedClass`), `app/router.tsx` (`/try`), `api/auth.ts` (`tryStatus`), one import and
+     one line in `routes/learner/today/Today.tsx` (the install hint), `vitest.config.ts` +
+     `package.json` (a `web` unit project for the worker's fetch policy), and the e2e/integration
+     harnesses (`test/e2e/serve.ts`, `test/integration/db.ts`) so the try-it class is reachable.
+  2. **`.env.example` is write-denied** in this session: please add `PUBLIC_TRY_CLASS_CODE=`
+     (the seed prints it: `class try code`) and `TRY_USER_DAILY_CALLS=6`. On Railway, set
+     `PUBLIC_TRY_CLASS_CODE` to the production seed's try code, or `/try` says it is not on.
+  3. **The try-it teacher** is a seeded person (`try-teacher@demo.guardianbook.test`, "Ms
+     Demo") whose account gets a fresh random, unprinted password on every seed run, so the
+     class has a teacher but nobody can sign in as it (integration test).
+  4. **Seed counts changed:** 4 classes, 6 guideline approvals (3 items × 12A and try); the
+     auth test's counts were updated. The permission harness is unchanged.
+  5. **Picker:** unapproved items stay listed (after the approved ones) but disabled, with
+     "not approved for your class yet", rather than hidden. Say if they should be hidden.
+  6. **Service worker update policy:** `skipWaiting` + `clients.claim` as the brief says, no
+     "A new version is ready" prompt (spec 06 §5 asked for one): the next page load gets the
+     new build because pages are network-first and `index.html`/`sw.js` are never HTTP-cached.
+     Activating deletes older caches, so an already-open old page that lazy-loads a chunk
+     after a deploy falls back to the route error boundary's retry (the existing stale-bundle
+     behaviour, unchanged).
+  7. **`robots.txt`** follows the brief's list exactly (allow `/`, `/try`, `/evidence`;
+     disallow `/api/`, `/today`, `/brain`, `/me`, `/bring`, `/attempts/`, `/items/`,
+     `/calendar`, `/guardian`, `/teacher`); the row above's older list (`/learner/`, invite
+     and join links) is superseded by the brief.
+  8. **Port 8097 is shared** by every worktree's e2e server: two sessions running
+     `pnpm test:e2e` at once reuse or kill each other's server (seen twice on 4 Nov). Not a
+     code issue; CI runs alone.
 - **B08 · resolved on `main` (4 Nov):** the eval-only `.env.example` lines (`EVAL_DATASET_LABEL`,
   `EVAL_HELD_OUT`, `EVAL_NOT_YET`, `EVAL_PRIVACY_FILE`) landed in `af71f5c`; D37 keeps the
   synthetic dev cases in-repo at `apps/api/src/evals/fixtures/cases/` (real and held-out sets
