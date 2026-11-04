@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-04T23:02:57.970Z",
+  "generated_at": "2026-11-04T23:39:07.553Z",
   "models": [
     {
       "id": "muse-spark-1.3",
@@ -303,19 +303,19 @@
         "label": "held-out NSC questions (newest session), memos as truth",
         "held_out": true
       },
-      "source": "pnpm eval:nsc · muse-spark-1.3 · guide-v1 + guide-check-v1 · 2026-11-04T22:20:58.081Z, re-scored 2026-11-04T23:02:57.970Z",
-      "n": 78,
+      "source": "pnpm eval:nsc · muse-spark-1.3 · guide-v1 + guide-check-v1 · 2026-11-04T22:20:58.081Z and 2026-11-04T23:39:07.553Z",
+      "n": 86,
       "metric": {
         "key": "memo_answer_reached",
         "label": "Reached the memo’s final answer",
         "definition": "questions where the answer the guide shows matches the memo’s (same values after normalising notation; another correct form counts as a miss) ÷ questions the guide read",
         "ratio": {
-          "n": 46,
-          "d": 78,
-          "rate": 0.5897435897435898,
+          "n": 53,
+          "d": 86,
+          "rate": 0.6162790697674418,
           "ci95": [
-            0.4788814980194958,
-            0.6921809462644678
+            0.5106287719068467,
+            0.7119856006672365
           ]
         }
       },
@@ -325,12 +325,12 @@
           "label": "Worked steps shown, answer not the memo’s",
           "definition": "what a learner sees: questions shown with worked steps whose final answer the same fixed comparison cannot match with the memo’s (wrong, or right in another form) ÷ questions shown with worked steps",
           "ratio": {
-            "n": 14,
-            "d": 51,
-            "rate": 0.27450980392156865,
+            "n": 15,
+            "d": 57,
+            "rate": 0.2631578947368421,
             "ci95": [
-              0.1711427516887183,
-              0.40946650872896384
+              0.16645786536083976,
+              0.38976579369575814
             ]
           }
         },
@@ -339,12 +339,12 @@
           "label": "Typed questions",
           "definition": "questions without a figure, typed in: the memo’s final answer reached ÷ such questions the guide read",
           "ratio": {
-            "n": 12,
-            "d": 21,
-            "rate": 0.5714285714285714,
+            "n": 19,
+            "d": 29,
+            "rate": 0.6551724137931034,
             "ci95": [
-              0.36546554224185784,
-              0.7553003119028359
+              0.47345103949857975,
+              0.8005928156337425
             ]
           }
         },
@@ -367,12 +367,12 @@
           "label": "Worked steps shown",
           "definition": "questions where two independent reads agreed and were confident, so the app shows worked steps ÷ questions",
           "ratio": {
-            "n": 51,
-            "d": 78,
-            "rate": 0.6538461538461539,
+            "n": 57,
+            "d": 86,
+            "rate": 0.6627906976744186,
             "ci95": [
-              0.5433019428779368,
-              0.7499479616088581
+              0.5578256067408826,
+              0.7538345148628337
             ]
           }
         },
@@ -381,12 +381,12 @@
           "label": "Worked steps shown and the memo’s answer",
           "definition": "questions with worked steps shown whose answer matches the memo’s ÷ questions with worked steps shown",
           "ratio": {
-            "n": 37,
-            "d": 51,
-            "rate": 0.7254901960784313,
+            "n": 42,
+            "d": 57,
+            "rate": 0.7368421052631579,
             "ci95": [
-              0.590533491271036,
-              0.8288572483112817
+              0.6102342063042419,
+              0.8335421346391603
             ]
           }
         },
@@ -395,11 +395,11 @@
           "label": "Passed every check first time",
           "definition": "model calls that passed every verifier check ÷ model calls",
           "ratio": {
-            "n": 148,
-            "d": 148,
+            "n": 163,
+            "d": 163,
             "rate": 1,
             "ci95": [
-              0.9747008563432001,
+              0.9769753938436303,
               1
             ]
           }
@@ -410,11 +410,11 @@
           "definition": "questions where no read was accepted (timeout, provider error, checks) ÷ questions",
           "ratio": {
             "n": 0,
-            "d": 78,
+            "d": 86,
             "rate": 0,
             "ci95": [
               0,
-              0.04693781041791674
+              0.04275819793144242
             ]
           }
         }
@@ -423,12 +423,12 @@
       "abstained": null,
       "checks_blocked_by_code": {},
       "latency_ms": {
-        "p50": 31171,
-        "p95": 51957
+        "p50": 30373,
+        "p95": 51878
       },
       "cost": {
-        "per_attempt_usd": 0.03123684,
-        "per_learner_week_usd": 0.1561842,
+        "per_attempt_usd": 0.03097533,
+        "per_learner_week_usd": 0.15487665,
         "assumption": "one learner asks for help with 5 questions a week; each question is two reads; cost per learner-week is the mean cost per question × 5"
       }
     },
@@ -439,19 +439,19 @@
         "label": "held-out NSC questions (newest session), memos as truth",
         "held_out": true
       },
-      "source": "pnpm eval:nsc · muse-spark-1.3 · work-check-v1 · 2026-11-04T22:20:58.081Z",
-      "n": 128,
+      "source": "pnpm eval:nsc · muse-spark-1.3 · work-check-v1 · 2026-11-04T22:20:58.081Z and 2026-11-04T23:39:07.553Z",
+      "n": 142,
       "metric": {
         "key": "lost_step_named",
         "label": "Lost step named",
         "definition": "changed answers (the memo’s working with the final step’s value altered) where the first step marked down is the changed one ÷ changed answers the checks accepted",
         "ratio": {
-          "n": 52,
-          "d": 56,
-          "rate": 0.9285714285714286,
+          "n": 58,
+          "d": 62,
+          "rate": 0.9354838709677419,
           "ci95": [
-            0.8302455183835961,
-            0.9718739636165804
+            0.8455248417912822,
+            0.9746270946558628
           ]
         }
       },
@@ -461,12 +461,12 @@
           "label": "Changed answers: exact total",
           "definition": "changed answers given exactly the marks minus the changed step’s ÷ changed answers the checks accepted",
           "ratio": {
-            "n": 52,
-            "d": 56,
-            "rate": 0.9285714285714286,
+            "n": 58,
+            "d": 62,
+            "rate": 0.9354838709677419,
             "ci95": [
-              0.8302455183835961,
-              0.9718739636165804
+              0.8455248417912822,
+              0.9746270946558628
             ]
           }
         },
@@ -475,12 +475,12 @@
           "label": "Memo’s own working: full marks",
           "definition": "the unchanged memo working for the same questions given full marks ÷ those the checks accepted",
           "ratio": {
-            "n": 51,
-            "d": 55,
-            "rate": 0.9272727272727272,
+            "n": 58,
+            "d": 62,
+            "rate": 0.9354838709677419,
             "ci95": [
-              0.8274005982567241,
-              0.9713559399660212
+              0.8455248417912822,
+              0.9746270946558628
             ]
           }
         },
@@ -489,12 +489,12 @@
           "label": "Passed every check first time",
           "definition": "model calls that passed every verifier check ÷ model calls",
           "ratio": {
-            "n": 111,
-            "d": 169,
-            "rate": 0.6568047337278107,
+            "n": 124,
+            "d": 182,
+            "rate": 0.6813186813186813,
             "ci95": [
-              0.5824535673793538,
-              0.72418582540892
+              0.6104728258153682,
+              0.7446685963263764
             ]
           }
         },
@@ -503,32 +503,32 @@
           "label": "Failed calls",
           "definition": "cases that ended in a timeout or provider error ÷ cases",
           "ratio": {
-            "n": 1,
-            "d": 128,
-            "rate": 0.0078125,
+            "n": 2,
+            "d": 142,
+            "rate": 0.014084507042253521,
             "ci95": [
-              0.0013804318776224171,
-              0.042926259893403734
+              0.003871016187956707,
+              0.049895991777030524
             ]
           }
         }
       ],
       "confidently_wrong": {
         "n": 4,
-        "d": 105,
-        "rate": 0.0380952380952381,
+        "d": 117,
+        "rate": 0.03418803418803419,
         "ci95": [
-          0.014912459227533675,
-          0.0938830218603343
+          0.013373841726568705,
+          0.08461784912953067
         ]
       },
       "abstained": {
         "n": 16,
-        "d": 128,
-        "rate": 0.125,
+        "d": 142,
+        "rate": 0.11267605633802817,
         "ci95": [
-          0.07842644609872867,
-          0.19342627144110075
+          0.0705564888869239,
+          0.17519982180980506
         ]
       },
       "checks_blocked_by_code": {
@@ -538,12 +538,12 @@
         "STEP_MISSING": 7
       },
       "latency_ms": {
-        "p50": 26068,
+        "p50": 25758,
         "p95": 48232
       },
       "cost": {
-        "per_attempt_usd": 0.01603302,
-        "per_learner_week_usd": 0.0801651,
+        "per_attempt_usd": 0.01566637,
+        "per_learner_week_usd": 0.07833185,
         "assumption": "one learner submits 5 pieces of work a week; cost per learner-week is the mean cost per attempt × 5"
       }
     }
