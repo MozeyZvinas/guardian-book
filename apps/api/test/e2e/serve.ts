@@ -48,6 +48,8 @@ const config = loadConfig({
   DATABASE_URL: databaseUrl,
   BETTER_AUTH_SECRET: 'e2e-only-secret-0123456789abcdef',
   BETTER_AUTH_URL: `http://127.0.0.1:${port}`,
+  // B09: /try sign-ups join the seeded try-it class, as in production.
+  PUBLIC_TRY_CLASS_CODE: seeded.classCodes.try,
 })
 const gateway = live ? createGateway({ config: config.meta, logger }) : scriptedModel().gateway
 const storage = memoryStorage(`http://127.0.0.1:${port}/e2e-bucket`)
