@@ -32,6 +32,7 @@ describe('GET /api/me/today', () => {
       exam: null,
       tonight: { kind: 'none' },
       checkIns: [],
+      practice: [],
       recent: [],
       guardianLinked: true,
       hasCards: false,

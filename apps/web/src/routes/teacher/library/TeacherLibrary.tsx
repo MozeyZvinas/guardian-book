@@ -167,7 +167,7 @@ function TopicSet({ classId, className, entries, onChanged }: { classId: string;
     <Card title="A topic as practice">
       <p className="m-0 text-sm text-fg-muted">Every loaded past-paper question on one skill. What comes up says how much it is worth in the exam.</p>
       {entries.length === 0 ? <p className="m-0 text-sm text-fg-muted">Loads once past papers are in.</p> : null}
-      <form onSubmit={setPractice} className="flex flex-col gap-3">
+      <form onSubmit={setPractice} className="flex flex-col gap-3" aria-label="A topic as practice">
         <fieldset className="m-0 border-0 p-0">
           <legend className="mb-1 text-sm font-medium">Skill</legend>
           <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Skill">
