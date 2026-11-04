@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import { checkAlone } from '../../../api/loop'
-import type { AttemptResponse } from '@guardian-book/shared'
+import type { AttemptResponse, AttemptReviewResponse } from '@guardian-book/shared'
 import { ApiRequestError } from '../../../api/client'
 import { assess, attemptImageUrl, getAttempt } from '../../../api/practice'
+import { attemptReview } from '../../../api/teacher'
 import { RequireRole } from '../../../app/RequireRole'
 import { Button, Card, FormError } from '../../../components/Form'
 import { HintCard } from '../../../components/HintCard'
 import { LearnerShell } from '../../../components/LearnerShell'
 import { MathText } from '../../../components/MathText'
+import { RedInk } from '../../../components/RedInk'
+import { planInk } from '../../../components/RedInkPlan'
 import { ConfidenceLabel, StepMap } from '../../../components/StepMap'
 import { WorkViewer } from '../../../components/WorkViewer'
 
@@ -17,6 +20,8 @@ import { WorkViewer } from '../../../components/WorkViewer'
  * where it slipped, the hint, confidence. Polls every 2 s while the check runs, with
  * skeleton rows. Uncertain: one sentence, no marks. Fix it opens L4 (B06); an independent
  * or follow-up check reads "You did it on your own" or "Not yet; here's a hint for next time".
+ * A photo gets the teacher's red ink drawn from the stored steps (B11): the proposal before
+ * release, the released review's values after (labelled Teacher-reviewed).
  */
 export function Attempt() {
   return <RequireRole roles={['learner', 'teacher']}>{() => <AttemptScreen />}</RequireRole>
@@ -32,7 +37,25 @@ function AttemptScreen() {
   const [paused, setPaused] = useState<string | null>(null)
   const [tick, setTick] = useState(0)
   const [busy, setBusy] = useState(false)
+  const [review, setReview] = useState<AttemptReviewResponse['review'] | null>(null)
   const navigate = useNavigate()
+
+  // The released review, when there is one (B07's route serves it to the owner only once released).
+  const proposedNow = data?.assessment?.status === 'proposed'
+  useEffect(() => {
+    if (!proposedNow) return
+    let cancelled = false
+    attemptReview(id)
+      .then((result) => {
+        if (!cancelled) setReview(result.review?.state === 'released' ? result.review : null)
+      })
+      .catch(() => {
+        // No review yet, or not ours to see: the proposal stands.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [id, proposedNow])
 
   useEffect(() => {
     let cancelled = false
@@ -80,10 +103,33 @@ function AttemptScreen() {
   if (attempt.parentAttemptId) return <Navigate to={`/attempts/${attempt.parentAttemptId}/fix?retry=${attempt.id}`} replace />
   const assessing = attempt.status === 'assessing' || attempt.status === 'submitted'
   const proposed = assessment?.status === 'proposed' ? assessment : null
-  const lost = proposed?.steps.find((step) => step.awarded < step.available) ?? null
+  // Once released, the teacher's award is the mark on every step (the proposal is never overwritten; it is read beside it).
+  const shownSteps = proposed
+    ? proposed.steps.map((step) => {
+        const teacher = review?.steps.find((s) => s.stepId === step.stepId)
+        return teacher ? { ...step, awarded: teacher.awarded } : step
+      })
+    : null
+  const lost = shownSteps?.find((step) => step.awarded < step.available) ?? null
   const lostName = lost ? guideline.find((step) => step.id === lost.stepId) : null
-  const boxes = proposed?.steps.flatMap((step) => (step.box ? [{ box: step.box, label: step.stepId, lost: step.awarded < step.available }] : [])) ?? []
+  const boxes = shownSteps?.flatMap((step) => (step.box ? [{ box: step.box, label: step.stepId, lost: step.awarded < step.available }] : [])) ?? []
   const independent = attempt.mode !== 'assisted'
+  // Red ink (B11): the stored steps only; after release the teacher's award wins.
+  const inkPlan =
+    proposed && attempt.kind === 'photo'
+      ? planInk(
+          guideline.map((name) => {
+            const step = proposed.steps.find((s) => s.stepId === name.id)
+            return {
+              stepId: name.id,
+              stepNo: name.stepNo,
+              available: name.marks,
+              proposed: step ? { awarded: step.awarded, confidence: step.confidence, feedback: step.feedback, box: step.box } : null,
+              teacherAwarded: review?.steps.find((s) => s.stepId === name.id)?.awarded ?? null,
+            }
+          }),
+        )
+      : null
 
   async function checkAgain(skill: string) {
     setBusy(true)
@@ -110,7 +156,11 @@ function AttemptScreen() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <WorkViewer imageUrl={attempt.hasImage ? attemptImageUrl(attempt.id) : null} text={attempt.answerText} boxes={boxes} alt="Your working" />
+        {inkPlan ? (
+          <RedInk imageUrl={attempt.hasImage ? attemptImageUrl(attempt.id) : null} text={attempt.answerText} alt="Your working" plan={inkPlan} label={review ? 'reviewed' : 'checked'} />
+        ) : (
+          <WorkViewer imageUrl={attempt.hasImage ? attemptImageUrl(attempt.id) : null} text={attempt.answerText} boxes={boxes} alt="Your working" />
+        )}
         <div className="flex flex-col gap-3">
           {assessing ? (
             <p role="status" aria-live="polite" className="m-0 flex items-center gap-2 text-fg-muted">
@@ -123,8 +173,12 @@ function AttemptScreen() {
               {paused}
             </p>
           ) : null}
-          <StepMap guideline={guideline} steps={proposed?.steps ?? null} assessing={assessing} />
-          {proposed ? (
+          <StepMap guideline={guideline} steps={shownSteps} assessing={assessing} />
+          {proposed && review ? (
+            <p className="m-0 text-sm tnum" aria-live="polite">
+              <span className="font-medium">{review.total}</span> of {attempt.maxMarks} marks · Teacher-reviewed
+            </p>
+          ) : proposed ? (
             <p className="m-0 text-sm tnum" aria-live="polite">
               <span className="font-medium">{proposed.total}</span> of {attempt.maxMarks} marks proposed · your teacher confirms
             </p>

@@ -91,6 +91,14 @@ function InkedFigure({ imageUrl, alt, plan, animate, onFailed }: { imageUrl: str
   const imageShare = (W / total) * 100
   const delay = (index: number) => (animate ? { animationDelay: `${index * STEP_DELAY_MS}ms` } : { animationDuration: '0ms' })
   const appear = 'motion-safe:animate-[fade-in_320ms_ease-out_both]'
+  // Two steps earned on the same line of working share a box (seen live): their ticks sit side by side.
+  const seen = new Map<string, number>()
+  const repeat = plan.marks.map((mark) => {
+    const key = mark.box.join(',')
+    const n = seen.get(key) ?? 0
+    seen.set(key, n + 1)
+    return n
+  })
 
   return (
     <figure ref={figureRef} className="relative m-0 overflow-hidden rounded-card bg-surface" style={{ aspectRatio: `${total} / ${H}` }} data-ink-figure>
@@ -108,7 +116,7 @@ function InkedFigure({ imageUrl, alt, plan, animate, onFailed }: { imageUrl: str
       >
         {plan.marks.map((mark, index) => (
           <g key={mark.stepId} className={appear} style={delay(index)} data-ink={mark.kind} data-step={mark.stepNo}>
-            <Mark mark={mark} unit={unit} stroke={stroke} font={font} />
+            <Mark mark={mark} unit={unit} stroke={stroke} font={font} repeat={repeat[index] ?? 0} />
             {mark.comment && anchors[mark.stepId] ? <path d={leader(mark, unit, W, anchors[mark.stepId]?.centre ?? 0)} strokeDasharray={`${stroke * 2} ${stroke * 2}`} strokeWidth={stroke * 0.7} /> : null}
           </g>
         ))}
@@ -136,7 +144,7 @@ function InkedFigure({ imageUrl, alt, plan, animate, onFailed }: { imageUrl: str
 }
 
 /** The pen's marks for one step, in image units. */
-function Mark({ mark, unit, stroke, font }: { mark: InkMark; unit: number; stroke: number; font: number }) {
+function Mark({ mark, unit, stroke, font, repeat }: { mark: InkMark; unit: number; stroke: number; font: number; repeat: number }) {
   const [x0, y0, x1, y1] = mark.box.map((n) => n * unit) as [number, number, number, number]
   const w = Math.max(x1 - x0, unit * 20)
   const h = Math.max(y1 - y0, unit * 20)
@@ -145,14 +153,14 @@ function Mark({ mark, unit, stroke, font }: { mark: InkMark; unit: number; strok
   if (mark.kind === 'tick') {
     // A tick just past the right edge of the box, the size of a line of writing.
     const s = Math.max(h * 0.9, font * 1.4)
-    const tx = Math.min(x1 + s * 0.3, 1000 * unit - s)
+    const tx = Math.min(x1 + s * 0.3 + repeat * s * 1.1, 1000 * unit - s)
     const ty = cy
     return <path d={`M ${tx} ${ty} l ${s * 0.3} ${s * 0.32} l ${s * 0.7} ${-s * 0.72}`} strokeWidth={stroke * 1.3} />
   }
   const rx = w / 2 + unit * 18
   const ry = h / 2 + unit * 14
   const cross = Math.max(font * 0.8, h * 0.5)
-  const cxr = Math.min(x1 + rx * 0.08 + cross, 1000 * unit - cross / 2)
+  const cxr = Math.min(x1 + rx * 0.08 + cross + repeat * cross * 1.3, 1000 * unit - cross / 2)
   return (
     <>
       <ellipse cx={cx} cy={cy} rx={rx} ry={ry} />
