@@ -6,7 +6,8 @@ import { z } from 'zod'
  */
 // B12 adds `translate` (one parent-facing text into the parent's home language).
 // B13 adds `transcribe` (Muse Voice Transcribe; audio in, text out) and `step_hint` (ask about a step).
-export const MODEL_PURPOSES = ['classify', 'profile_cards', 'assess', 'notice', 'plan', 'note', 'translate', 'transcribe', 'step_hint'] as const
+// B15 adds `guide` (help me with a question: any question read back and worked step by step).
+export const MODEL_PURPOSES = ['classify', 'profile_cards', 'assess', 'notice', 'plan', 'note', 'translate', 'transcribe', 'step_hint', 'guide'] as const
 export const modelPurposeSchema = z.enum(MODEL_PURPOSES)
 export type ModelPurpose = z.infer<typeof modelPurposeSchema>
 
