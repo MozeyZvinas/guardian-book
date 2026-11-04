@@ -28,6 +28,7 @@ test('Bring and Calendar fit a 360 px phone', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Bring anything' })).toBeVisible()
   await noOverflow(page)
   await page.screenshot({ path: 'docs/screenshots/b04-bring-360.png', fullPage: true, animations: 'disabled' })
+  await page.getByRole('button', { name: /Check my work/ }).click() // B15: the three plain choices
   await page.getByRole('button', { name: /Type/ }).click()
   await noOverflow(page)
   await page.goto('/calendar')
