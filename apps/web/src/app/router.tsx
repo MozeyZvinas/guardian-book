@@ -57,6 +57,12 @@ export const router = createBrowserRouter([
     lazy: () => import('../routes/learner/attempt/Attempt').then((m) => ({ Component: m.Attempt })),
     errorElement: <RouteError />,
   },
+  // B15: help me with a question, read back and taken one step at a time.
+  {
+    path: '/guide/:id',
+    lazy: () => import('../routes/learner/guide/Guide').then((m) => ({ Component: m.Guide })),
+    errorElement: <RouteError />,
+  },
   {
     path: '/calendar',
     lazy: () => import('../routes/learner/calendar/Calendar').then((m) => ({ Component: m.Calendar })),
