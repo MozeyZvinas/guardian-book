@@ -14,7 +14,8 @@ import { TRANSLATE_MAX_TOKENS, TRANSLATE_PROMPT_VERSION, TRANSLATE_TIMEOUT_MS, b
  * a fluent speaker can check the four outputs recorded in `docs/TASKS.md`. Prints the
  * verifier result, tokens and cost per call; never the key. Not run in CI.
  *
- *   pnpm --filter @guardian-book/api exec tsx src/translate/live.ts
+ *   pnpm --filter @guardian-book/api exec tsx src/translate/live.ts        # both languages
+ *   pnpm --filter @guardian-book/api exec tsx src/translate/live.ts zu     # one language
  */
 
 const here = path.dirname(fileURLToPath(import.meta.url))
@@ -31,7 +32,11 @@ const SAMPLES: Array<{ label: string; text: string }> = [
     text: 'This week Lerato worked on algebra. One step slipped: writing the final answers after factorising. Please ask Lerato to explain that step to you tonight; 10 minutes is enough. Ms Dlamini',
   },
 ]
-const LANGUAGES: Language[] = ['zu', 'af']
+/** `tsx src/translate/live.ts zu` limits a re-run to the languages named (default: both). */
+const LANGUAGES: Language[] = (() => {
+  const asked = process.argv.slice(2).filter((code): code is 'zu' | 'af' => code === 'zu' || code === 'af')
+  return asked.length > 0 ? asked : ['zu', 'af']
+})()
 const names = { learner: 'Lerato', teacher: 'Ms Dlamini' }
 
 async function main(): Promise<void> {

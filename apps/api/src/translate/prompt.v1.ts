@@ -13,8 +13,14 @@ import { assertPromptSafe } from '../gateway/promptSafety.js'
  */
 
 export const TRANSLATE_PROMPT_VERSION = 'translate-v1' as const
-/** Muse Spark reasons before it writes the JSON (B03); a translation's JSON is short. */
-export const TRANSLATE_MAX_TOKENS = 2_000
+/**
+ * Output budget. Muse Spark reasons before it writes the JSON and the reasoning is billed
+ * as output tokens (B03). Live check, 4 Nov 2026 (`muse-spark-1.3`, two parent texts of
+ * about 40 words): Afrikaans used 1,164 and 1,827 output tokens; isiZulu ran past 2,000
+ * and was cut off (`finish_reason: length`, no JSON). 6,000 matches the work check and
+ * costs at most about $0.026 per call.
+ */
+export const TRANSLATE_MAX_TOKENS = 6_000
 export const TRANSLATE_TIMEOUT_MS = 45_000
 
 export const TRANSLATE_SYSTEM = `You translate short messages written in English for a learner's parent or guardian by the learner's high-school teacher, or by the school's planning assistant that the teacher reviews. Translate into the language named in the input.

@@ -206,6 +206,15 @@ export async function translateNow(deps: TranslateDeps, source: TranslationSourc
     logger.warn('translate: exhausted; the English stands', { kind: source.kind, sourceId: source.id, language, runs: result.runs.length })
     return 'unavailable'
   }
+  if (result.error?.code === 'invalid_output' && lastRunId) {
+    // The provider answered but the content was unusable (cut off by max_tokens, not JSON):
+    // deterministic at temperature 0, so the English stands rather than re-spending on every read.
+    const id = await store(db, { ...base, model, provider, text: null, status: 'unavailable', modelRunId: lastRunId })
+    await recordAudit(db, { actorId: null, action: 'translation.refused', subjectType: 'translation', subjectId: id, outcome: 'refused' })
+    logger.warn('translate: unusable answer; the English stands', { kind: source.kind, sourceId: source.id, language })
+    return 'unavailable'
+  }
+  // A timeout, a network or provider error: no row, so the next read tries again (bounded by the caps).
   logger.warn('translate: no answer from the gateway', { kind: source.kind, sourceId: source.id, language, error: result.error?.code ?? null })
   return 'failed'
 }

@@ -226,6 +226,25 @@ describe('G1 · This week in isiZulu', () => {
     expect((await translateRuns()).length).toBe(runsBefore + 3)
   })
 
+  it('an answer cut off by max_tokens is remembered as unavailable after one call: the English stands, nothing is re-spent', async () => {
+    const [note] = await ctx.db
+      .insert(notes)
+      .values({ teacherId: SEED_PEOPLE.msDlamini.id, learnerId: lerato, guardianId: SEED_PEOPLE.mmaLerato.id, provenance: 'teacher_verified', draftText: 'Bring the calculator on Monday, please.', status: 'sent', origin: 'teacher_added', audience: 'guardian', approvedAt: new Date(), sentAt: new Date() })
+      .returning({ id: notes.id })
+    model.queue.push(okResponse('', { finishReason: 'length', completionTokens: 6000 }))
+    const guardian = await signInAs(app(), 'mmaLerato')
+    const runsBefore = (await translateRuns()).length
+    await request(app()).get('/api/guardian/notes').set('Cookie', guardian)
+    await ctx.jobs.waitAll()
+    const served = (await request(app()).get('/api/guardian/notes').set('Cookie', guardian)).body.notes.find((n: { id: string }) => n.id === note?.id)
+    expect(served).toMatchObject({ text: 'Bring the calculator on Monday, please.', translation: { language: 'zu', status: 'unavailable', text: null } })
+    expect((await translateRuns()).slice(runsBefore).map((run) => [run.subject_id, run.status])).toEqual([[note?.id, 'failed']])
+    expect((await sql<{ status: string }>(`select status from translations where source_id = '${note?.id}'`))[0]?.status).toBe('unavailable')
+    await request(app()).get('/api/guardian/notes').set('Cookie', guardian)
+    await ctx.jobs.waitAll()
+    expect((await translateRuns()).length).toBe(runsBefore + 1)
+  })
+
   it('a guardian of another learner: 404 on the week, an empty notes list, their own language only', async () => {
     const signedUp = await origin(request(app()).post('/api/auth/sign-up/email')).send({ nickname: 'Gogo', email: 'gogo@demo.guardianbook.test', password: TEST_PASSWORD, role: 'guardian', ageAttested: true })
     expect(signedUp.status).toBe(201)
