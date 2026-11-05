@@ -38,6 +38,9 @@ export const CHECK_CODES = [
   'MATH_UNBALANCED',
   'PERSONAL_DATA',
   'ANSWERS_DISAGREE',
+  // B17: past-paper extraction (one page of a paper or memo)
+  'EXTRACT_ENTRY_INVALID',
+  'EXTRACT_STEP_SUM',
 ] as const
 export type CheckCode = (typeof CHECK_CODES)[number]
 
@@ -145,6 +148,15 @@ export interface GuideContext {
   otherFinalAnswer: string | null
 }
 
+/**
+ * Past-paper extraction (B17): which document the page comes from, and, on a targeted
+ * re-read, the only question numbers the output may hold.
+ */
+export interface ExtractContext {
+  document: 'paper' | 'memo'
+  onlyNumbers: string[]
+}
+
 export interface CheckContexts {
   classify: ClassifyContext
   profile_cards: ProfileCardsContext
@@ -156,6 +168,7 @@ export interface CheckContexts {
   transcribe: TranscribeContext
   step_hint: HintContext
   guide: GuideContext
+  extract: ExtractContext
 }
 
 export type CheckContextFor<P extends ModelPurpose> = CheckContexts[P]

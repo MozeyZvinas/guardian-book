@@ -1,0 +1,1 @@
+ALTER TYPE "public"."model_run_purpose" ADD VALUE 'extract';

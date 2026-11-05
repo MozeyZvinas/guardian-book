@@ -1,15 +1,27 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-03T21:47:32.468Z",
+  "generated_at": "2026-11-04T23:39:07.553Z",
   "models": [
     {
       "id": "muse-spark-1.3",
       "tier": "standard",
       "used_for": "work check (assess)"
+    },
+    {
+      "id": "muse-spark-1.3",
+      "tier": "standard",
+      "used_for": "guide (help me with a question), held-out NSC"
+    },
+    {
+      "id": "muse-spark-1.3",
+      "tier": "standard",
+      "used_for": "work check (assess), held-out NSC"
     }
   ],
   "prompt_versions": [
-    "work-check-v1"
+    "work-check-v1",
+    "guide-v1",
+    "guide-check-v1"
   ],
   "dataset": {
     "label": "development set: synthetic typed answers, scored by the implementing session against the guideline; not teacher-checked; not held out",
@@ -283,12 +295,265 @@
       "checks_blocked_by_code": {},
       "latency_ms": null,
       "cost": null
+    },
+    {
+      "key": "nsc_guide",
+      "label": "Help me with a question: the guide against the memo’s final answer",
+      "dataset": {
+        "label": "held-out NSC questions (newest session), memos as truth",
+        "held_out": true
+      },
+      "source": "pnpm eval:nsc · muse-spark-1.3 · guide-v1 + guide-check-v1 · 2026-11-04T22:20:58.081Z and 2026-11-04T23:39:07.553Z",
+      "n": 86,
+      "metric": {
+        "key": "memo_answer_reached",
+        "label": "Reached the memo’s final answer",
+        "definition": "questions where the answer the guide shows matches the memo’s (same values after normalising notation; another correct form counts as a miss) ÷ questions the guide read",
+        "ratio": {
+          "n": 53,
+          "d": 86,
+          "rate": 0.6162790697674418,
+          "ci95": [
+            0.5106287719068467,
+            0.7119856006672365
+          ]
+        }
+      },
+      "metrics": [
+        {
+          "key": "ready_other_answer",
+          "label": "Worked steps shown, answer not the memo’s",
+          "definition": "what a learner sees: questions shown with worked steps whose final answer the same fixed comparison cannot match with the memo’s (wrong, or right in another form) ÷ questions shown with worked steps",
+          "ratio": {
+            "n": 15,
+            "d": 57,
+            "rate": 0.2631578947368421,
+            "ci95": [
+              0.16645786536083976,
+              0.38976579369575814
+            ]
+          }
+        },
+        {
+          "key": "reached_typed",
+          "label": "Typed questions",
+          "definition": "questions without a figure, typed in: the memo’s final answer reached ÷ such questions the guide read",
+          "ratio": {
+            "n": 19,
+            "d": 29,
+            "rate": 0.6551724137931034,
+            "ci95": [
+              0.47345103949857975,
+              0.8005928156337425
+            ]
+          }
+        },
+        {
+          "key": "reached_with_figure",
+          "label": "Questions with a figure",
+          "definition": "questions printed with a figure, typed in with the figure’s crop attached as a photo: the memo’s final answer reached ÷ such questions the guide read",
+          "ratio": {
+            "n": 34,
+            "d": 57,
+            "rate": 0.5964912280701754,
+            "ci95": [
+              0.4669729232041756,
+              0.7138248453283215
+            ]
+          }
+        },
+        {
+          "key": "ready",
+          "label": "Worked steps shown",
+          "definition": "questions where two independent reads agreed and were confident, so the app shows worked steps ÷ questions",
+          "ratio": {
+            "n": 57,
+            "d": 86,
+            "rate": 0.6627906976744186,
+            "ci95": [
+              0.5578256067408826,
+              0.7538345148628337
+            ]
+          }
+        },
+        {
+          "key": "ready_reached",
+          "label": "Worked steps shown and the memo’s answer",
+          "definition": "questions with worked steps shown whose answer matches the memo’s ÷ questions with worked steps shown",
+          "ratio": {
+            "n": 42,
+            "d": 57,
+            "rate": 0.7368421052631579,
+            "ci95": [
+              0.6102342063042419,
+              0.8335421346391603
+            ]
+          }
+        },
+        {
+          "key": "schema_validity",
+          "label": "Passed every check first time",
+          "definition": "model calls that passed every verifier check ÷ model calls",
+          "ratio": {
+            "n": 163,
+            "d": 163,
+            "rate": 1,
+            "ci95": [
+              0.9769753938436303,
+              1
+            ]
+          }
+        },
+        {
+          "key": "failed",
+          "label": "Failed",
+          "definition": "questions where no read was accepted (timeout, provider error, checks) ÷ questions",
+          "ratio": {
+            "n": 0,
+            "d": 86,
+            "rate": 0,
+            "ci95": [
+              0,
+              0.04275819793144242
+            ]
+          }
+        }
+      ],
+      "confidently_wrong": null,
+      "abstained": null,
+      "checks_blocked_by_code": {},
+      "latency_ms": {
+        "p50": 30373,
+        "p95": 51878
+      },
+      "cost": {
+        "per_attempt_usd": 0.03097533,
+        "per_learner_week_usd": 0.15487665,
+        "assumption": "one learner asks for help with 5 questions a week; each question is two reads; cost per learner-week is the mean cost per question × 5"
+      }
+    },
+    {
+      "key": "nsc_work_check",
+      "label": "Work check: naming the lost step on memo working with one step changed",
+      "dataset": {
+        "label": "held-out NSC questions (newest session), memos as truth",
+        "held_out": true
+      },
+      "source": "pnpm eval:nsc · muse-spark-1.3 · work-check-v1 · 2026-11-04T22:20:58.081Z and 2026-11-04T23:39:07.553Z",
+      "n": 142,
+      "metric": {
+        "key": "lost_step_named",
+        "label": "Lost step named",
+        "definition": "changed answers (the memo’s working with the final step’s value altered) where the first step marked down is the changed one ÷ changed answers the checks accepted",
+        "ratio": {
+          "n": 58,
+          "d": 62,
+          "rate": 0.9354838709677419,
+          "ci95": [
+            0.8455248417912822,
+            0.9746270946558628
+          ]
+        }
+      },
+      "metrics": [
+        {
+          "key": "changed_total",
+          "label": "Changed answers: exact total",
+          "definition": "changed answers given exactly the marks minus the changed step’s ÷ changed answers the checks accepted",
+          "ratio": {
+            "n": 58,
+            "d": 62,
+            "rate": 0.9354838709677419,
+            "ci95": [
+              0.8455248417912822,
+              0.9746270946558628
+            ]
+          }
+        },
+        {
+          "key": "memo_full_marks",
+          "label": "Memo’s own working: full marks",
+          "definition": "the unchanged memo working for the same questions given full marks ÷ those the checks accepted",
+          "ratio": {
+            "n": 58,
+            "d": 62,
+            "rate": 0.9354838709677419,
+            "ci95": [
+              0.8455248417912822,
+              0.9746270946558628
+            ]
+          }
+        },
+        {
+          "key": "schema_validity",
+          "label": "Passed every check first time",
+          "definition": "model calls that passed every verifier check ÷ model calls",
+          "ratio": {
+            "n": 124,
+            "d": 182,
+            "rate": 0.6813186813186813,
+            "ci95": [
+              0.6104728258153682,
+              0.7446685963263764
+            ]
+          }
+        },
+        {
+          "key": "failed",
+          "label": "Failed calls",
+          "definition": "cases that ended in a timeout or provider error ÷ cases",
+          "ratio": {
+            "n": 2,
+            "d": 142,
+            "rate": 0.014084507042253521,
+            "ci95": [
+              0.003871016187956707,
+              0.049895991777030524
+            ]
+          }
+        }
+      ],
+      "confidently_wrong": {
+        "n": 4,
+        "d": 117,
+        "rate": 0.03418803418803419,
+        "ci95": [
+          0.013373841726568705,
+          0.08461784912953067
+        ]
+      },
+      "abstained": {
+        "n": 16,
+        "d": 142,
+        "rate": 0.11267605633802817,
+        "ci95": [
+          0.0705564888869239,
+          0.17519982180980506
+        ]
+      },
+      "checks_blocked_by_code": {
+        "EVIDENCE_MISSING": 51,
+        "HINT_LEAKS_ANSWER": 1,
+        "STEP_UNKNOWN": 7,
+        "STEP_MISSING": 7
+      },
+      "latency_ms": {
+        "p50": 25758,
+        "p95": 48232
+      },
+      "cost": {
+        "per_attempt_usd": 0.01566637,
+        "per_learner_week_usd": 0.07833185,
+        "assumption": "one learner submits 5 pieces of work a week; cost per learner-week is the mean cost per attempt × 5"
+      }
     }
   ],
   "not_yet": [
     "Handwriting photos: no photo cases in this run; typed answers only.",
     "No teacher-scored held-out set yet (spec 04 §5.2 asks for at least 30 frozen cases).",
-    "School notices and Help Plans: no evaluation suite yet."
+    "School notices and Help Plans: no evaluation suite yet.",
+    "Held-out NSC guide: 57 question(s) printed with a figure went in typed with the figure attached as a photo (the app takes typed text or a photo, not both); 13 that ask to prove or show a printed result were left out.",
+    "Held-out NSC suites: the memo is the truth and the comparison is fixed; no teacher has scored these cases."
   ],
   "built": {
     "from": "2026-10-26",

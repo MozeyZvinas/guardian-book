@@ -111,4 +111,12 @@ describe('loadConfig', () => {
     }
     expect(summary).toContain('"configured"')
   })
+  it('reads the DBE corpus bucket (B17) only when all four variables are set, and never logs it', () => {
+    expect(loadConfig({}).corpus).toEqual({ configured: false, endpoint: null, bucket: null, accessKeyId: null, secretAccessKey: null })
+    const corpusEnv = { DBE_R2_ENDPOINT: 'https://r2.example.test', DBE_R2_BUCKET: 'corpus-test', DBE_R2_ACCESS_KEY_ID: 'id-test', DBE_R2_SECRET_ACCESS_KEY: 'secret-test' }
+    expect(loadConfig(corpusEnv).corpus.configured).toBe(true)
+    expect(loadConfig({ ...corpusEnv, DBE_R2_SECRET_ACCESS_KEY: '' }).corpus.configured).toBe(false)
+    const summary = JSON.stringify(describeConfig(loadConfig(corpusEnv)))
+    for (const value of Object.values(corpusEnv)) expect(summary).not.toContain(value)
+  })
 })

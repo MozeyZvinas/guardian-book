@@ -67,6 +67,11 @@ const envSchema = z.object({
   BUCKET_SECRET_ACCESS_KEY: optionalString,
   BUCKET_REGION: optionalString,
   SENTRY_DSN: optionalString,
+  /** B17 (D40): the founder's private DBE corpus bucket (Cloudflare R2), read-only; CLI only. */
+  DBE_R2_ENDPOINT: optionalString,
+  DBE_R2_BUCKET: optionalString,
+  DBE_R2_ACCESS_KEY_ID: optionalString,
+  DBE_R2_SECRET_ACCESS_KEY: optionalString,
 })
 
 type Env = z.infer<typeof envSchema>
@@ -119,6 +124,19 @@ export interface SentryConfig {
   dsn: string | null
 }
 
+/**
+ * B17 (D40): the private DBE corpus bucket, read with a read-only token by the extraction
+ * CLI (`apps/api/src/corpus`) and nothing else. The server never opens it: no route reads
+ * a paper, and no PDF or bucket URL ever leaves the server.
+ */
+export interface CorpusConfig {
+  configured: boolean
+  endpoint: string | null
+  bucket: string | null
+  accessKeyId: string | null
+  secretAccessKey: string | null
+}
+
 /** B09: the public "Try it" path. Unconfigured = /try says so and sign-ups join nothing. */
 export interface TryItConfig {
   configured: boolean
@@ -139,6 +157,7 @@ export interface AppConfig {
   sentry: SentryConfig
   loop: LoopConfig
   tryIt: TryItConfig
+  corpus: CorpusConfig
   /** Problems found while reading env, in plain words. Never contain values. */
   notes: string[]
 }
@@ -197,6 +216,15 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     bucket.endpoint && bucket.name && bucket.accessKeyId && bucket.secretAccessKey && bucket.region,
   )
 
+  const corpus: CorpusConfig = {
+    configured: false,
+    endpoint: values.DBE_R2_ENDPOINT ?? null,
+    bucket: values.DBE_R2_BUCKET ?? null,
+    accessKeyId: values.DBE_R2_ACCESS_KEY_ID ?? null,
+    secretAccessKey: values.DBE_R2_SECRET_ACCESS_KEY ?? null,
+  }
+  corpus.configured = Boolean(corpus.endpoint && corpus.bucket && corpus.accessKeyId && corpus.secretAccessKey)
+
   return {
     port: values.PORT ?? DEFAULT_PORT,
     db: {
@@ -234,6 +262,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       classCode: values.PUBLIC_TRY_CLASS_CODE ?? null,
       userDailyCalls: values.TRY_USER_DAILY_CALLS ?? DEFAULT_TRY_USER_DAILY_CALLS,
     },
+    corpus,
     notes,
   }
 }

@@ -120,5 +120,6 @@ describe('evidence summary', () => {
     const parsed = evidenceFileSchema.parse(JSON.parse(await readFile(committedLatest, 'utf8')))
     expect(parsed.dataset.label.length).toBeGreaterThan(0)
     if (parsed.dataset.held_out) expect(parsed.dataset.label).toMatch(/held[- ]out/i)
+    for (const suite of parsed.suites) if (suite.dataset?.held_out) expect(suite.dataset.label).toMatch(/held[- ]out/i)
   })
 })

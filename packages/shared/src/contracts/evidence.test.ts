@@ -54,6 +54,14 @@ describe('evidence file schema', () => {
     expect(evidenceFileSchema.safeParse(contributor).success).toBe(false)
   })
 
+  it('accepts a held-out NSC suite with its own dataset label (B17), and refuses a malformed one', () => {
+    const file = sampleEvidence()
+    file.suites.push({ ...file.suites[0]!, key: 'nsc_guide', dataset: { label: 'held-out NSC questions (newest session), memos as truth', held_out: true } })
+    expect(evidenceFileSchema.safeParse(file).success).toBe(true)
+    file.suites[1] = { ...file.suites[1]!, dataset: { label: '', held_out: true } }
+    expect(evidenceFileSchema.safeParse(file).success).toBe(false)
+  })
+
   it('refuses unknown keys, out-of-range rates and an empty suite list', () => {
     expect(evidenceFileSchema.safeParse({ ...sampleEvidence(), extra: 1 }).success).toBe(false)
     const bad = sampleEvidence()
