@@ -10,6 +10,7 @@ import { Skeleton } from '../../../components/Skeleton'
 import { MARK_LABELS, MARK_LEGEND, Mark, SkillChip, SkillStateBadge } from '../../../components/SkillChip'
 import { TimelineRow } from '../../../components/TimelineRow'
 import { shortDate } from '../../../lib/dates'
+import { useHasPapers } from '../../library/hasPapers'
 import { plainEvidence } from './evidence'
 
 /**
@@ -29,6 +30,7 @@ function BrainScreen() {
   const [load, setLoad] = useState<Load>({ status: 'loading' })
   const [attempt, setAttempt] = useState(0)
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
+  const hasPapers = useHasPapers()
 
   useEffect(() => {
     let cancelled = false
@@ -88,7 +90,7 @@ function BrainScreen() {
       <div className="flex flex-col gap-2">
         <h1 className="text-display font-semibold text-balance">Your Brain</h1>
         <p className="text-fg-muted">This is what you can do, and how sure we are.</p>
-        {Object.keys(brain.whatComesUp).length > 0 ? (
+        {hasPapers === true && Object.keys(brain.whatComesUp).length > 0 ? (
           <p className="text-sm text-fg-muted">
             <span aria-hidden="true">◷ </span>
             What comes up: how often a skill appears in the <Link to="/library">past papers</Link>, and the marks it carries.

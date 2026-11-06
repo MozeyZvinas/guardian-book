@@ -10,6 +10,7 @@ import { LearnerShell } from '../../../components/LearnerShell'
 import { Skeleton } from '../../../components/Skeleton'
 import { daysWord, shortDate, shortDateTime } from '../../../lib/dates'
 import { InstallHint } from '../../../sw/InstallHint'
+import { useHasPapers } from '../../library/hasPapers'
 import { KIND_WORD, NEXT_ACTION_TITLE, nextAction, splitRecent, statusWords, type NextAction } from './status'
 
 /**
@@ -26,6 +27,7 @@ type Load = { status: 'loading' } | { status: 'ready'; today: TodayResponse } | 
 function TodayScreen() {
   const [load, setLoad] = useState<Load>({ status: 'loading' })
   const [attempt, setAttempt] = useState(0)
+  const hasPapers = useHasPapers()
 
   useEffect(() => {
     let cancelled = false
@@ -100,9 +102,11 @@ function TodayScreen() {
 
       {today.practice.length > 0 ? <PracticeCard practice={today.practice} /> : null}
 
-      <p className="m-0 text-sm text-fg-muted">
-        <Link to="/library">Past papers</Link>: real exam questions, with their memos.
-      </p>
+      {hasPapers === true ? (
+        <p className="m-0 text-sm text-fg-muted">
+          <Link to="/library">Past papers</Link>: real exam questions, with their memos.
+        </p>
+      ) : null}
 
       {!today.hasCards ? (
         <EmptyState title="Tell me about you" action={<Link to="/me/setup">Five quick taps</Link>}>
