@@ -3,6 +3,7 @@ import { Link, NavLink } from 'react-router'
 import type { MeResponse } from '@guardian-book/shared'
 import { SignOutButton } from '../../../components/SignOutButton'
 import { Wordmark } from '../../../components/Wordmark'
+import { useHasPapers } from '../../library/hasPapers'
 
 /**
  * The teacher's frame (spec 05 §2 tab bars, §6 ≥1024 sidebar, §9 navigation): Classes ·
@@ -12,13 +13,15 @@ import { Wordmark } from '../../../components/Wordmark'
  */
 export function TeacherShell({ me, classId, eyebrow, title, children, wide = false }: { me: MeResponse; classId?: string | undefined; eyebrow?: ReactNode; title: string; children: ReactNode; wide?: boolean }) {
   const current = classId ?? me.classes[0]?.id
+  const hasPapers = useHasPapers()
   const tabs = [
     { to: '/teacher', label: 'Classes', end: true },
     { to: current ? `/teacher/classes/${current}/queue` : '/teacher', label: 'Queue', end: false },
     { to: current ? `/teacher/classes/${current}/notes` : '/teacher', label: 'Notes', end: false },
     { to: current ? `/teacher/classes/${current}/guidelines` : '/teacher', label: 'Guidelines', end: false },
-    // B17: approve a past paper for the class and set practice from the library.
-    { to: current ? `/teacher/classes/${current}/library` : '/library', label: 'Past papers', end: false },
+    // B17: approve a past paper for the class and set practice from the library; shown
+    // only once the library has papers (an empty library is not a way in).
+    ...(hasPapers === true ? [{ to: current ? `/teacher/classes/${current}/library` : '/library', label: 'Past papers', end: false }] : []),
   ]
   return (
     <div className="flex min-h-dvh flex-col bg-ground text-fg">
